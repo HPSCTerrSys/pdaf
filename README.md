@@ -1,3 +1,8 @@
+# tsmp-pdaf-patched-visakh
+
+This branch is generated for testing eCLM-PDAF simulations over Europe
+by Visakh.
+
 # TSMP-PDAF: Pre-patched PDAF
 
 This fork of PDAF contains the PDAF changes ("patches") for using it
