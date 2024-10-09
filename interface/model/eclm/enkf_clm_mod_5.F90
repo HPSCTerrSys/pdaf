@@ -464,6 +464,8 @@ module enkf_clm_mod
                   if(i<=clmstatevec_max_layer) then
                     if(col%hydrologically_active(j) .and. i<=col%nbedrock(j) ) then
                       cc = col_index_hydr_act(j,i)
+                    else
+                      cycle
                     end if
                   else
                     cycle
