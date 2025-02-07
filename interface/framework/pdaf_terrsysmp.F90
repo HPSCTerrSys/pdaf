@@ -88,6 +88,9 @@ PROGRAM pdaf_terrsysmp
         ! forward simulation of component models
         CALL integrate_tsmp()
 
+        ! barrier before model integration starts
+        CALL MPI_BARRIER(MPI_COMM_WORLD, MPIerr)
+
         ! assimilation step
         CALL assimilate_pdaf()
 
