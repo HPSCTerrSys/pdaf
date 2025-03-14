@@ -627,113 +627,113 @@ module enkf_clm_mod
     ! write updated swc back to CLM
     if(clmupdate_swc.ne.0) then
 
-      ! Set minimum soil moisture for checking the state vector and
-      ! for setting minimum swc for CLM
-      if(clmwatmin_switch.eq.3) then
-        ! CLM3.5 type watmin
-        watmin_check = 0.00
-        watmin_set = 0.05
-      else if(clmwatmin_switch.eq.5) then
-        ! CLM5.0 type watmin
-        watmin_check = watmin
-        watmin_set = watmin
-      else
-        ! Default
-        watmin_check = 0.0
-        watmin_set = 0.0
-      end if
+        ! Set minimum soil moisture for checking the state vector and
+        ! for setting minimum swc for CLM
+        if(clmwatmin_switch.eq.3) then
+          ! CLM3.5 type watmin
+          watmin_check = 0.00
+          watmin_set = 0.05
+        else if(clmwatmin_switch.eq.5) then
+          ! CLM5.0 type watmin
+          watmin_check = watmin
+          watmin_set = watmin
+        else
+          ! Default
+          watmin_check = 0.0
+          watmin_set = 0.0
+        end if
 
-      ! cc = 0
-      do i=1,nlevsoi
-        ! CLM3.5: iterate over grid cells
-        ! CLM5.0: iterate over columns
-        ! do j=clm_begg,clm_endg
-        do j=clm_begc,clm_endc
+        ! cc = 0
+        do i=1,nlevsoi
+          ! CLM3.5: iterate over grid cells
+          ! CLM5.0: iterate over columns
+          ! do j=clm_begg,clm_endg
+            do j=clm_begc,clm_endc
 
-          ! Update only those SWCs that are not excluded by ispval
-          if(state_clm2pdaf_p(j,i) .ne. ispval) then
+              ! Update only those SWCs that are not excluded by ispval
+              if(state_clm2pdaf_p(j,i) .ne. ispval) then
 
-            if(swc(j,i).eq.0.0) then
-              swc_zero_before_update = .true.
+                if(swc(j,i).eq.0.0) then
+                  swc_zero_before_update = .true.
 
-              ! Zero-SWC leads to zero denominator in computation of
-              ! rliq/rice, therefore setting rliq/rice to special
-              ! value
-              rliq = spval
-              rice = spval
-            else
-              swc_zero_before_update = .false.
+                  ! Zero-SWC leads to zero denominator in computation of
+                  ! rliq/rice, therefore setting rliq/rice to special
+                  ! value
+                  rliq = spval
+                  rice = spval
+                else
+                  swc_zero_before_update = .false.
 
-              rliq = h2osoi_liq(j,i)/(dz(j,i)*denh2o*swc(j,i))
-              rice = h2osoi_ice(j,i)/(dz(j,i)*denice*swc(j,i))
-              !h2osoi_vol(c,j) = h2osoi_liq(c,j)/(dz(c,j)*denh2o) + h2osoi_ice(c,j)/(dz(c,j)*denice)
-            end if
+                  rliq = h2osoi_liq(j,i)/(dz(j,i)*denh2o*swc(j,i))
+                  rice = h2osoi_ice(j,i)/(dz(j,i)*denice*swc(j,i))
+                  !h2osoi_vol(c,j) = h2osoi_liq(c,j)/(dz(c,j)*denh2o) + h2osoi_ice(c,j)/(dz(c,j)*denice)
+                end if
 
-            swc_update = clm_statevec(state_clm2pdaf_p(j,i))
+                swc_update = clm_statevec(state_clm2pdaf_p(j,i))
 
-            if(swc_update.le.watmin_check) then
-              swc(j,i) = watmin_set
-            else if(swc_update.ge.watsat(j,i)) then
-              swc(j,i) = watsat(j,i)
-            else
-              swc(j,i)   = swc_update
-            endif
+                if(swc_update.le.watmin_check) then
+                  swc(j,i) = watmin_set
+                else if(swc_update.ge.watsat(j,i)) then
+                  swc(j,i) = watsat(j,i)
+                else
+                  swc(j,i)   = swc_update
+                endif
 
-            if (isnan(swc(j,i))) then
-              swc(j,i) = watmin_set
-              print *, "WARNING: swc at j,i is nan: ", j, i
-            endif
+                if (isnan(swc(j,i))) then
+                  swc(j,i) = watmin_set
+                  print *, "WARNING: swc at j,i is nan: ", j, i
+                endif
 
-            if(swc_zero_before_update) then
-              ! This case should not appear for hydrologically
-              ! active columns/layers, where always: swc > watmin
-              !
-              ! If you want to make sure that no zero SWCs appear in
-              ! the code, comment out the error stop
+                if(swc_zero_before_update) then
+                  ! This case should not appear for hydrologically
+                  ! active columns/layers, where always: swc > watmin
+                  !
+                  ! If you want to make sure that no zero SWCs appear in
+                  ! the code, comment out the error stop
 
 #ifdef PDAF_DEBUG
-              ! error stop "ERROR: Update of zero-swc"
-              print *, "WARNING: Update of zero-swc"
-              print *, "WARNING: Any new H2O added to h2osoi_liq(j,i) with j,i = ", j, i
+                  ! error stop "ERROR: Update of zero-swc"
+                  print *, "WARNING: Update of zero-swc"
+                  print *, "WARNING: Any new H2O added to h2osoi_liq(j,i) with j,i = ", j, i
 #endif
-              h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o
-              h2osoi_ice(j,i) = 0.0
-            else
-              ! update liquid water content
-              h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o*rliq
-              ! update ice content
-              h2osoi_ice(j,i) = swc(j,i) * dz(j,i)*denice*rice
-            end if
+                  h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o
+                  h2osoi_ice(j,i) = 0.0
+                else
+                  ! update liquid water content
+                  h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o*rliq
+                  ! update ice content
+                  h2osoi_ice(j,i) = swc(j,i) * dz(j,i)*denice*rice
+                end if
 
-          end if
-          ! cc = cc + 1
+              end if
+              ! cc = cc + 1
+            end do
         end do
-      end do
 
 #ifdef PDAF_DEBUG
-      IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
+        IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
 
-        IF(clmupdate_swc.NE.0) THEN
-          ! TSMP-PDAF: For debug runs, output the state vector in files
-          WRITE(fn3, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".update.", tstartcycle, ".txt"
-          OPEN(unit=71, file=fn3, action="write")
-          WRITE (71,"(es22.15)") h2osoi_liq(:,:)
-          CLOSE(71)
+          IF(clmupdate_swc.NE.0) THEN
+            ! TSMP-PDAF: For debug runs, output the state vector in files
+            WRITE(fn3, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".update.", tstartcycle, ".txt"
+            OPEN(unit=71, file=fn3, action="write")
+            WRITE (71,"(es22.15)") h2osoi_liq(:,:)
+            CLOSE(71)
 
-          ! TSMP-PDAF: For debug runs, output the state vector in files
-          WRITE(fn4, "(a,i5.5,a,i5.5,a)") "h2osoi_ice", mype, ".update.", tstartcycle, ".txt"
-          OPEN(unit=71, file=fn4, action="write")
-          WRITE (71,"(es22.15)") h2osoi_ice(:,:)
-          CLOSE(71)
+            ! TSMP-PDAF: For debug runs, output the state vector in files
+            WRITE(fn4, "(a,i5.5,a,i5.5,a)") "h2osoi_ice", mype, ".update.", tstartcycle, ".txt"
+            OPEN(unit=71, file=fn4, action="write")
+            WRITE (71,"(es22.15)") h2osoi_ice(:,:)
+            CLOSE(71)
 
-          ! TSMP-PDAF: For debug runs, output the state vector in files
-          WRITE(fn2, "(a,i5.5,a,i5.5,a)") "swcstate_", mype, ".update.", tstartcycle, ".txt"
-          OPEN(unit=71, file=fn2, action="write")
-          WRITE (71,"(es22.15)") swc(:,:)
-          CLOSE(71)
+            ! TSMP-PDAF: For debug runs, output the state vector in files
+            WRITE(fn2, "(a,i5.5,a,i5.5,a)") "swcstate_", mype, ".update.", tstartcycle, ".txt"
+            OPEN(unit=71, file=fn2, action="write")
+            WRITE (71,"(es22.15)") swc(:,:)
+            CLOSE(71)
+          END IF
+
         END IF
-
-      END IF
 #endif
 
     endif
