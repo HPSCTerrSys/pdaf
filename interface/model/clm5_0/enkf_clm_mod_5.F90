@@ -282,8 +282,15 @@ module enkf_clm_mod
         clm_statevecsize =  (clm_endg-clm_begg+1) ! So like this if snow is set it takes priority
     endif
     ! Case 3: Assimilation of snow depth: Snow depth and snow water
-    ! equivalent in the state vector
+    ! equivalent in the state vector. Update of h2osoi_ice
     if(clmupdate_snow.eq.3) then
+        clm_varsize      =  (clm_endg-clm_begg+1)
+        clm_statevecsize =  2*(clm_endg-clm_begg+1)
+    endif
+    ! Case 4: Assimilation of snow depth: Snow depth and snow water
+    ! equivalent in the state vector. Update of h2osoi_ice, h2osoi_liq
+    ! and dz
+    if(clmupdate_snow.eq.4) then
         clm_varsize      =  (clm_endg-clm_begg+1)
         clm_statevecsize =  2*(clm_endg-clm_begg+1)
     endif
@@ -430,6 +437,9 @@ module enkf_clm_mod
               else if(clmupdate_snow.eq.3) then
                 clm_statevec(cc+offset) = snow_depth(jj)
                 clm_statevec(cc+clm_varsize+offset) = h2osno(jj)
+              else if(clmupdate_snow.eq.4) then
+                clm_statevec(cc+offset) = snow_depth(jj)
+                clm_statevec(cc+clm_varsize+offset) = h2osno(jj)
               else
                 error stop "Wrong input for clmupdate_snow"
               end if
@@ -484,9 +494,12 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
 
-    real(r8)  :: rliq,rice,incr_sno
-    real(r8) :: rsnow(clm_begc:clm_endc)
-    real(r8) :: nsnow(clm_begc:clm_endc)
+    real(r8)  :: rliq,rice
+    real(r8)  :: incr_sno
+    real(r8)  :: incr_sd
+    real(r8)  :: incr_swe
+    real(r8)  :: h2osno_in(clm_begc:clm_endc)
+    real(r8)  :: snow_depth_in(clm_begc:clm_endc)
     real(r8)  :: watmin_check      ! minimum soil moisture for checking clm_statevec (mm)
     real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
     real(r8)  :: swc_update        ! updated SWC in loop
@@ -721,32 +734,31 @@ module enkf_clm_mod
         ! CLM5-grid-index
         cc = (col%gridcell(j) - clm_begg + 1)
 
+        snow_depth_in(j) = snow_depth(j)
+        h2osno_in(j) = h2osno(j)
+
         if (clmupdate_snow.eq.1) then
-          rsnow(j) = snow_depth(j)
+          snow_depth(j) = clm_statevec(cc+offset)
         else if (clmupdate_snow.eq.2) then
-          rsnow(j) = h2osno(j)
+          h2osno(j)     = clm_statevec(cc+offset)
         else if (clmupdate_snow.eq.3) then
-          rsnow(j) = h2osno(j)
+          h2osno(j)     = clm_statevec(cc+clm_varsize+offset)
+        else if (clmupdate_snow.eq.4) then
+          snow_depth(j) = clm_statevec(cc+offset)
+          h2osno(j)     = clm_statevec(cc+clm_varsize+offset)
         end if
 
-        if (clmupdate_snow.eq.1 .or. clmupdate_snow.eq.2) then
-          nsnow(j) = clm_statevec(cc+offset)
-        else if (clmupdate_snow.eq.3) then
-          nsnow(j) = clm_statevec(cc+clm_varsize+offset)
+        if (snow_depth(j).lt.0.0) then
+          ! Catch negative values from DA
+          print *, "WARNING: Snow-depth is negative at state vector cc. cc, j, offset, snow_depth(j): ", cc, j, offset, snow_depth(j)
+          print *, "WARNING: Snow-depth is reset to pre-DA value."
+          snow_depth(j) = snow_depth_in(j)
         end if
-
-        if (nsnow(j).gt.0.0) then
-          ! Update state variable to CLM
-          ! Not needed for repartioning-case 3?
-          if(clmupdate_snow.eq.1) then
-            snow_depth(j) = nsnow(j)
-          end if
-          if(clmupdate_snow.eq.2 .or. clmupdate_snow.eq.3) then
-            h2osno(j) = nsnow(j)
-          end if
-        else
-          ! Catch negative or 0 values from DA
-          print *, "WARNING: Snow-statevec is negative/zero at cc. cc, j, offset, clm_statevec(cc+offset): ", cc, j, offset, clm_statevec(cc+offset)
+        if (h2osno(j).lt.0.0) then
+          ! Catch negative values from DA
+          print *, "WARNING: SWE is negative at state vector cc. cc, j, offset, h2osno(j): ", cc, j, offset, h2osno(j)
+          print *, "WARNING: SWE is reset to pre-DA value or zero."
+          h2osno(j) = h2osno_in(j)
         end if
 
       end do
@@ -754,9 +766,15 @@ module enkf_clm_mod
       ! Repartitioning
       if ( clmupdate_snow_repartitioning.eq.1 .or. clmupdate_snow_repartitioning.eq.2) then
 
-        if (clmupdate_snow.eq.1 .or. clmupdate_snow.eq.2) then
-          if ( SUM(ABS(rsnow(:) - nsnow(:))).gt.0.000001) then
-            call clm_repartition_snow(rsnow(:))
+        if (clmupdate_snow.eq.1) then
+          if ( SUM(ABS(snow_depth_in(:) - snow_depth(:))).gt.0.000001) then
+            call clm_repartition_snow(snow_depth_in(:))
+          end if
+        end if
+
+        if (clmupdate_snow.eq.2) then
+          if ( SUM(ABS(h2osno_in(:) - h2osno(:))).gt.0.000001) then
+            call clm_repartition_snow(h2osno_in(:))
           end if
         end if
 
@@ -768,19 +786,65 @@ module enkf_clm_mod
 
       if ( clmupdate_snow_repartitioning.eq.3) then
 
-        do j=clm_begc,clm_endc
-          if (nsnow(j).gt.0.0) then
-            if ( ABS(rsnow(j) - nsnow(j)).gt.0.000001) then
-              if ( ABS(rsnow(j)).gt.0.0) then
-                ! Update h2osoi_ice with increment
-                incr_sno = nsnow(j) / rsnow(j) ! INC = New snow var / OLD snow var
-                do i=snlsno(j)+1,0
-                  h2osoi_ice(j,i) = h2osoi_ice(j,i) * incr_sno
-                end do
+        if (clmupdate_snow.eq.1) then
+          do j=clm_begc,clm_endc
+            if (snow_depth(j).gt.0.0) then
+              if ( ABS(snow_depth_in(j) - snow_depth(j)).gt.0.000001) then
+                if ( ABS(snow_depth_in(j)).gt.0.0) then
+                  ! Update h2osoi_ice with increment
+                  incr_sno = snow_depth(j) / snow_depth_in(j)
+                  do i=snlsno(j)+1,0
+                    h2osoi_ice(j,i) = h2osoi_ice(j,i) * incr_sno
+                  end do
+                end if
               end if
             end if
-          end if
-        end do
+          end do
+        end if
+
+        if (clmupdate_snow.eq.2 .or. clmupdate_snow.eq.3) then
+          do j=clm_begc,clm_endc
+            if (h2osno(j).gt.0.0) then
+              if ( ABS(h2osno_in(j) - h2osno(j)).gt.0.000001) then
+                if ( ABS(h2sno_in(j)).gt.0.0) then
+                  ! Update h2osoi_ice with increment
+                  incr_sno = h2osno(j) / h2osno_in(j)
+                  do i=snlsno(j)+1,0
+                    h2osoi_ice(j,i) = h2osoi_ice(j,i) * incr_sno
+                  end do
+                end if
+              end if
+            end if
+          end do
+        end if
+
+        if (clmupdate_snow.eq.4) then
+          do j=clm_begc,clm_endc
+            if (h2osno(j).gt.0.0) then
+              if ( ABS(h2osno_in(j) - h2osno(j)).gt.0.000001) then
+                if ( ABS(h2sno_in(j)).gt.0.0) then
+                  ! Update h2osoi_ice/h2osoi_liq with increment
+                  incr_swe = h2osno(j) / h2osno_in(j)
+                  do i=snlsno(j)+1,0
+                    h2osoi_ice(j,i) = h2osoi_ice(j,i) * incr_swe
+                    h2osoi_liq(j,i) = h2osoi_liq(j,i) * incr_swe
+                  end do
+                end if
+              end if
+            end if
+            if (snow_depth(j).gt.0.0) then
+              if ( ABS(snow_depth_in(j) - snow_depth(j)).gt.0.000001) then
+                if ( ABS(snow_depth_in(j)).gt.0.0) then
+                  ! Update snow_depth with increment
+                  incr_sd = snow_depth(j) / snow_depth_in(j)
+                  do i=snlsno(j)+1,0
+                    dz(j,i) = dz(j,i) * incr_sd
+                  end do
+                end if
+              end if
+            end if
+          end do
+        end if
 
       end if
 
@@ -879,7 +943,7 @@ module enkf_clm_mod
               h2osno_po(jj) = snow_depth(jj) * denice
             end if
             h2osno_pr(jj) = h2osno(jj)
-          else if (clmupdate_snow .eq. 2 .or. clmupdate_snow .eq. 3) then
+          else if (clmupdate_snow .eq. 2) then
             ! for clmupdate_snow == 2 we have post H2OSNO as the main H2OSNO already
             h2osno_po(jj) = h2osno(jj)
             h2osno_pr(jj) = h2osno_in(jj)
