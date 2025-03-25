@@ -806,7 +806,7 @@ module enkf_clm_mod
           do j=clm_begc,clm_endc
             if (h2osno(j).gt.0.0) then
               if ( ABS(h2osno_in(j) - h2osno(j)).gt.0.000001) then
-                if ( ABS(h2sno_in(j)).gt.0.0) then
+                if ( ABS(h2osno_in(j)).gt.0.0) then
                   ! Update h2osoi_ice with increment
                   incr_sno = h2osno(j) / h2osno_in(j)
                   do i=snlsno(j)+1,0
@@ -822,7 +822,7 @@ module enkf_clm_mod
           do j=clm_begc,clm_endc
             if (h2osno(j).gt.0.0) then
               if ( ABS(h2osno_in(j) - h2osno(j)).gt.0.000001) then
-                if ( ABS(h2sno_in(j)).gt.0.0) then
+                if ( ABS(h2osno_in(j)).gt.0.0) then
                   ! Update h2osoi_ice/h2osoi_liq with increment
                   incr_swe = h2osno(j) / h2osno_in(j)
                   do i=snlsno(j)+1,0
