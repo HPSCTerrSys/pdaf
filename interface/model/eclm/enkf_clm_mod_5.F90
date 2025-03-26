@@ -827,7 +827,6 @@ module enkf_clm_mod
                   incr_swe = h2osno(j) / h2osno_in(j)
                   do i=snlsno(j)+1,0
                     h2osoi_ice(j,i) = h2osoi_ice(j,i) * incr_swe
-                    h2osoi_liq(j,i) = h2osoi_liq(j,i) * incr_swe
                   end do
                 end if
               end if
