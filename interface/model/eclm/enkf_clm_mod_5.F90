@@ -1029,7 +1029,66 @@ module enkf_clm_mod
   end subroutine get_interp_idx
 
 #if defined CLMSA
-  subroutine init_clm_l_size(dim_l)
+  !> @author  Johannes Keller
+  !> @date    24.04.2025
+  !> @brief   Set number of local analysis domains N_DOMAINS_P
+  !> @details
+  !>    This routine sets N_DOMAINS_P, the number of local analysis domains.
+  subroutine init_n_domains_clm(n_domains_p)
+
+    use decompMod, only : get_proc_bounds
+    use ColumnType , only : col
+
+    implicit none
+
+    integer, intent(out) :: n_domains_p
+    integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+    integer :: begc, endc   ! per-proc beginning and ending column indices
+
+    integer :: c
+
+    call get_proc_bounds(begg=begg, endg=endg, begc=begc, endc=endc)
+
+    if(clmupdate_swc.eq.1) then
+      if(clmstatevec_allcol.eq.1) then
+        if(clmstatevec_only_active .eq. 1) then
+
+          ! Each hydrologically active layer is a local domain
+          ! -> DIM_L: number of layers in hydrologically active column
+          n_domains_p = 0
+
+          do c=clm_begc,clm_endc
+            if(col%hydrologically_active(c)) then
+              n_domains_p = n_domains_p + 1
+            end if
+          end do
+
+        else
+          ! Each column is a local domain
+          ! -> DIM_L: number of layers in column
+          n_domains_p = endc - begc + 1
+        end if
+      else
+        ! Each gridcell is a local domain
+        ! -> DIM_L: number of layers in gridcell
+        n_domains_p = endg - begg + 1
+      end if
+    else
+      ! Process-local number of gridcells
+      ! Default, possibly not tested
+      n_domains_p = endg - begg + 1
+    end if
+
+
+  end subroutine init_n_domains_clm
+
+
+  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @date    20.11.2017
+  !> @brief   Set local state vector dimension DIM_L local PDAF filters
+  !> @details
+  !>    This routine sets DIM_L, the local state vector dimension.
+  subroutine init_dim_l_clm(dim_l)
     use clm_varpar   , only : nlevsoi
 
     implicit none
@@ -1038,8 +1097,13 @@ module enkf_clm_mod
     integer              :: nshift
 
     if(clmupdate_swc.eq.1) then
-      dim_l = nlevsoi
-      nshift = nlevsoi
+      ! Currently: All columns/gridcells (each being a local domain)
+      ! must have the same number of layers.
+
+      ! TODO: Include flexibility for different number of layers
+      ! (example: different bedrock depths)
+      dim_l = min(nlevsoi, clmstatevec_max_layer)
+      nshift = min(nlevsoi, clmstatevec_max_layer)
     endif
 
     if(clmupdate_swc.eq.2) then
@@ -1056,7 +1120,68 @@ module enkf_clm_mod
       dim_l = 3*nlevsoi + nshift
     endif
 
-  end subroutine init_clm_l_size
+  end subroutine init_dim_l_clm
+
+  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @date    20.11.2017
+  !> @brief   Set local state vector STATE_L from global state vector STATE_P
+  !> @details
+  !>    This routine sets STATE_L, the local state vector.
+  !>
+  !>    Source is STATE_P, the global (PE-local) state vector.
+  subroutine g2l_state_clm(domain_p, dim_p, state_p, dim_l, state_l)
+
+    implicit none
+
+    INTEGER, INTENT(in) :: domain_p       ! Current local analysis domain
+    INTEGER, INTENT(in) :: dim_p          ! PE-local full state dimension
+    INTEGER, INTENT(in) :: dim_l          ! Local state dimension
+    REAL, TARGET, INTENT(in)    :: state_p(dim_p) ! PE-local full state vector
+    REAL, TARGET, INTENT(out)   :: state_l(dim_l) ! State vector on local analysis d
+
+    INTEGER :: i,
+    INTEGER :: n_domain
+    INTEGER :: nshift_p
+
+    call init_n_domains_clm(n_domain)
+
+    DO i = 0, dim_l-1
+      nshift_p = domain_p + i * n_domain
+      state_l(i+1) = state_p(nshift_p)
+    ENDDO
+
+  end subroutine g2l_state_clm
+
+  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @date    20.11.2017
+  !> @brief   Update global state vector STATE_P from local state vector STATE_L
+  !> @details
+  !>    This routine updates STATE_P, the global (PE-local) state vector.
+  !>
+  !>    Source is STATE_L, the local vector.
+  subroutine l2g_state_clm(domain_p, dim_l, state_l, dim_p, state_p)
+
+    implicit none
+
+    INTEGER, INTENT(in) :: domain_p       ! Current local analysis domain
+    INTEGER, INTENT(in) :: dim_l          ! Local state dimension
+    INTEGER, INTENT(in) :: dim_p          ! PE-local full state dimension
+    REAL, TARGET, INTENT(in)    :: state_l(dim_l) ! State vector on local analysis domain
+    REAL, TARGET, INTENT(inout) :: state_p(dim_p) ! PE-local full state vector
+
+    INTEGER :: i,
+    INTEGER :: n_domain
+    INTEGER :: nshift_p
+
+    ! beg and end gridcell for atm
+    call init_n_domains_clm(n_domain)
+
+    DO i = 0, dim_l-1
+      nshift_p = domain_p + i * n_domain
+      state_p(nshift_p) = state_l(i+1)
+    ENDDO
+
+  end subroutine l2g_state_clm
 #endif
 
 end module enkf_clm_mod
