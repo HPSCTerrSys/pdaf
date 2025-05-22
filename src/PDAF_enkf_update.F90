@@ -102,7 +102,7 @@ SUBROUTINE  PDAF_enkf_update(step, dim_p, dim_obs_p, dim_ens, state_p, &
   WRITE (*,*) '++ PDAF-debug: ', debug, 'PDAF_enkf_update -- START'
      DO i = 1, dim_ens
         WRITE (*,*) '++ PDAF-debug PDAF_enkf_update:', debug, 'ensemble member', i, &
-             ' forecast values (1:min(dim_p,6)):', ens_p(1:min(dim_p,6),i)
+             ' forecast values (1:min(dim_p,20)):', ens_p(1:min(dim_p,20),i)
      END DO
   END IF
 
@@ -163,7 +163,7 @@ SUBROUTINE  PDAF_enkf_update(step, dim_p, dim_obs_p, dim_ens, state_p, &
   IF (debug>0) THEN
      DO i = 1, dim_ens
         WRITE (*,*) '++ PDAF-debug PDAF_enkf_update:', debug, 'ensemble member', i, &
-             ' analysis values (1:min(dim_p,6)):', ens_p(1:min(dim_p,6),i)
+             ' analysis values (1:min(dim_p,20)):', ens_p(1:min(dim_p,20),i)
      END DO
   END IF
 
