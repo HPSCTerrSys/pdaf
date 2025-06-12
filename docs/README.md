@@ -1,13 +1,13 @@
 # Building TSMP-PDAF Documentation
 
-If you'd like to develop and/or build the eCLM documentation, you should:
+If you'd like to develop and/or build the TSMP-PDAF documentation, you should:
 
 1. Switch to this directory: `cd docs`
 2. Run `pip install -r requirements.txt`
 3. (*Optional*) Edit the books source files (`*.md`) in this folder. Check out the [MyST syntax cheat sheet](https://jupyterbook.org/en/stable/reference/cheatsheet.html) for reference.
 4. Build the docs: `make clean docs`.
-5. (*Optional*) Build eCLM source code browser (PDAF-library): `make src-browser-lib`
-6. (*Optional*) Build eCLM source code browser (TSMP-PDAF interface): `make src-browser-interface`
+5. (*Optional*) Build TSMP-PDAF source code browser (PDAF-library): `make src-browser-lib`
+6. (*Optional*) Build TSMP-PDAF source code browser (TSMP-PDAF interface): `make src-browser-interface`
 7. Launch the doc homepage on your default browser: `open _build/html/index.html`
 
 ## Contributors
