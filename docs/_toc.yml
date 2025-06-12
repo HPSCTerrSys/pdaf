@@ -14,16 +14,21 @@ parts:
       - file: users_guide/introduction_to_tsmp_pdaf/input_file
       - file: users_guide/introduction_to_tsmp_pdaf/how_to_use_this_document
 
-    # - file: users_guide/building_eCLM/README
-    #   title: Building eCLM
-    #   sections:
-    #   - file: users_guide/building_eCLM/Ubuntu
-    #   - file: users_guide/building_eCLM/JSC/README
-    #     title: JSC
-    #     sections:
-    #     - file: users_guide/building_eCLM/JSC/prerequisites_JSC_users
-    #     - file: users_guide/building_eCLM/JSC/setting_up_eCLM
-    #   - file: users_guide/building_eCLM/Levante
+    - file: users_guide/building_tsmp_pdaf/README
+      title: Building TSMP-PDAF
+      sections:
+      - file: users_guide/building_tsmp_pdaf/build_preprocessor_variables
+
+    - file: users_guide/running_tsmp_pdaf/README
+      title: Running TSMP-PDAF
+      sections:
+      - file: users_guide/running_tsmp_pdaf/input_clm
+      - file: users_guide/running_tsmp_pdaf/input_pfl
+      - file: users_guide/running_tsmp_pdaf/input_cos
+      - file: users_guide/running_tsmp_pdaf/input_oas
+      - file: users_guide/running_tsmp_pdaf/input_cmd
+      - file: users_guide/running_tsmp_pdaf/input_obs
+      - file: users_guide/running_tsmp_pdaf/input_enkfpf
 
   - caption: Reference
     chapters:
