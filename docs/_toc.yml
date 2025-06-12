@@ -31,4 +31,6 @@ parts:
     - url: https://pdaf.awi.de/trac/wiki
       title: PDAF documentation
     - url: https://hpscterrsys.github.io/pdaf/src
-      title: TSMP-PDAF Source Code Browser
+      title: TSMP-PDAF Source Code Browser (library)
+    - url: https://hpscterrsys.github.io/pdaf/interface
+      title: TSMP-PDAF Source Code Browser (interface)
