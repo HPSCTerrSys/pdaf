@@ -75,6 +75,7 @@ In general, `delt_obs` should be as small as possible, in order to
 avoid performance loss. See remark in
 [`[DA]da_interval`](enkfpf:da:da_interval).
 
+(cmd:screen)=
 ## screen ##
 
 `screen` (integer) Control verbosity of PDAF

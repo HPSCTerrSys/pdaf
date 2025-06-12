@@ -684,6 +684,7 @@ and thus reduces compute time.
 output files for ParFlow.  Can be used when an assimilation run is
 restarted.
 
+(enkfpf:da:screen_wrapper)=
 ### DA:screen_wrapper ###
 
 `DA:screen_wrapper` (added 02/2022): Variable for controlling
