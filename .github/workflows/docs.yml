@@ -41,10 +41,15 @@ jobs:
         run:  |
           make clean docs
 
-      - name: Build eCLM Source Code browser
+      - name: Build TSMP-PDAF Source Code browser
         working-directory: ./docs
         run:  |
           make src-browser-lib
+
+      - name: Build TSMP-PDAF Source Code browser
+        working-directory: ./docs
+        run:  |
+          make src-browser-interface
 
       - name: Upload documentation artifacts
         uses: actions/upload-pages-artifact@v3
