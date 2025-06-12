@@ -1,0 +1,34 @@
+# https://hpscterrsys.github.io/pdaf
+
+format: jb-book
+root: INDEX
+
+parts:
+  - caption: User's Guide
+    chapters:
+
+    - file: users_guide/introduction_to_pdaf/README
+      title: Introduction to TSMP-PDAF
+      sections:
+      - file: users_guide/introduction_to_pdaf/introduction
+      - file: users_guide/introduction_to_pdaf/input_file
+      - file: users_guide/introduction_to_pdaf/how_to_use_this_document
+
+    # - file: users_guide/building_eCLM/README
+    #   title: Building eCLM
+    #   sections:
+    #   - file: users_guide/building_eCLM/Ubuntu
+    #   - file: users_guide/building_eCLM/JSC/README
+    #     title: JSC
+    #     sections:
+    #     - file: users_guide/building_eCLM/JSC/prerequisites_JSC_users
+    #     - file: users_guide/building_eCLM/JSC/setting_up_eCLM
+    #   - file: users_guide/building_eCLM/Levante
+
+  - caption: Reference
+    chapters:
+    # - file: reference/history_fields
+    - url: https://pdaf.awi.de/trac/wiki
+      title: PDAF documentation
+    - url: https://hpscterrsys.github.io/pdaf/src
+      title: TSMP-PDAF Source Code Browser
