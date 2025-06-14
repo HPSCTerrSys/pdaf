@@ -913,7 +913,7 @@ module enkf_clm_mod
   !> @brief   Set local state vector dimension DIM_L local PDAF filters
   !> @details
   !>    This routine sets DIM_L, the local state vector dimension.
-  subroutine init_dim_l_clm(dim_l)
+  subroutine init_dim_l_clm(domain_p, dim_l)
     use clm_varpar   , only : nlevsoi
 
     implicit none
