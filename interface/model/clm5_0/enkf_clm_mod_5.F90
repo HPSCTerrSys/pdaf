@@ -44,6 +44,7 @@ module enkf_clm_mod
   real(r8),allocatable :: clm_statevec_orig(:)
   integer,allocatable :: state_pdaf2clm_c_p(:)
   integer,allocatable :: state_pdaf2clm_j_p(:)
+  integer,allocatable :: state_loc2clm_c_p(:)
   ! clm_paramarr: Contains LAI used in obs_op_pdaf for computing model
   ! LST in LST assimilation (clmupdate_T)
   real(r8),allocatable :: clm_paramarr(:)  !hcp CLM parameter vector (f.e. LAI)
@@ -1119,48 +1120,120 @@ module enkf_clm_mod
   subroutine init_n_domains_clm(n_domains_p)
 
     use decompMod, only : get_proc_bounds
+    use clm_varcon      , only : ispval
     use ColumnType , only : col
 
     implicit none
 
     integer, intent(out) :: n_domains_p
+    integer :: domain_p
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
 
+    integer :: g
     integer :: c
 
+    ! TODO: remove unnecessary calls of get_proc_bounds (use clm_begg,
+    ! clm_endg, etc)
     call get_proc_bounds(begg=begg, endg=endg, begc=begc, endc=endc)
 
     if(clmupdate_swc.eq.1) then
       if(clmstatevec_allcol.eq.1) then
-        if(clmstatevec_only_active .eq. 1) then
-
-          ! Each hydrologically active layer is a local domain
-          ! -> DIM_L: number of layers in hydrologically active column
-          n_domains_p = 0
-
-          do c=clm_begc,clm_endc
-            if(col%hydrologically_active(c)) then
-              n_domains_p = n_domains_p + 1
-            end if
-          end do
-
-        else
-          ! Each column is a local domain
-          ! -> DIM_L: number of layers in column
-          n_domains_p = endc - begc + 1
-        end if
+        ! Each column is a local domain
+        ! -> DIM_L: number of layers in column
+        n_domains_p = endc - begc + 1
       else
         ! Each gridcell is a local domain
         ! -> DIM_L: number of layers in gridcell
         n_domains_p = endg - begg + 1
       end if
     else
-      ! Process-local number of gridcells
-      ! Default, possibly not tested
+      ! Process-local number of gridcells Default, possibly not tested
+      ! for other updates except SWC
       n_domains_p = endg - begg + 1
     end if
 
+    ! If only_active: Use clm2pdaf to check which columsn/gridcells
+    ! are inside. Possibly: number of columns/gridcells reduced by
+    ! hydrologically inactive columns/gridcells.
+    !
+    ! Also: Set state_loc2clm_c_p: Returns the CLM-column c for the
+    ! local domain domain_p (from the column, the gridcell can be
+    ! derived)
+
+    ! Allocate state_loc2clm_c_p with preliminary n_domains_p
+    IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
+    allocate(state_loc2clm_c_p(n_domains_p))
+    do domain_p=1,n_domains_p
+      state_loc2clm_c_p(domain_p) = ispval
+    end do
+
+    if(clmstatevec_only_active .eq. 1) then
+
+      ! Reset n_domains_p
+      n_domains_p = 0
+      domain_p = 0
+
+      if(clmstatevec_allcol .eq. 1) then
+        ! COLUMNS
+
+        ! Each hydrologically active layer is a local domain
+        ! -> DIM_L: number of layers in hydrologically active column
+        do c=clm_begc,clm_endc
+          ! Skip state vector loop and directly check if column is
+          ! hydrologically active
+          if(col%hydrologically_active(c)) then
+            domain_p = domain_p + 1
+            n_domains_p = n_domains_p + 1
+            state_loc2clm_c_p(domain_p) = c
+          end if
+        end do
+
+      else
+        ! GRIDCELLS
+
+        ! For gridcells
+        do g = clm_begg,clm_endg
+
+          ! Search the state vector for col in grc
+          do cc = 1,clm_statevecsize
+
+            if (col%gridcell(state_pdaf2clm_c_p(cc)) == g) then
+              ! Set local domain index
+              domain_p = domain_p + 1
+              ! Set new number of local domains
+              n_domains_p = n_domains_p + 1
+              ! Set CLM-column-index corresponding to local domain
+              state_loc2clm_c_p(domain_p) = c
+              ! Exit state vector loop, when fitting column is found
+              exit
+            end if
+          end do
+
+        end do
+
+      end if
+
+    else
+
+      ! Set state_loc2clm_c_p for non-excluding hydrologically
+      ! inactive cols/grcs
+      if(clmstatevec_only_active .eq. 1) then
+        ! COLUMNS
+        do domain_p=1,n_domains_p
+          state_loc2clm_c_p(domain_p) = clm_begc + domain_p - 1
+        end do
+      else
+        ! GRIDCELLS
+        do domain_p=1,n_domains_p
+          state_loc2clm_c_p(domain_p) = clm_begg + domain_p - 1
+        end do
+      end if
+
+    end if
+
+    ! Possibly: Warning when final n_domains_p actually excludes
+    ! hydrologically inactive gridcells
 
   end subroutine init_n_domains_clm
 
@@ -1172,6 +1245,7 @@ module enkf_clm_mod
   !>    This routine sets DIM_L, the local state vector dimension.
   subroutine init_dim_l_clm(domain_p, dim_l)
     use clm_varpar   , only : nlevsoi
+    use ColumnType , only : col
 
     implicit none
 
@@ -1179,13 +1253,8 @@ module enkf_clm_mod
     integer              :: nshift
 
     if(clmupdate_swc.eq.1) then
-      ! Currently: All columns/gridcells (each being a local domain)
-      ! must have the same number of layers.
-
-      ! TODO: Include flexibility for different number of layers
-      ! (example: different bedrock depths)
-      dim_l = min(nlevsoi, clmstatevec_max_layer)
-      nshift = min(nlevsoi, clmstatevec_max_layer)
+      dim_l = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
+      nshift = min(nlevsoi, clmstatevec_max_layer, , col%nbedrock(state_loc2clm_c_p(domain_p)))
     endif
 
     if(clmupdate_swc.eq.2) then
@@ -1225,12 +1294,19 @@ module enkf_clm_mod
     INTEGER :: n_domain
     INTEGER :: nshift_p
 
-    call init_n_domains_clm(n_domain)
+    ! call init_n_domains_clm(n_domain)
 
-    DO i = 0, dim_l-1
-      nshift_p = domain_p + i * n_domain
-      state_l(i+1) = state_p(nshift_p)
-    ENDDO
+    ! DO i = 0, dim_l-1
+    !   nshift_p = domain_p + i * n_domain
+    !   state_l(i+1) = state_p(nshift_p)
+    ! ENDDO
+
+    ! Column index inside gridcell index domain_p
+    DO i = 1, dim_l
+      ! Column index from DOMAIN_P via STATE_LOC2CLM_C_P
+      ! Layer index: i
+      state_l(i) = state_p(state_clm2pdaf_p(state_loc2clm_c_p(domain_p),i))
+    END DO
 
   end subroutine g2l_state_clm
 
@@ -1255,13 +1331,20 @@ module enkf_clm_mod
     INTEGER :: n_domain
     INTEGER :: nshift_p
 
-    ! beg and end gridcell for atm
-    call init_n_domains_clm(n_domain)
+    ! ! beg and end gridcell for atm
+    ! call init_n_domains_clm(n_domain)
 
-    DO i = 0, dim_l-1
-      nshift_p = domain_p + i * n_domain
-      state_p(nshift_p) = state_l(i+1)
-    ENDDO
+    ! DO i = 0, dim_l-1
+    !   nshift_p = domain_p + i * n_domain
+    !   state_p(nshift_p) = state_l(i+1)
+    ! ENDDO
+
+    ! Column index inside gridcell index domain_p
+    DO i = 1, dim_l
+      ! Column index from DOMAIN_P via STATE_LOC2CLM_C_P
+      ! Layer index i
+      state_p(state_clm2pdaf_p(state_loc2clm_c_p(domain_p),i)) = state_l(i)
+    END DO
 
   end subroutine l2g_state_clm
 #endif
