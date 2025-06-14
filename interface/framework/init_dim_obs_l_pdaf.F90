@@ -76,7 +76,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 #endif
 
 #if defined CLMSA
-  USE enkf_clm_mod, ONLY: state_pdaf2clm_c_p
+  USE enkf_clm_mod, ONLY: state_loc2clm_c_p
   use shr_kind_mod, only: r8 => shr_kind_r8
 
 #ifdef CLMFIVE
@@ -292,12 +292,12 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 #ifdef CLMSA
         ! Units: lat/lon (degrees)
         ! More doc on following lines: See `localize_covar_pdaf`
-        dx = abs(clmobs_lon(obs_pdaf2nc(i)) - lon(mycgridcell(state_pdaf2clm_c_p(domain_p))))
-        dy = abs(clmobs_lat(obs_pdaf2nc(i)) - lat(mycgridcell(state_pdaf2clm_c_p(domain_p))))
+        dx = abs(clmobs_lon(obs_pdaf2nc(i)) - lon(mycgridcell(state_loc2clm_c_p(domain_p))))
+        dy = abs(clmobs_lat(obs_pdaf2nc(i)) - lat(mycgridcell(state_loc2clm_c_p(domain_p))))
         IF (dx > 180.0) THEN
           dx = 360.0 - dx
         END IF
-        yhalf = ( clmobs_lat(obs_pdaf2nc(i)) + lat(mycgridcell(state_pdaf2clm_c_p(domain_p))) ) / 2.0
+        yhalf = ( clmobs_lat(obs_pdaf2nc(i)) + lat(mycgridcell(state_loc2clm_c_p(domain_p))) ) / 2.0
         dx = dx * cos(yhalf * 3.14159265358979323846 / 180.0)
         dist = 111.19492664455873 * sqrt(real(dx)**2 + real(dy)**2)
 #else
