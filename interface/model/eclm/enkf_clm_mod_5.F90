@@ -1132,6 +1132,7 @@ module enkf_clm_mod
 
     integer :: g
     integer :: c
+    integer :: cc
 
     ! TODO: remove unnecessary calls of get_proc_bounds (use clm_begg,
     ! clm_endg, etc)
@@ -1249,6 +1250,7 @@ module enkf_clm_mod
 
     implicit none
 
+    integer, intent(in)  :: domain_p
     integer, intent(out) :: dim_l
     integer              :: nshift
 
