@@ -1256,7 +1256,7 @@ module enkf_clm_mod
 
     if(clmupdate_swc.eq.1) then
       dim_l = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
-      nshift = min(nlevsoi, clmstatevec_max_layer, , col%nbedrock(state_loc2clm_c_p(domain_p)))
+      nshift = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
     endif
 
     if(clmupdate_swc.eq.2) then
