@@ -1205,7 +1205,7 @@ module enkf_clm_mod
               ! Set new number of local domains
               n_domains_p = n_domains_p + 1
               ! Set CLM-column-index corresponding to local domain
-              state_loc2clm_c_p(domain_p) = c
+              state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(cc)
               ! Exit state vector loop, when fitting column is found
               exit
             end if
@@ -1219,7 +1219,7 @@ module enkf_clm_mod
 
       ! Set state_loc2clm_c_p for non-excluding hydrologically
       ! inactive cols/grcs
-      if(clmstatevec_only_active .eq. 1) then
+      if(clmstatevec_allcol .eq. 1) then
         ! COLUMNS
         do domain_p=1,n_domains_p
           state_loc2clm_c_p(domain_p) = clm_begc + domain_p - 1
