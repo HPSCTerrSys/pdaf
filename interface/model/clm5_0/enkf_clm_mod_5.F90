@@ -1255,8 +1255,15 @@ module enkf_clm_mod
     integer              :: nshift
 
     if(clmupdate_swc.eq.1) then
-      dim_l = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
-      nshift = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
+      if(clmstatevec_only_active .eq. 1) then
+        ! Compare nlevsoi to clmstatevec_max_layer and bedrock if
+        ! "hydrologically active" is turned on
+        dim_l = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
+        nshift = min(nlevsoi, clmstatevec_max_layer, col%nbedrock(state_loc2clm_c_p(domain_p)))
+      else
+        dim_l = nlevsoi
+        nshift = nlevsoi
+      end if
     endif
 
     if(clmupdate_swc.eq.2) then
