@@ -192,9 +192,9 @@ module enkf_clm_mod
 
                 do c=clm_begc,clm_endc
                   if(col%gridcell(c) == g) then
-                    ! All hydrologically active columns above
-                    ! bedrock in a gridcell point to the state
-                    ! vector index of the gridcell
+                    ! All (hydrologically active / above bedrock)
+                    ! column-layer pairs that belong to a gridcell
+                    ! point to the state vector index of the
                     if(col%hydrologically_active(c) .and. i<=col%nbedrock(c)) then
                       if(newgridcell) then
                         ! Update the index if first col found for grc,
