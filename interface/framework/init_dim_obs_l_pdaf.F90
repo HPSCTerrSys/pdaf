@@ -56,10 +56,6 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
        longxy, latixy, longxy_obs, latixy_obs
   USE mod_assimilation, &
        ONLY: lon_var_id, ix_var_id, lat_var_id, iy_var_id
-#if defined CLMSA
-  USE mod_assimilation, &
-       ONLY: obs_pdaf2nc
-#endif
   USE mod_read_obs, &
        ONLY: x_idx_obs_nc, y_idx_obs_nc, z_idx_obs_nc, idx_obs_nc, clmobs_lon, &
        clmobs_lat, var_id_obs_nc, dim_nx, dim_ny 
@@ -292,12 +288,16 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 #ifdef CLMSA
         ! Units: lat/lon (degrees)
         ! More doc on following lines: See `localize_covar_pdaf`
-        dx = abs(clmobs_lon(obs_pdaf2nc(i)) - lon(mycgridcell(state_loc2clm_c_p(domain_p))))
-        dy = abs(clmobs_lat(obs_pdaf2nc(i)) - lat(mycgridcell(state_loc2clm_c_p(domain_p))))
+
+       ! Compared to LOCALIZE_COVAR_PDAF: No OBS_PDAF2NC. This is in
+       ! order to have OBS_INDEX_L return a NC-ordered array, not
+       ! PDAF-ordered array.
+        dx = abs(clmobs_lon(i) - lon(mycgridcell(state_loc2clm_c_p(domain_p))))
+        dy = abs(clmobs_lat(i) - lat(mycgridcell(state_loc2clm_c_p(domain_p))))
         IF (dx > 180.0) THEN
           dx = 360.0 - dx
         END IF
-        yhalf = ( clmobs_lat(obs_pdaf2nc(i)) + lat(mycgridcell(state_loc2clm_c_p(domain_p))) ) / 2.0
+        yhalf = ( clmobs_lat(i) + lat(mycgridcell(state_loc2clm_c_p(domain_p))) ) / 2.0
         dx = dx * cos(yhalf * 3.14159265358979323846 / 180.0)
         dist = 111.19492664455873 * sqrt(real(dx)**2 + real(dy)**2)
 #else
