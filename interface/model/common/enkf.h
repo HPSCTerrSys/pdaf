@@ -85,17 +85,30 @@ GLOBAL int pf_printstat;
 GLOBAL int pf_paramprintensemble;
 GLOBAL int pf_paramprintstat;
 GLOBAL int nx_local,ny_local,nz_local;
+#ifdef COMP_GNU
+/* Compilation with GCC leads to multiple-definition error
+   otherwise. */
+extern int clmupdate_swc;
+extern int clmupdate_T;
+extern int clmupdate_texture;
+extern int clmstatevec_allcol;
+extern int clmstatevec_colmean;
+extern int clmstatevec_only_active;
+extern int clmstatevec_max_layer;
+extern int clmwatmin_switch;
+#else
 GLOBAL int clmupdate_swc;
 GLOBAL int clmupdate_T;
 GLOBAL int clmupdate_texture;
-GLOBAL int clmprint_swc;
-GLOBAL int clmprint_et;
 GLOBAL int clmstatevec_allcol;
 GLOBAL int clmstatevec_colmean;
 GLOBAL int clmstatevec_only_active;
 GLOBAL int clmstatevec_max_layer;
-GLOBAL int clmt_printensemble;
 GLOBAL int clmwatmin_switch;
+#endif
+GLOBAL int clmprint_swc;
+GLOBAL int clmprint_et;
+GLOBAL int clmt_printensemble;
 GLOBAL int dtmult_cosmo;
 GLOBAL int pf_olfmasking;
 GLOBAL int pf_olfmasking_param;
