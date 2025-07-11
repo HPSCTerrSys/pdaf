@@ -100,10 +100,18 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!>> TSMP PDAF comment out beginning
   ! call cime_pre_init1(esmf_logfile_option)
 !!>> TSMP PDAF addition beginning
+#if defined CLMSA
   call cime_pre_init1(esmf_logfile_option, &
                       COMM_model_clm, &
                       pdaf_id=pdaf_id, &
                       pdaf_max=pdaf_max)
+#endif
+
+#if defined COUP_OAS_PFL
+  ! EXPERIMENTAL: For eCLM-ParFlow-PDAF, the whole management of
+  ! communicators has to be re-traced
+  call cime_pre_init1(esmf_logfile_option)
+#endif
 !!<< TSMP PDAF addition end
 
   end_count = shr_sys_irtc(irtc_rate)
