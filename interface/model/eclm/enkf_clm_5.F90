@@ -194,7 +194,9 @@ end subroutine clm_init
 !--------------------------------------------------------------------------
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
+#if defined CLMSA
   use enkf_clm_mod, only : set_clm_statevec 
+#endif
   use iso_C_binding
 
   implicit none
@@ -224,7 +226,9 @@ subroutine clm_finalize() bind(C,name="clm_finalize")
 
   ! use ESMF,          only : ESMF_Initialize, ESMF_Finalize
   use cime_comp_mod, only : cime_final
+#if defined CLMSA
   use enkf_clm_mod, only : cleanup_clm_statevec
+#endif
 
   implicit none
 
