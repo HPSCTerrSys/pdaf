@@ -10,6 +10,7 @@ parts:
     - file: users_guide/introduction_to_tsmp_pdaf/README
       title: Introduction to TSMP-PDAF
       sections:
+      - file: users_guide/introduction_to_tsmp_pdaf/dev
       - file: users_guide/introduction_to_tsmp_pdaf/how_to_use_this_document
 
     - file: users_guide/building_tsmp_pdaf/README
