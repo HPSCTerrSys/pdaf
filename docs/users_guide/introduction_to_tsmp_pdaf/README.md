@@ -26,17 +26,8 @@ in one of the following places:
 
 Please cite the following when using TSMP-PDAF in a publication
 
-* Kurtz, W., He, G., Kollet, S. J., Maxwell, R. M., Vereecken, H., &
-  Hendricks Franssen, H. J. (2016). TerrSysMP–PDAF (version 1.0): a
-  modular high-performance data assimilation framework for an
-  integrated land surface–subsurface model. Geoscientific Model
-  Development, 9(4), 1341-1360. doi:
-  [10.5194/gmd-9-1341-2016](http://dx.doi.org/10.5194/gmd-9-1341-2016)
-
-* Nerger, L., & Hiller, W. (2013). Software for ensemble-based data
-  assimilation systems - Implementation strategies and
-  scalability. Computers & Geosciences, 55(), 110–118. doi:
-  [j.cageo.2012.03.026](http://dx.doi.org/10.1016/j.cageo.2012.03.026)
+* {cite}`Kurtz2016`
+* {cite}`Nerger2013`
 
 ## Contributors
 
@@ -50,3 +41,17 @@ In alphabetic order (to be extended):
 * Mukund Pondkule
 * Prabhakar Shrestha
 * Lukas Strebel
+
+## About this documentation
+
+```{important}
+**Welcome!** The documentation for TSMP-PDAF is a living document, which means it will be continuously updated and improved. Please check back regularly for the latest information and updates.
+
+This style of the TSMP-PDAF documentation is adapted from the eCLM-documentation: https://github.com/HPSCTerrSys/eCLM
+```
+
+## References
+
+```{bibliography}
+```
+
