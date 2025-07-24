@@ -31,8 +31,6 @@ parts:
 
     - file: users_guide/debugging_tsmp_pdaf/README
       title: Debugging TSMP-PDAF
-      sections:
-      - file: users_guide/debugging_tsmp_pdaf/debug
 
     - file: users_guide/misc/README
       title: Misc
