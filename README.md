@@ -29,22 +29,7 @@ i.e. it is "pre-patched".
 
 The pre-patched PDAF is updated with three types of changes.
 
-1. Developments from TSMP1-PDAF.
-   - **Remark**: As long as TSMP1 is actively developed, PDAF-related
-     development is carried out in TSMP1 and then copied to this
-     repository. Once TSMP1 will be deprecated, the TSMP2-PDAF
-     interface will be developed in this repository.
-   - **Technical explanation**: Changes in the TSMP-PDAF interface are
-     implemented in the repo `TSMP` and then copied (and re-commited)
-     to `tsmp-pdaf-patched`, the default branch of this
-     repository. For a more detailed workflow of this update, see the
-     internal issue:
-     <https://gitlab.jsc.fz-juelich.de/HPSCTerrSys/tsmp-internal-development-tracking/-/issues/73>.
-     These changes become part of TSMP2, when the pre-patched PDAF is
-     cloned as described in TSMP2's README. Version tags
-     (<https://github.com/HPSCTerrSys/pdaf/tags>) ensure stability and
-     developments become part of the default TSMP2-build once the
-     version tags are updated in the README.
+1. Updating the interface and documentation.
 
 2. Version updates from PDAF
    - **Technical explanation**: PDAF version updates are pulled from
@@ -55,11 +40,10 @@ The pre-patched PDAF is updated with three types of changes.
 
 3. TSMP-related changes in the PDAF library
    -  **Remark**: TSMP-related changes in the PDAF library should be
-   avoided. If implemented, these changes should be described in this
+   avoided. If implemented, these changes have to be described in this
    README.
    - **Technical explanation**: TSMP-related changes in the PDAF
    library are implemented directly in `tsmp-pdaf-patched`.
-
 
 # PDAF (Parallel Data Assimilation Framework)
 
