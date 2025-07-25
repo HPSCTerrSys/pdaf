@@ -58,6 +58,8 @@ SUBROUTINE init_n_domains_pdaf(step, n_domains_p)
 #else
   USE decompMod, ONLY: get_proc_bounds_atm
 #endif
+  use enkf_clm_mod, only: num_hactiveg
+  USE enkf_clm_mod, ONLY: clmupdate_tws
 #endif
 
   IMPLICIT NONE
@@ -97,8 +99,12 @@ SUBROUTINE init_n_domains_pdaf(step, n_domains_p)
 #else  
   call get_proc_bounds_atm(begg, endg)
 #endif
+  if (clmupdate_tws.eq.1) then
+  n_domains_p = num_hactiveg
+  else
   ! Here simply the process-local state dimension  
   n_domains_p = endg - begg + 1
+  end if
 #endif
 
 END SUBROUTINE init_n_domains_pdaf

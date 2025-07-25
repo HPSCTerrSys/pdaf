@@ -54,6 +54,10 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
 ! !USES:
    USE mod_assimilation, &
         ONLY:rms_obs
+   USE mod_assimilation, &
+        ONLY: clm_obserr_p, obs_index_l
+   use mod_read_obs, &
+        ONLY: multierr, clm_obserr, clm_obscov, vec_useObs, vec_useObs_global
 
   IMPLICIT NONE
 
@@ -64,6 +68,9 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
   REAL, INTENT(in) :: obs_l(dim_obs_l) ! Local observation vector
   REAL, INTENT(out)   :: meanvar_l     ! Mean local observation error variance
 
+  REAL :: sum_l
+  INTEGER :: i, count
+
 ! !CALLING SEQUENCE:
 ! Called by: PDAF_set_forget_local    (as U_init_obsvar_l)
 !EOP
@@ -72,7 +79,8 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
 ! ***********************************
 ! *** Compute local mean variance ***
 ! ***********************************
-
+ select case (multierr)
+ case (0)
    meanvar_l = rms_obs ** 2
 !  meanvar_l = ?
 
@@ -119,5 +127,32 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
 !!$     meanvar = meanvar/npes_filter    
 !!$  end if
 !!$#endif
+ case (1)
+   meanvar_l = 0
+   sum_l = 0
+   count = 0
+   clm_obserr_p = pack(clm_obserr,vec_useObs_global)
+   do i = 1, dim_obs_l
+     if (clm_obserr_p(obs_index_l(i)) /= 0) then
+       sum_l = sum_l + clm_obserr_p(obs_index_l(i))
+       count = count+1
+     end if
+   end do
+   
+   meanvar_l = sum_l/count
+
+ case(2)
+   meanvar_l = 0
+   sum_l = 0
+   count = 0
+   do i = 1, dim_obs_l
+     if(vec_useObs_global(obs_index_l(i))) then
+       sum_l = sum_l + clm_obscov(obs_index_l(i),obs_index_l(i))
+       count = count + 1 
+     end if
+   end do
+   ! averaging the sum of observation errors with total no of non-zero observations
+   meanvar_l = sum_l/count
+ end select
 
 END SUBROUTINE init_obsvar_l_pdaf

@@ -53,6 +53,7 @@ SUBROUTINE init_pdaf_parse()
        forget, rank_analysis_enkf, locweight, cradius, &
        sradius, filename, type_trans, dim_obs, &
        type_sqrt, obs_filename, dim_lag
+  USE mod_assimilation, ONLY: temp_mean_filename
 
   IMPLICIT NONE
 
@@ -130,6 +131,10 @@ SUBROUTINE init_pdaf_parse()
   ! *** user defined observation filename *** !
   handle = 'obs_filename'
   call parse(handle, obs_filename)
+
+  ! *** Yorck: user defined filename for temporal mean of TWS to be subtracted in observation operator *** !
+  handle = 'temp_mean_filename'
+  call parse(handle, temp_mean_filename)
 
   !kuw: add smoother support
   handle = 'smoother_lag'

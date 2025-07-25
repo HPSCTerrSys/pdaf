@@ -60,6 +60,8 @@ SUBROUTINE l2g_state_pdaf(step, domain_p, dim_l, state_l, dim_p, state_p)
 #else  
   USE decompMod, ONLY: get_proc_bounds_atm
 #endif
+  use enkf_clm_mod, only: hactiveg_levels, num_layer, state_setup, num_hactiveg_patch, hactiveg_patch, clm_varsize_tws
+  USE enkf_clm_mod, ONLY: clmupdate_tws
 #endif
 
   IMPLICIT NONE
@@ -73,6 +75,7 @@ SUBROUTINE l2g_state_pdaf(step, domain_p, dim_l, state_l, dim_p, state_p)
   REAL, TARGET, INTENT(inout) :: state_p(dim_p) ! PE-local full state vector 
 
   INTEGER :: i, n_domain, nshift_p
+  INTEGER :: sub, j, g
   INTEGER :: begg, endg   ! per-proc gridcell ending gridcell indices
 ! !CALLING SEQUENCE:
 ! Called by: PDAF_lseik_update    (as U_l2g_state)
@@ -101,11 +104,144 @@ SUBROUTINE l2g_state_pdaf(step, domain_p, dim_l, state_l, dim_p, state_p)
 #else  
   call get_proc_bounds_atm(begg, endg)
 #endif
+  if (clmupdate_tws.eq.1) then    
+    if (clm_varsize_tws(5).ne.0) then
+      sub=3
+    else
+      sub=2
+    end if
+  
+    select case (state_setup)
+    case(0) ! liq and ice seperated
+      g = hactiveg_levels(domain_p,1)
+      do i = 1, (dim_l-sub)/2 ! two entries for liq and ice seperated
+        do j = 1, num_layer(i) ! i is the layer that we are in right now
+          if (g==hactiveg_levels(j,i)) then ! if the counter is the gridcell of the local domain, we know the position in the statevector
+  
+            if (i == 1) then ! if first layer
+              state_p(j) = state_l(i)
+              state_p(j+clm_varsize_tws(1)) = state_l(i+(dim_l-3)/2)
+            else
+              state_p(j + sum(num_layer(1:i-1))) = state_l(i)
+              state_p(j + sum(num_layer(1:i-1)) + clm_varsize_tws(1)) = state_l(i+(dim_l-3)/2)
+            end if
+  
+          end if
+        end do
+      end do
+  
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+  
+          if (sub==3) then
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(dim_l-2)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3)) = state_l(dim_l-1)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3) + clm_varsize_tws(4)) = state_l(dim_l)
+          else
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(dim_l-1)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3)) = state_l(dim_l)
+          end if
+  
+        end if
+      end do
+  
+    case(1)
+      g = hactiveg_levels(domain_p,1)
+      do i = 1, dim_l-sub ! liq and ice added up
+        do j = 1, num_layer(i) ! i is the layer that we are in right now
+          if (g==hactiveg_levels(j,i)) then ! if the counter is the gridcell of the local domain, we know the position in the statevector
+  
+            if (i == 1) then ! if first layer
+              state_p(j)  = state_l(i)    ! first liquid water as it is first in the statevector
+            else
+              state_p(j + sum(num_layer(1:i-1))) = state_l(i)
+            end if
+  
+          end if
+        end do 
+      end do
+  
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+  
+          if (sub==3) then
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(dim_l-2)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3)) = state_l(dim_l-1)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3) + clm_varsize_tws(4)) = state_l(dim_l)
+          else
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(dim_l-1)
+            state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3)) = state_l(dim_l)
+          end if
+  
+        end if
+      end do
+  
+    
+    case(2) ! only tws in statevector
+      g = hactiveg_levels(domain_p,1)
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+          state_p(j) = state_l(1)
+        end if
+      end do
+  
+    case(3)
+      g = hactiveg_levels(domain_p,1)
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+          state_p(j) = state_l(1)
+          state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(2)
+        end if
+      end do
+  
+    case(4)
+      g = hactiveg_levels(domain_p,1)
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+          state_p(j) = state_l(1)
+          state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(dim_l)
+        end if
+      end do
+  
+      do j = 1, num_layer(8)
+        if (g==hactiveg_levels(j,8)) then
+          state_p(j + clm_varsize_tws(1)) = state_l(2)
+        end if
+      end do
+  
+    case(5)
+  
+      g = hactiveg_levels(domain_p,1)
+      do j = 1, num_layer(1)
+        if (g==hactiveg_levels(j,1)) then
+          state_p(j) = state_l(1)
+          state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)  + clm_varsize_tws(3)) = state_l(dim_l)
+        end if
+      end do
+  
+      do j = 1, num_layer(4)
+        if (g==hactiveg_levels(j,4)) then
+          state_p(j + clm_varsize_tws(1)) = state_l(2)
+        end if
+      end do
+  
+      do j = 1, num_layer(13)
+        if (g==hactiveg_levels(j,13)) then
+          state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2)) = state_l(3)
+        end if
+      end do
+  
+    end select
+
+  else
+
   n_domain = endg - begg + 1
   DO i = 0, dim_l-1
      nshift_p = domain_p + i * n_domain
      state_p(nshift_p) = state_l(i+1)
   ENDDO
+
+  end if
 #endif
   
 END SUBROUTINE l2g_state_pdaf

@@ -59,6 +59,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   USE mod_read_obs, &
        ONLY: x_idx_obs_nc, y_idx_obs_nc, z_idx_obs_nc, idx_obs_nc, clmobs_lon, &
        clmobs_lat, var_id_obs_nc, dim_nx, dim_ny 
+  ! USE mod_read_obs, ONLY: vec_useObs_global
   USE mod_tsmp, &
 #if defined CLMSA
   ONLY: idx_map_subvec2state_fortran, tag_model_parflow, enkf_subvecsize, &
@@ -70,6 +71,9 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
        xcoord_fortran, ycoord_fortran, zcoord_fortran, &
        point_obs, model
 #endif
+  use enkf_clm_mod, only: hactiveg_levels
+  USE enkf_clm_mod, ONLY: clmupdate_tws
+  use GridcellType, only: grc
 
   USE, INTRINSIC :: iso_c_binding, ONLY: C_F_POINTER
 
@@ -89,6 +93,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 
   ! local variables
   INTEGER :: i, j, k, m, cnt ! Counters
+  INTEGER :: g ! Counters
   !  INTEGER :: idx, ix, iy, ix1, iy1
   REAL :: dist ! Distance between observation and analysis domain
   LOGICAL, ALLOCATABLE :: log_var_id(:) ! logical variable ID for setting location observation vector using remote sensing data
@@ -98,6 +103,16 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   integer :: dx,dy, max_var_id, ierror
   integer :: obsind(dim_obs)
   real    :: obsdist(dim_obs)
+
+  ! real, pointer :: lon(:)
+  ! real, pointer :: lat(:)
+
+  ! REAL, ALLOCATABLE    :: obs_lon(:)
+  ! REAL, ALLOCATABLE    :: obs_lat(:)
+
+  ! lon   => grc%londeg
+  ! lat   => grc%latdeg
+
   ! kuw end
 
   ! **********************************************
@@ -190,7 +205,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   obsind    = 0
   obsdist   = 0.0
   dim_obs_l = 0
-  if(point_obs.eq.0) then
+  if(point_obs.eq.0 .and. clmupdate_tws.ne.1) then
      max_var_id = MAXVAL(var_id_obs_nc(:,:))
      allocate(log_var_id(max_var_id))
      log_var_id(:) = .TRUE.
@@ -251,6 +266,43 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
            obsind(i) = 1
         end if
      end do
+
+    ! ! TWS-addition (outdated)
+    ! if (allocated(obs_lon)) deallocate(obs_lon)
+    ! if (allocated(obs_lat)) deallocate(obs_lat)
+    ! allocate(obs_lon(dim_obs))
+    ! allocate(obs_lat(dim_obs))
+    ! if (allocated(clmobs_lon)) then
+    !    print*, "lon is allocated"
+    ! else
+    !    print*, "lon is not allocated"
+    ! end if
+ 
+    ! obs_lon = pack(clmobs_lon,vec_useObs_global)
+    ! obs_lat = pack(clmobs_lat,vec_useObs_global)
+    ! !if (allocated(clmobs_lon)) deallocate(clmobs_lon)
+    ! !if (allocated(clmobs_lat)) deallocate(clmobs_lat)
+ 
+    ! do i = 1, dim_obs
+    !    ! check which gridcell domain_p is
+    !    g = hactiveg_levels(domain_p,1)
+    !    if (lon(g)<180) then
+    !       dx = abs(obs_lon(i) - lon(g))
+    !    else
+    !       dx = abs(obs_lon(i) - (lon(g)-360))
+    !    end if
+    !    dy = abs(obs_lat(i) - lat(g))
+    !    a = sin(dy / 2)**2 + cos(obs_lat(i)) * cos(lat(g)) * sin(dx/ 2)**2
+    !    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    !    !dist = sqrt(real(dx)**2 + real(dy)**2)
+    !    dist = R*c
+    !    obsdist(i) = dist
+    !    if (dist <= real(cradius)) then
+    !       dim_obs_l = dim_obs_l + 1
+    !       obsind(i) = 1
+    !    end if
+    ! end do
+ 
      end if 
   end if
 #endif

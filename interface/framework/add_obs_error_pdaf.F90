@@ -50,8 +50,11 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 ! !USES:
   USE mod_assimilation, &
        ONLY: rms_obs, obs_pdaf2nc
+  USE mod_assimilation, ONLY: obscov
 
   USE mod_read_obs, ONLY: multierr,clm_obserr, pressure_obserr
+  USE mod_read_obs, ONLY: vec_useObs_global
+  USE enkf_clm_mod, ONLY: clmupdate_tws
   USE mod_parallel_pdaf, ONLY: mype_world
   USE mod_parallel_pdaf, ONLY: abort_parallel
   USE mod_tsmp, ONLY: point_obs
@@ -72,7 +75,9 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 
 ! *** local variables ***
   INTEGER :: i          ! index of observation component
+  INTEGER :: j          ! index of observation component
   REAL :: variance_obs  ! variance of observations
+  REAL :: clm_obserr_model(dim_obs) ! errors of observations in the model domain
 
 
 ! **********************
@@ -98,19 +103,38 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
  
   if(multierr.eq.1) then
 
-    ! Check that point observations are used
-    if (.not. point_obs .eq. 1) then
-      print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(3) `point_obs.eq.1` needed for using obs_pdaf2nc."
-      call abort_parallel()
-    end if
+    if (clmupdate_tws.ne.1) then
 
-    do i=1,dim_obs
+      ! Check that point observations are used
+      if (.not. point_obs .eq. 1) then
+        print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(3) `point_obs.eq.1` needed for using obs_pdaf2nc."
+        call abort_parallel()
+      end if
+
+      do i=1,dim_obs
 #if defined CLMSA
-      C_p(i,i) = C_p(i,i) + clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
+        C_p(i,i) = C_p(i,i) + clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
 #else
-      C_p(i,i) = C_p(i,i) + pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
+        C_p(i,i) = C_p(i,i) + pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
 #endif
-    enddo
+      enddo
+
+    else
+
+      clm_obserr_model = pack(clm_obserr,vec_useObs_global)
+      do i = 1,dim_obs
+        C_p(i,i) = C_p(i,i) + clm_obserr_model(i) ! we put already variances in GRACE observation files, so no square need
+      end do
+
+    end if
   endif
+  
+  if(multierr.eq.2) then
+    do i = 1, size(obscov,1)
+      do j = 1, size(obscov,2)
+        C_p(i,j) = C_p(i,j)+obscov(i,j)
+      end do
+    end do
+  end if
 
 END SUBROUTINE add_obs_error_pdaf

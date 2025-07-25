@@ -49,11 +49,11 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
     ! !USES:
     USE mod_assimilation, &
         ONLY: rms_obs, obs_pdaf2nc
-    USE mod_parallel_pdaf, ONLY: mype_world
-    USE mod_parallel_pdaf, ONLY: abort_parallel
+    USE mod_assimilation, ONLY: obscov
     use mod_read_obs, only: multierr,clm_obserr, pressure_obserr
-    USE mod_tsmp, ONLY: point_obs
+    use mod_read_obs, only: vec_useObs_global
     use netcdf
+    use enkf_clm_mod, only: clmupdate_tws
 
     IMPLICIT NONE
 
@@ -87,6 +87,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
   INTEGER :: i          ! Index of observation component
   REAL :: variance_obs  ! ariance of observations
   integer :: ncid,j,status,varid
+  REAL :: clm_obserr_model(dim_obs)
 
 
 ! **********************
@@ -108,7 +109,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
   !   covar(i, i) = variance_obs
   !ENDDO
 
-  if(multierr.ne.1) then
+  if(multierr.eq.0) then
     DO i = 1, dim_obs
        covar(i, i) = variance_obs
     ENDDO
@@ -123,6 +124,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
       call abort_parallel()
     end if
 
+    if (clmupdate_tws.ne.1) then
     do i=1,dim_obs
 #if defined CLMSA
       covar(i,i) = clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
@@ -130,6 +132,15 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
       covar(i,i) = pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
 #endif
     enddo
+
+    else
+
+    clm_obserr_model = pack(clm_obserr,vec_useObs_global)
+    do i=1,dim_obs
+      covar(i,i) = clm_obserr_model(i)
+    end do
+
+    end if
   endif
   ! The matrix is diagonal
   ! This setting avoids the computation of the SVD of COVAR
@@ -161,6 +172,11 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
     !end do
     !isdiag=.false.
     ! kuw end
+
+if(multierr.eq.2) then
+  covar = obscov
+  isdiag = .FALSE.
+endif
 
 END SUBROUTINE init_obscovar_pdaf
 

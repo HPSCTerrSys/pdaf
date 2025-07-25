@@ -54,6 +54,17 @@ module mod_read_obs
   real, allocatable :: clm_obserr(:)
   !kuw end
 
+  ! Yorck
+  real, allocatable :: clm_obscov(:,:) ! covariance matrix for TWS observations
+  logical, allocatable :: vec_useObs(:) ! vector that tells if an observation of used (1) or not (0), same dimension as observation vector, for local process
+  integer, allocatable :: vec_numPoints_global(:) ! vector of number of points for each GRACE observation, same dimension as observation vector
+  logical, allocatable :: vec_useObs_global(:) ! vector that tells if an observation of used (1) or not (0), same dimension as observation vector, global
+  real, allocatable :: tws_temp_mean(:,:) ! temporal mean for TWS
+  real, allocatable :: lon_temp_mean(:,:) ! corresponding longitude
+  real, allocatable :: lat_temp_mean(:,:) ! corresponding latitude
+
+
+
   real, allocatable :: pressure_obs(:)
   real, allocatable :: pressure_obserr(:)
 
@@ -130,13 +141,16 @@ contains
 #ifndef OBS_ONLY_PARFLOW
     integer :: clmobs_varid, dr_varid,  clmobs_lon_varid,  clmobs_lat_varid,  &
         clmobs_layer_varid, clmobserr_varid
+    integer :: clmobscov_varid
     character (len = *), parameter :: obs_name   = "obs_clm"
     character (len = *), parameter :: dr_name    = "dr"
     character (len = *), parameter :: lon_name   = "lon"
     character (len = *), parameter :: lat_name   = "lat"
     character (len = *), parameter :: layer_name = "layer"
     character (len = *), parameter :: obserr_name   = "obserr_clm"
+    character (len = *), parameter :: obscov_name   = "obscov_clm"
     integer :: has_obs_clm
+    integer :: i
 #endif
 #endif
 
@@ -358,6 +372,19 @@ contains
             end if
         endif
 
+        !check, if covariance matrix is present in observation file
+        haserr = nf90_inq_varid(ncid, obscov_name, clmobscov_varid) 
+        if(haserr == nf90_noerr) then
+          multierr = 2
+          if(allocated(clm_obscov)) deallocate(clm_obscov)
+          allocate(clm_obscov(dim_obs, dim_obs))
+          call check(nf90_get_var(ncid, clmobscov_varid, clm_obscov))
+          !   if (screen > 2) then
+          !       print *, "TSMP-PDAF mype(w)=", mype_world, ": clm_obscov=", clm_obscov
+          !   end if
+
+        endif
+
         ! Read the longitude latidute data from the file.
 
         if(allocated(clmobs_lon))   deallocate(clmobs_lon)
@@ -508,6 +535,7 @@ contains
   subroutine clean_obs_nc()
 
     USE mod_assimilation, ONLY: filtertype
+    USE enkf_clm_mod, ONLY: clmupdate_tws
 
     implicit none
    ! if(allocated(idx_obs_nc))deallocate(idx_obs_nc)
@@ -517,7 +545,7 @@ contains
     !if(allocated(y_idx_obs_nc))deallocate(y_idx_obs_nc)
     !if(allocated(z_idx_obs_nc))deallocate(z_idx_obs_nc)
     !kuw: clean clm observations
-    IF (.NOT. filtertype == 8) THEN
+    IF (.NOT. filtertype == 8 .and. clmupdate_tws.ne.1) THEN
       ! For LEnKF lat/lon are used
       if(allocated(clmobs_lon))deallocate(clmobs_lon)
       if(allocated(clmobs_lat))deallocate(clmobs_lat)
@@ -526,6 +554,7 @@ contains
     if(allocated(clmobs_layer))deallocate(clmobs_layer)
     if(allocated(clmobs_dr))deallocate(clmobs_dr)
     !if(allocated(clm_obserr))deallocate(clm_obserr)
+    if(allocated(clm_obscov))deallocate(clm_obscov)
     !kuw end
   end subroutine clean_obs_nc
 
@@ -591,7 +620,7 @@ contains
   !> @param[in] fn Filename of the observation file
   !> @param[out] aa new da_interval (number of time steps until next assimilation time step)
   !> @details
-  !>     Reads the content of the variable name `da_interval` from NetCDF
+  !>     Reads the content of the variable name `da_interval`/`da_interval_variable` from NetCDF
   !>     file `fn` using subroutines from the NetCDF module.
   !>     The result is returned in `aa`.
   !>
@@ -602,7 +631,11 @@ contains
     use shr_kind_mod, only: r8 => shr_kind_r8
     use netcdf, only: nf90_max_name, nf90_open, nf90_nowrite, &
       nf90_inq_varid, nf90_get_var, nf90_close, nf90_noerr
-
+#ifdef CLMSA
+    use clm_varcon, only: ispval
+    use clm_time_manager, only : get_step_size
+    USE enkf_clm_mod, ONLY: clmupdate_tws
+#endif
     implicit none
 
     character(len=*),intent(in) :: fn
@@ -616,6 +649,29 @@ contains
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname
 
+#ifdef CLMSA
+  if (clmupdate_tws.eq.1) then
+    varname = "da_interval_variable"
+    dtime = get_step_size()
+
+    call check(nf90_open(fn, nf90_nowrite, ncid))
+    !call check(nf90_inq_dimid(ncid, dim_name, dimid))
+    !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
+    status = nf90_inq_varid(ncid, varname, varid)
+    if (status == nf90_noerr) then
+      call check(nf90_inq_varid(ncid, varname, varid))
+      call check( nf90_get_var(ncid, varid, aa) )     
+      call check(nf90_close(ncid))
+      ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, da_interval is set up as hours
+      ! --> is adjusted using information from inside CLM
+      aa = aa*INT(3600/dtime)
+    else
+      aa = ispval
+    end if
+  end if
+  if (clmupdate_tws.ne.1) then
+#endif
+
     call check(nf90_open(fn, nf90_nowrite, ncid))
     !call check(nf90_inq_dimid(ncid, dim_name, dimid))
     !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
@@ -624,7 +680,296 @@ contains
     call check( nf90_get_var(ncid, varid, aa) )
     call check(nf90_close(ncid))
 
+#ifdef CLMSA
+  end if
+#endif
   end subroutine check_n_observationfile_da_interval
+
+
+
+  !> @author Yorck Ewerdwalbesloh
+  !> @date 04.12.2023
+  !> @brief Return set zero interval for running mean of model variables from file
+  !> @param[in] fn Filename of the observation file
+  !> @param[out] nn number of hours until setting zero
+  !> @details
+  !>     Reads the content of the variable name `set_zero` from NetCDF
+  !>     file `fn` using subroutines from the NetCDF module.
+  !>     The result is returned in `nn`.
+  !>
+  !>     The result is used to reset the running average of state variables.
+  subroutine check_n_observationfile_set_zero(fn,nn)
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use netcdf, only: nf90_max_name, nf90_open, nf90_nowrite, &
+      nf90_inq_varid, nf90_get_var, nf90_close, nf90_noerr
+    use clm_varcon, only: ispval
+    use clm_time_manager, only : get_step_size
+
+    implicit none
+
+    character(len=*),intent(in) :: fn
+    integer, intent(out)        :: nn
+
+    integer :: ncid, varid, status !,dimid
+    character (len = *), parameter :: varname = "set_zero"
+    real(r8) :: dtime ! land model time step (sec)
+
+    !character (len = *), parameter :: dim_name = "dim_obs"
+    !character(len = nf90_max_name) :: recorddimname
+
+    dtime = get_step_size()
+
+    call check(nf90_open(fn, nf90_nowrite, ncid))
+    !call check(nf90_inq_dimid(ncid, dim_name, dimid))
+    !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
+    status = nf90_inq_varid(ncid, varname, varid)
+    if (status == nf90_noerr) then
+      call check(nf90_inq_varid(ncid, varname, varid))
+      call check( nf90_get_var(ncid, varid, nn) )     
+      call check(nf90_close(ncid))
+      ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, set_zero is set up as hours
+      ! --> is adjusted using information from inside CLM
+      if (nn.ne.ispval) then
+        nn = nn*INT(3600/dtime)
+      end if
+    else
+      nn = ispval
+    end if
+
+  end subroutine check_n_observationfile_set_zero
+
+  !> @author Yorck Ewerdwalbesloh
+  !> @date 05.09.2023
+  !> @brief reading TWS temporal mean model file
+  !> @param[in] temp_mean_filename Name of mean file
+  !> @details
+  !> This subroutine reads a provided temporal mean model file
+  subroutine read_temp_mean_model(temp_mean_filename)
+
+    use netcdf
+    implicit none
+    integer :: ncid, dim_lon, dim_lat, lon_varid, lat_varid, tws_varid
+    character (len = *), parameter :: dim_lon_name = "lsmlon"
+    character (len = *), parameter :: dim_lat_name = "lsmlat"
+    character (len = *), parameter :: lon_name = "longitude"
+    character (len = *), parameter :: lat_name = "latitude"
+    character (len = *), parameter :: tws_name = "TWS"
+    character(len = nf90_max_name) :: RecordDimName
+    integer :: dimid_lon, dimid_lat, status
+    integer :: haserr
+    character (len = *), intent(in) :: temp_mean_filename
+
+    !print *, "Read temporal mean of CLM OL run"
+
+    call check(nf90_open(temp_mean_filename, nf90_nowrite, ncid))
+    call check(nf90_inq_dimid(ncid, dim_lon_name, dimid_lon))
+    call check(nf90_inq_dimid(ncid, dim_lat_name, dimid_lat))
+    call check(nf90_inquire_dimension(ncid, dimid_lon, recorddimname, dim_lon))
+    call check(nf90_inquire_dimension(ncid, dimid_lat, recorddimname, dim_lat))
+
+    if(allocated(lon_temp_mean))deallocate(lon_temp_mean)
+    if(allocated(lat_temp_mean))deallocate(lat_temp_mean)
+    if(allocated(tws_temp_mean))deallocate(tws_temp_mean)
+
+    allocate(tws_temp_mean(dim_lon,dim_lat))
+    allocate(lon_temp_mean(dim_lon,dim_lat))
+    allocate(lat_temp_mean(dim_lon,dim_lat))
+
+    call check( nf90_inq_varid(ncid, lon_name, lon_varid))
+    call check(nf90_get_var(ncid, lon_varid, lon_temp_mean))
+
+    call check( nf90_inq_varid(ncid, lat_name, lat_varid))
+    call check(nf90_get_var(ncid, lat_varid, lat_temp_mean))
+
+    call check( nf90_inq_varid(ncid, tws_name, tws_varid))
+    call check(nf90_get_var(ncid, tws_varid, tws_temp_mean))
+
+    call check( nf90_close(ncid) )
+
+  end subroutine read_temp_mean_model
+
+  subroutine domain_def_clm(lon_clmobs, lat_clmobs, dim_obs, &
+    longxy, latixy, longxy_obs, latixy_obs)
+
+    use spmdMod,   only : npes, iam
+    use domainMod, only : ldomain, lon1d, lat1d
+    use decompMod, only : get_proc_total, get_proc_bounds, ldecomp
+    use GridcellType, only: grc
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use enkf_clm_mod, only: hactiveg_levels, num_hactiveg
+    !USE mod_parallel_pdaf, &
+    !   ONLY: mpi_2integer, mpi_minloc
+    USE mod_parallel_pdaf, &
+      ONLY: comm_filter, npes_filter, abort_parallel, &
+      mpi_integer, mpi_double_precision, mpi_in_place, mpi_sum, &
+      mype_world, mpi_2integer, mpi_minloc, mype_filter
+    real, intent(in) :: lon_clmobs(:)
+    real, intent(in) :: lat_clmobs(:)
+    integer, intent(in) :: dim_obs
+    integer, allocatable, intent(inout) :: longxy(:)
+    integer, allocatable, intent(inout) :: latixy(:)
+    integer, allocatable, intent(inout) :: longxy_obs(:)
+    integer, allocatable, intent(inout) :: latixy_obs(:)
+    integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits, &
+      ncols, npatches, ncohorts, counter, i, g, ll
+    real :: minlon, minlat, maxlon, maxlat
+    real(r8), pointer :: lon(:)
+    real(r8), pointer :: lat(:)
+
+    real(r8), allocatable :: longxy_obs_lokal(:), latixy_obs_lokal(:)
+
+    INTEGER, allocatable :: in_mpi_(:,:), out_mpi_(:,:)
+
+    integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+
+    real(r8) :: lat1, lon1, lat2, lon2, a, c, R, pi
+
+    real(r8) :: dist
+    real(r8), allocatable :: min_dist(:)
+    integer, allocatable :: min_g(:)
+
+    integer :: ierror
+
+    integer :: lok_lon, lok_lat
+
+
+
+    lon   => grc%londeg
+    lat   => grc%latdeg
+
+
+    ni = ldomain%ni
+    nj = ldomain%nj
+
+    ! get total number of gridcells, landunits,
+    ! columns, patches and cohorts on processor
+
+    call get_proc_total(iam, ncells, nlunits, ncols, npatches, ncohorts)
+
+    ! beg and end gridcell
+    call get_proc_bounds(begg=begg, endg=endg)
+
+    if (allocated(longxy)) deallocate(longxy)
+    if (allocated(latixy)) deallocate(latixy)
+    allocate(longxy(num_hactiveg), stat=ier)
+    allocate(latixy(num_hactiveg), stat=ier)
+
+
+    longxy(:) = 0
+    latixy(:) = 0
+
+
+    counter = 1
+    do ii = 1, nj
+      do jj = 1, ni
+        cid = (ii-1)*ni + jj
+        do ll = 1, num_hactiveg
+          kk = hactiveg_levels(ll,1)
+          if(cid == ldecomp%gdc2glo(kk)) then
+            latixy(counter) = ii
+            longxy(counter) = jj
+            counter = counter + 1
+          end if
+        end do
+      end do
+    end do
+
+    if (allocated(min_dist)) deallocate(min_dist)
+    allocate(min_dist(dim_obs))
+    min_dist(:) = huge(1.0d0)
+
+    if (allocated(min_g)) deallocate(min_g)
+    allocate(min_g(dim_obs))
+
+    R = 6371.0
+    pi = 3.14159265358979323846
+    do i = 1, dim_obs
+      do g = begg, endg
+
+        ! check distance from each grid point to observation location --> take the coordinate in local system that equals 
+        ! the one of the closest coordinate
+        lat1 = lat(g) * pi / 180.0
+        lon1 = lon(g) * pi / 180.0
+        lat2 = lat_clmobs(i) * pi / 180.0
+        lon2 = lon_clmobs(i) * pi / 180.0
+
+        a = sin((lat2 - lat1) / 2)**2 + cos(lat1) * cos(lat2) * sin((lon2 - lon1) / 2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        dist = R * c
+
+        if (dist < min_dist(i)) then
+          min_dist(i) = dist
+          min_g(i) = g
+        end if
+      end do
+    end do
+
+
+    IF (ALLOCATED(in_mpi_)) DEALLOCATE(in_mpi_)
+    ALLOCATE(in_mpi_(2,dim_obs))
+    IF (ALLOCATED(out_mpi_)) DEALLOCATE(out_mpi_)
+    ALLOCATE(out_mpi_(2,dim_obs))
+
+    in_mpi_(1,:) = int(ceiling(min_dist))
+    in_mpi_(2,:) = min_g
+
+    if (allocated(longxy_obs_lokal)) deallocate(longxy_obs_lokal)
+    if (allocated(latixy_obs_lokal)) deallocate(latixy_obs_lokal)
+
+    allocate(longxy_obs_lokal(dim_obs))
+    allocate(latixy_obs_lokal(dim_obs))
+
+    do i =1, dim_obs
+      outer: do ii = 1, nj
+        do jj = 1, ni
+          cid = (ii-1)*ni + jj
+          do kk = begg, endg
+            if (kk == in_mpi_(2,i)) then
+              if(cid == ldecomp%gdc2glo(kk)) then
+                if (min_dist(i)<30) then
+                  latixy_obs_lokal(i) = ii
+                  longxy_obs_lokal(i) = jj
+                else
+                  longxy_obs_lokal(i) = -9999
+                  latixy_obs_lokal(i) = -9999
+                end if
+                exit outer
+              end if
+            end if
+          end do
+        end do
+      end do outer
+    end do
+
+
+    if (allocated(longxy_obs)) deallocate(longxy_obs)
+    if (allocated(latixy_obs)) deallocate(latixy_obs)
+    allocate(longxy_obs(dim_obs), stat=ier)
+    allocate(latixy_obs(dim_obs), stat=ier)
+
+    in_mpi_(2,:) = longxy_obs_lokal
+    call mpi_allreduce(in_mpi_,out_mpi_, dim_obs, mpi_2integer, mpi_minloc, comm_filter, ierror)
+    longxy_obs(:) = out_mpi_(2,:)
+
+    in_mpi_(2,:) = latixy_obs_lokal
+    call mpi_allreduce(in_mpi_,out_mpi_, dim_obs, mpi_2integer, mpi_minloc, comm_filter, ierror)
+    latixy_obs(:) = out_mpi_(2,:)
+
+    deallocate(longxy_obs_lokal)
+    deallocate(latixy_obs_lokal)
+    deallocate(in_mpi_)
+    deallocate(out_mpi_)
+    deallocate(min_dist)
+    deallocate(min_g)
+
+
+    if (mype_filter == 0) then
+      print*, "longxy_obs = ", longxy_obs
+      print*, "latixy_obs = ", latixy_obs
+    end if
+
+  end subroutine domain_def_clm
+
 
   !> @author Wolfgang Kurtz, Guowei He, Mukund Pondkule
   !> @date 03.03.2023

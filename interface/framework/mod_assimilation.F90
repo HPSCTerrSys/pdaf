@@ -96,6 +96,17 @@ MODULE mod_assimilation
   INTEGER, ALLOCATABLE :: obs_nc2pdaf(:)   ! index for mapping mstate to local domain
   !kuw end
 
+  ! Yorck
+
+  REAL :: da_interval_variable ! interval until next observation, used by next_observation_pdaf.F90, better solution for next assimilation time step
+  ! has to be read from observation file --> no empty observation files have to be written
+  REAL, ALLOCATABLE :: obscov(:,:) ! observation covariance matrix
+  REAL, ALLOCATABLE :: obscov_inv(:,:) ! inverse of the observation covariance matrix
+  REAL, ALLOCATABLE :: tws_temp_mean_d(:) ! Mean temporal TWS for model domain
+  character (len = 110) :: temp_mean_filename ! User defined filename of temporal mean
+
+  ! END Yorck
+
   ! Multi-scale DA
 
   ! store the maximum and minimum limits for remote sensing data with

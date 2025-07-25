@@ -66,6 +66,8 @@ USE mod_tsmp, &
 #else
        ONLY: tag_model_parflow, model
 #endif
+use mod_read_obs, only: multierr, clm_obserr, clm_obscov, vec_useObs, vec_useObs_global
+USE enkf_clm_mod, ONLY: clmupdate_tws
 
 
   IMPLICIT NONE
@@ -120,9 +122,17 @@ USE mod_tsmp, &
 
 #if defined CLMSA
   if(model .eq. tag_model_clm) then
+
+    select case (multierr)
+    case(0)
+      meanvar  = rms_obs ** 2
+    case(1)
      meanvar_p = 0
      sum_p = 0
      counter = 0
+     if (clmupdate_tws.eq.1) then
+       clm_obserr_p = pack(clm_obserr,vec_useObs_global)
+     end if
      do i = 1, dim_obs_p
         if(clm_obserr_p(i) /= 0) then
            sum_p = sum_p + clm_obserr_p(i)
@@ -135,6 +145,27 @@ USE mod_tsmp, &
      call MPI_Allreduce(meanvar_p, meanvar, 1, MPI_REAL8, MPI_SUM, COMM_filter, MPIerr)
      ! to get the mean dividing the mean observation error by size of processors
      meanvar = meanvar/npes_filter    
+
+    case(2)
+      meanvar_p = 0
+      sum_p = 0
+      counter = 0
+
+      do i = 1, size(clm_obscov,1)
+        if(vec_useObs_global(i)) then
+          sum_p = sum_p + clm_obscov(i,i)
+          counter = counter + 1
+        end if
+      end do
+      ! averaging the sum of observation errors with total no of non-zero observations
+      meanvar_p = sum_p/counter
+      ! summing the average of observation errors and communicating it back to each rank
+      call MPI_Allreduce(meanvar_p, meanvar, 1, MPI_REAL8, MPI_SUM, COMM_filter, MPIerr)
+      ! to get the mean dividing the mean observation error by size of processors
+      meanvar = meanvar/npes_filter
+    end select
+
+
   end if
 #endif
 
