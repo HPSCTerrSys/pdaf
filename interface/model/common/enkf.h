@@ -43,6 +43,8 @@ extern void clm_advance(int *ntstep, int *tstartcycle, int *mype);
 extern void update_clm(int *tstartcycle, int *mype);
 #if defined CLMSA
 extern void print_update_clm(int *ts, int *ttot);
+extern void print_inc_clm();
+extern void print_state_clm();
 #endif
 extern void write_clm_statistics(int *ts, int *ttot);
 extern void clm_finalize();
@@ -59,6 +61,7 @@ GLOBAL char pfoutfile_stat[500];
 GLOBAL char pfproblemname[100];
 GLOBAL char clminfile[100*2];
 GLOBAL char outdir[100];
+GLOBAL char mean_filename[100];
 
 /* integers */
 GLOBAL int nprocpf;
@@ -66,7 +69,6 @@ GLOBAL int nprocclm;
 GLOBAL int nproccosmo;
 GLOBAL int nreal;
 GLOBAL int startreal;
-GLOBAL int flexible_da_interval;
 GLOBAL int total_steps;
 GLOBAL int tcycle;
 GLOBAL int tstartcycle;
@@ -92,7 +94,6 @@ GLOBAL int clmupdate_tws;
 GLOBAL int clmprint_swc;
 GLOBAL int clmprint_et;
 GLOBAL int clmstatevec_allcol;
-GLOBAL int clmstatevec_colmean;
 GLOBAL int clmstatevec_only_active;
 GLOBAL int clmstatevec_max_layer;
 GLOBAL int clmt_printensemble;
@@ -137,11 +138,9 @@ GLOBAL double dt;
 GLOBAL double pf_aniso_perm_y;
 GLOBAL double pf_aniso_perm_z;
 GLOBAL double da_interval;
-GLOBAL double da_interval_final;
 GLOBAL double pf_dampfac_param;
 GLOBAL double pf_dampfac_state;
 GLOBAL double dampfac_state_time_dependent;
 GLOBAL double dampfac_param_time_dependent;
 GLOBAL double da_crns_depth_tol;
 GLOBAL double max_inc;
-GLOBAL double clmcrns_bd;

@@ -178,7 +178,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
        callcount=0)
 
 #if defined CLMSA
-  call define_clm_statevec(mype)
+  call define_clm_statevec
 #endif 
 
 
@@ -210,7 +210,7 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
 
 #if defined CLMSA
   ! Calling PDAF Function to set state vector before assimiliation
-  call set_clm_statevec(tstartcycle, mype)
+  call set_clm_statevec()
 #endif
 
 end subroutine clm_advance
