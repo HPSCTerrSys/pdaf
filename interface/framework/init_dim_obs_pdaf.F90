@@ -1092,7 +1092,7 @@ pp       ! dim_obs_p, &
 
   if(clmupdate_tws.eq.1) then
 
-   is_use_dr = .true.
+  is_use_dr = .false.
 
   call domain_def_clm_tws(clmobs_lon, clmobs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
@@ -1119,14 +1119,12 @@ pp       ! dim_obs_p, &
          count_points = 0
          ! only take gridcells into account that have at least one hydrological active column
          do c = 1, num_layer(1)
-           j = hactiveg_levels(c,1)
-           if (lon(j)<180)then
-             deltax = abs(lon(j)-clmobs_lon(i))
-           else
-             deltax = abs((lon(j)-360)-clmobs_lon(i))
-           end if
-           deltay = abs(lat(j)-clmobs_lat(i))
-           if((deltax.le.clmobs_dr(1)).and.(deltay.le.clmobs_dr(2))) then
+            deltax = abs(longxy(c)-longxy_obs(i))
+            deltay = abs(latixy(c)-latixy_obs(i))
+            dist = sqrt(real(deltax)**2 + real(deltay)**2)
+
+            ! EUR-11 Grid --> 1 gridcell every 1/0.11°
+            if(dist<=clmobs_dr(1)/0.11) then
                count_points = count_points+1
             end if
          end do           
@@ -1136,8 +1134,9 @@ pp       ! dim_obs_p, &
       ! get vec_numPoints from all processes and add them up together via mpi_allreduce
       call mpi_allreduce(vec_numPoints,vec_numPoints_global, dim_obs, mpi_integer, mpi_sum, COMM_filter, ierror)
       ! only observations should be used that "see" enough gridcells
-      ! numPoints equation from Anne
-      numPoints = int(ceiling((clmobs_dr(1)*2/0.11 * clmobs_dr(2)*2/0.11)/2.0)) 
+      !numPoints = int(ceiling((clmobs_dr(1)*2/0.11 * clmobs_dr(2)*2/0.11)/2.0)) 
+      pi = 3.14159265358979323846
+      numPoints = int(ceiling((pi*(clmobs_dr(1)/0.11)**2)/2))
       if (screen > 2) then
         if (mype_filter==0) then
           print *, "Minimum number of points for using one observation is ", numPoints
@@ -1148,13 +1147,12 @@ pp       ! dim_obs_p, &
       vec_useObs_global = merge(vec_useObs_global,.false.,vec_numPoints_global.ge.numPoints)
       vec_useObs = vec_useObs_global
 
-
-      ! The observation should be reproduced by the process that has the most grid points inside the observation radius
-      ! However, in the observation operator, all points will be used by using mpi
-      ! obs_id_p could be of good use for this as it assigns each grid point in the local process a observation (or none if
-      ! there isn't any in the radius)
-
-      ! The corresponding process for each observation is found out using the following code
+      if (screen > 2) then
+         if (mype_filter==0) then
+            print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_f_pdaf: vec_useObs_global=", vec_useObs_global
+            print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_f_pdaf: vec_numPoints_global=", vec_numPoints_global
+         end if
+      end if
 
       in_mpi(1,:) = vec_numPoints
       in_mpi(2,:) = mype_filter
@@ -1175,68 +1173,49 @@ pp       ! dim_obs_p, &
         if (vec_useObs_global(i)) then
           do c = 1, num_layer(1)
             j = hactiveg_levels(c,1)
-            if (lon(j)<180)then
-              deltax = abs(lon(j)-clmobs_lon(i))
-            else
-              deltax = abs((lon(j)-360)-clmobs_lon(i))
-            end if
-            deltay = abs(lat(j)-clmobs_lat(i))
-            if((deltax.le.clmobs_dr(1)).and.(deltay.le.clmobs_dr(2))) then
+            deltax = abs(longxy(c)-longxy_obs(i))
+            deltay = abs(latixy(c)-latixy_obs(i))
+            dist = sqrt(real(deltax)**2 + real(deltay)**2)
+
+            if(dist<=clmobs_dr(1)/0.11) then
               obs_id_p(j) = i
             end if
           end do
         end if
       end do
 
-    else
+   end if
 
-      dim_obs_p = count(vec_useObs)
-      ! if (mype_filter == 0) then
-      !    dim_obs_p = COUNT(vec_useObs_global)
-      ! else
-      !    dim_obs_p = 0
-      ! end if
-
-    end if
 
    dim_obs = count(vec_useObs_global)
-
-  if (screen > 2) then
-    if (mype_filter==0) then
-      print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_f_pdaf: vec_useObs_global=", vec_useObs_global
-      print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_f_pdaf: vec_numPoints_global=", vec_numPoints_global
-    end if
-  end if
-
-  if (screen > 2) then
-    print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dim_obs_p=", dim_obs_p
-  end if
-
-  ! add and broadcast size of local observation dimensions using mpi_allreduce 
-  call mpi_allreduce(dim_obs_p, sum_dim_obs_p, 1, MPI_INTEGER, MPI_SUM, &
-    comm_filter, ierror) 
-
-
-
+   dim_obs_f = dim_obs
 
    IF (ALLOCATED(obs)) DEALLOCATE(obs)
-   ALLOCATE(obs(dim_obs))
-   IF (ALLOCATED(obs_p)) DEALLOCATE(obs_p)
-   ALLOCATE(obs_p(dim_obs_p))
+   ALLOCATE(obs(dim_obs_f))
 
    obs = pack(clm_obs,vec_useObs_global)
    obs_p = pack(clm_obs,vec_useObs)
 
 
+   ! Overwrite longxy_obs and latixy_obs as the observation dimension could be smaller now
 
-   if(multierr.eq.1) then
-     if (allocated(clm_obserr_p)) deallocate(clm_obserr_p)
-     allocate(clm_obserr_p(dim_obs_p))
-   endif
+   if (allocated(obs_lon)) deallocate(obs_lon)
+   allocate(obs_lon(dim_obs))
+
+   if (allocated(obs_lat)) deallocate(obs_lat)
+   allocate(obs_lat(dim_obs))
+
+   obs_lon = pack(clmobs_lon,vec_useObs_global)
+   obs_lat = pack(clmobs_lat,vec_useObs_global)
+
+   call domain_def_clm_tws(obs_lon, obs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
+
+
    if (multierr .eq. 2) then
       print *, 'Store observation covariance matrix'
       IF (ALLOCATED(obscov)) DEALLOCATE(obscov)
-      ALLOCATE(obscov(COUNT(vec_useObs_global),COUNT(vec_useObs_global)))
+      ALLOCATE(obscov(dim_obs,dim_obs))
+      ! First store covariance matrix
       countR = 1
       countC = 1
       do i = 1, size(clm_obscov,1)
@@ -1252,7 +1231,6 @@ pp       ! dim_obs_p, &
          end if
       end do
 
-    if (filtertype.ne.2) then
       print *, 'Compute inverse of observation covariance matrix'
       IF (ALLOCATED(obscov_inv)) DEALLOCATE(obscov_inv)
       ALLOCATE(obscov_inv(dim_obs,dim_obs))
@@ -1268,13 +1246,9 @@ pp       ! dim_obs_p, &
       end if
       IF (ALLOCATED(ipiv)) DEALLOCATE(ipiv)
       IF (ALLOCATED(work)) DEALLOCATE(work)
-    end if
 
-  end if
-
-  count_points = 1
-
-  end if
+   end if
+   end if
 
   !  clean up the temp data from nc file
   ! ------------------------------------
