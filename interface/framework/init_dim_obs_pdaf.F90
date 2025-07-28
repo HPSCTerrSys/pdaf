@@ -478,9 +478,9 @@ pp       ! dim_obs_p, &
 #endif
 #endif
 
-  if(clmupdate_tws.ne.1) then
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
+  if(clmupdate_tws.ne.1) then
   ! Switch for how to check index of CLM observations
   ! True: Use snapping distance between long/lat on CLM grid
   ! False: Use index arrays from `domain_def_clm`
@@ -529,9 +529,11 @@ pp       ! dim_obs_p, &
         end do
     end do
   end if
+  end if
 #endif
 #endif
 
+  if(clmupdate_tws.ne.1) then
   if (screen > 2) then
       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dim_obs_p=", dim_obs_p
   end if
