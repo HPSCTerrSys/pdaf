@@ -103,7 +103,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
        clmobs_lon, clmobs_lat, clmobs_layer, clmobs_dr, clm_obserr
   USE mod_read_obs, &
     only: clm_obscov, vec_useObs, vec_useObs_global, vec_numPoints_global, &
-    lon_temp_mean, lat_temp_mean, tws_temp_mean, read_temp_mean_model, domain_def_clm
+    lon_temp_mean, lat_temp_mean, tws_temp_mean, read_temp_mean_model, domain_def_clm_tws
   use mod_read_obs, only: dampfac_state_time_dependent_in
   use mod_read_obs, only: dampfac_param_time_dependent_in
   use mod_tsmp, &
@@ -140,7 +140,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
   !hcp
   !use the subroutine written by Mukund "domain_def_clm" to evaluate longxy,
   !latixy, longxy_obs, latixy_obs
-  ! USE enkf_clm_mod, only: domain_def_clm
+  USE enkf_clm_mod, only: domain_def_clm
   USE enkf_clm_mod, only: get_interp_idx
   use enkf_clm_mod, only: clmstatevec_allcol
   !hcp end
@@ -1101,7 +1101,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
   is_use_dr = .false.
 
-  call domain_def_clm(clmobs_lon, clmobs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
+  call domain_def_clm_tws(clmobs_lon, clmobs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
     if (ALLOCATED(vec_useObs_global).eqv..false.) then
       IF (ALLOCATED(vec_useObs)) DEALLOCATE(vec_useObs)
@@ -1215,7 +1215,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
    obs_lon = pack(clmobs_lon,vec_useObs_global)
    obs_lat = pack(clmobs_lat,vec_useObs_global)
 
-   call domain_def_clm(obs_lon, obs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
+   call domain_def_clm_tws(obs_lon, obs_lat, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
 
    if (multierr .eq. 2) then
