@@ -58,8 +58,8 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     real(r8), pointer :: psand(:,:)
     real(r8), pointer :: pclay(:,:)
     real(r8), pointer :: porgm(:,:)
-    real(r8), pointer :: clmstate_tmp_local(:)
-    real(r8), pointer :: clmstate_tmp_global(:)
+    ! real(r8), pointer :: clmstate_tmp_local(:)
+    ! real(r8), pointer :: clmstate_tmp_global(:)
     real(r8), allocatable :: clmstate_out(:,:,:)
     integer ,dimension(4) :: dimids
     integer ,dimension(1) :: il_var_id
@@ -71,13 +71,13 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
     call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
     call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
-    allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)), stat=nerror)
+    ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)), stat=nerror)
 
     ndlon  = ldomain%ni
     ndlat  = ldomain%nj
 
     if (masterproc) then
-      allocate(clmstate_tmp_global(nlevsoi*numg), stat=nerror)
+      ! allocate(clmstate_tmp_global(nlevsoi*numg), stat=nerror)
       allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
     end if
 
@@ -203,12 +203,605 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     if(masterproc) then
       status = nf90_close(il_file_id)
       deallocate(clmstate_out)
-      deallocate(clmstate_tmp_global)
+      ! deallocate(clmstate_tmp_global)
     end if
 
-    deallocate(clmstate_tmp_local)
+    ! deallocate(clmstate_tmp_local)
 
 end subroutine print_update_clm
+
+subroutine print_inc_clm() bind(C,name="print_inc_clm")
+
+  use iso_c_binding   
+  use shr_kind_mod , only : r8 => shr_kind_r8
+  use domainMod    , only : ldomain 
+  use clm_varpar   , only : nlevsoi
+  use clm_varcon   , only : nameg, spval
+  use decompmod    , only : get_proc_global, get_proc_bounds, ldecomp, get_proc_total
+  use spmdmod      , only : masterproc, npes, mpicom, iam
+  use clm_time_manager        , only : get_nstep    
+  use clm_instMod, only : soilhydrology_inst, waterstate_inst, atm2lnd_inst
+  use netcdf
+  use enkf_clm_mod, only : num_layer, num_layer_columns, hactivec_levels, hactiveg_levels 
+  use cime_comp_mod
+  use ColumnType         , only : col
+  use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use mpi
+
+  implicit none
+
+  ! local variables
+
+  integer :: numg           ! total number of gridcells across all processors
+  integer :: numl           ! total number of landunits across all processors
+  integer :: numc           ! total number of columns across all processors
+  integer :: nump           ! total number of pfts across all processors
+  integer :: begg,endg      ! local beg/end gridcells gdc
+  integer :: begl,endl      ! local beg/end landunits
+  integer :: begc,endc      ! local beg/end columns
+  integer :: begp,endp      ! local beg/end pfts
+  integer :: ncells       ! total number of gridcells on the processor
+  integer :: nlunits      ! total number of landunits on the processor
+  integer :: ncols        ! total number of columns on the processor
+  integer :: npfts        ! total number of pfts on the processor
+  integer :: ncohorts
+
+  integer ::   isec, info, jn, jj, ji, g1, jx, c, l, j, g, index, p, count, count2    ! temporary integer
+  real(r8), pointer :: h2osoi_liq(:,:)
+  real(r8), pointer :: h2osoi_ice(:,:)
+  real(r8), pointer :: h2osno(:)
+  real(r8), pointer :: clmstate_tmp_local(:,:)
+  real(r8), pointer :: clmstate_tmp_global(:)
+  real(r8), allocatable :: clmstate_out(:,:,:)
+  integer ,dimension(3) :: dimids
+  integer ,dimension(2) :: dimids_1level
+  integer ,dimension(1) :: il_var_id
+  integer :: il_file_id, ncvarid(4), status
+  character(len = 300) :: inc_filename
+  integer :: nerror
+  integer :: ndlon,ndlat
+
+  integer :: ier                    !return code
+  integer :: beg                    !temporary
+  integer :: numrecvv(0:npes-1)     !vector of items to be received
+  integer :: displsv(0:npes-1)      !displacement vector
+  integer :: numsend                !number of items to be sent
+  integer :: pid          ! processor id
+  integer :: count_columns
+  real(r8) :: sum_columns
+  real(r8), allocatable :: tws_inc(:)
+
+  h2osoi_liq   => waterstate_inst%h2osoi_liq_col_inc
+  h2osoi_ice   => waterstate_inst%h2osoi_ice_col_inc
+  h2osno       => waterstate_inst%h2osno_col_inc
+
+  call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
+  call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
+  allocate(clmstate_tmp_local(begg:endg,1:nlevsoi), stat=nerror)
+  allocate(tws_inc(begg:endg), stat=nerror)
+  tws_inc(begg:endg) = 0._r8
+
+  ndlon  = ldomain%ni
+  ndlat  = ldomain%nj
+
+  if (masterproc) then
+    
+    allocate(clmstate_tmp_global(1:numg), stat=nerror)
+    allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+    clmstate_out(:,:,:) = nan
+
+  end if
+
+  call get_proc_total(iam, ncells, nlunits, ncols, npfts, ncohorts)
+
+  numsend = ncells
+
+  do pid = 0,npes-1
+    call get_proc_total(pid, ncells, nlunits, ncols, npfts, ncohorts)
+    numrecvv(pid) = ncells
+  end do
+  beg = begg
+  displsv(0) = 0
+  do pid = 1,npes-1
+      displsv(pid) = displsv(pid-1) + numrecvv(pid-1)
+  end do
+
+  if(masterproc) then
+    call get_inc_filename(inc_filename)
+    status =  nf90_create(inc_filename, NF90_CLOBBER, il_file_id)
+    status =  nf90_def_dim(il_file_id, "lon", ndlon, dimids(1))
+    status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
+    status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
+
+    dimids_1level = (/ dimids(1), dimids(2) /)
+    status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
+    status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
+    status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
+    status =  nf90_def_var(il_file_id, "TWS", NF90_FLOAT, dimids_1level, ncvarid(3))
+    status =  nf90_enddef(il_file_id)
+  end if
+
+  clmstate_tmp_local(begg:endg,:) = 0._r8
+
+  do j = 1, nlevsoi
+    do count = 1, num_layer(j)
+      g = hactiveg_levels(count,j)
+      count_columns = 0
+      sum_columns = 0
+      do count2 = 1, num_layer_columns(j)
+        c = hactivec_levels(count2,j)
+        if (g==col%gridcell(c)) then
+          sum_columns = sum_columns+h2osoi_liq(c,j)
+          count_columns = count_columns+1
+        end if
+      end do
+      clmstate_tmp_local(g,j) = sum_columns/count_columns
+      if (j==1) then
+        tws_inc(g) = 0._r8
+      end if
+      tws_inc(g) = tws_inc(g) + clmstate_tmp_local(g,j)
+    end do
+  end do
+  do jn = 1, nlevsoi
+    if (masterproc) then
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+  end do
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
+      status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
+                start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+  end if
+
+
+  clmstate_tmp_local(begg:endg,:) = 0._r8
+
+  do j = 1, nlevsoi
+    do count = 1, num_layer(j)
+      g = hactiveg_levels(count,j)
+      count_columns = 0
+      sum_columns = 0
+      do count2 = 1, num_layer_columns(j)
+        c = hactivec_levels(count2,j)
+        if (g==col%gridcell(c)) then
+          sum_columns = sum_columns+h2osoi_ice(c,j)
+          count_columns = count_columns+1
+        end if
+      end do
+      clmstate_tmp_local(g,j) = sum_columns/count_columns
+      tws_inc(g) = tws_inc(g) + clmstate_tmp_local(g,j)
+    end do
+  end do
+  do jn = 1, nlevsoi
+    if (masterproc) then
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+  end do
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
+      status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
+                start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+  end if
+
+
+
+
+  clmstate_tmp_local(begg:endg,:) = 0._r8
+  do count = 1, num_layer(1)
+    g = hactiveg_levels(count,1)
+    count_columns = 0
+    sum_columns = 0
+    do count2 = 1, num_layer_columns(1)
+      c = hactivec_levels(count2,1)
+      if (g==col%gridcell(c)) then
+        sum_columns = sum_columns+h2osno(c)
+        count_columns = count_columns+1
+      end if
+    end do
+    clmstate_tmp_local(g,1) = sum_columns/count_columns
+    tws_inc(g) = tws_inc(g) + clmstate_tmp_local(g,1)
+  end do
+
+
+  if (masterproc) then
+    call mpi_gatherv (clmstate_tmp_local(beg,1), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (clmstate_tmp_local(beg,1), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+    
+  end if
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
+      status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+
+
+  if (masterproc) then
+    call mpi_gatherv (tws_inc(beg), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (tws_inc(beg), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+  end if
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
+      status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+
+
+  if(masterproc) then
+    status = nf90_close(il_file_id)
+    deallocate(clmstate_out)
+    deallocate(clmstate_tmp_global)
+  end if
+  deallocate(tws_inc)
+  deallocate(clmstate_tmp_local)
+
+
+
+
+
+end subroutine print_inc_clm
+
+
+subroutine print_state_clm() bind(C,name="print_state_clm")
+
+  use iso_c_binding   
+  use shr_kind_mod , only : r8 => shr_kind_r8
+  use domainMod    , only : ldomain 
+  use clm_varpar   , only : nlevsoi
+  use clm_varcon   , only : nameg, spval
+  use decompmod    , only : get_proc_global, get_proc_bounds, ldecomp, get_proc_total
+  use spmdmod      , only : masterproc, npes, mpicom, iam
+  use clm_time_manager        , only : get_nstep    
+  use clm_instMod, only : soilhydrology_inst, waterstate_inst, atm2lnd_inst
+  use netcdf
+  use enkf_clm_mod, only : num_layer, num_layer_columns, hactivec_levels, hactiveg_levels, state_setup
+  use cime_comp_mod
+  use ColumnType         , only : col
+  use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
+  use mpi
+
+  implicit none
+
+  ! local variables
+
+  integer :: numg           ! total number of gridcells across all processors
+  integer :: numl           ! total number of landunits across all processors
+  integer :: numc           ! total number of columns across all processors
+  integer :: nump           ! total number of pfts across all processors
+  integer :: begg,endg      ! local beg/end gridcells gdc
+  integer :: begl,endl      ! local beg/end landunits
+  integer :: begc,endc      ! local beg/end columns
+  integer :: begp,endp      ! local beg/end pfts
+  integer :: ncells       ! total number of gridcells on the processor
+  integer :: nlunits      ! total number of landunits on the processor
+  integer :: ncols        ! total number of columns on the processor
+  integer :: npfts        ! total number of pfts on the processor
+  integer :: ncohorts
+
+  integer ::   isec, info, jn, jj, ji, g1, jx, c, l, j, g, index, p, count, count2    ! temporary integer
+  real(r8), pointer :: tws_state_before(:)
+  real(r8), pointer :: h2osoi_liq_state_before(:,:)
+  real(r8), pointer :: h2osoi_ice_state_before(:,:)
+  real(r8), pointer :: h2osno_state_before(:)
+
+  real(r8), pointer :: tws_state_after(:)
+  real(r8), pointer :: h2osoi_liq_state_after(:,:)
+  real(r8), pointer :: h2osoi_ice_state_after(:,:)
+  real(r8), pointer :: h2osno_state_after(:)
+
+  real(r8), pointer :: clmstate_tmp_global(:)
+  real(r8), allocatable :: clmstate_out(:,:,:)
+  integer ,dimension(3) :: dimids
+  integer ,dimension(2) :: dimids_1level
+  integer :: il_file_id, ncvarid(4), status
+  character(len = 300) :: state_before_filename
+  character(len = 300) :: state_after_filename
+  integer :: nerror
+  integer :: ndlon,ndlat
+
+  integer :: ier                    !return code
+  integer :: beg                    !temporary
+  integer :: numrecvv(0:npes-1)     !vector of items to be received
+  integer :: displsv(0:npes-1)      !displacement vector
+  integer :: numsend                !number of items to be sent
+  integer :: pid          ! processor id
+  integer :: count_columns
+
+  tws_state_before   => waterstate_inst%tws_state_before
+  tws_state_after   => waterstate_inst%tws_state_after
+
+  h2osoi_liq_state_before => waterstate_inst%h2osoi_liq_state_before
+  h2osoi_ice_state_before => waterstate_inst%h2osoi_ice_state_before
+  h2osno_state_before => waterstate_inst%h2osno_state_before
+
+  h2osoi_liq_state_after => waterstate_inst%h2osoi_liq_state_after
+  h2osoi_ice_state_after => waterstate_inst%h2osoi_ice_state_after
+  h2osno_state_after => waterstate_inst%h2osno_state_after
+
+  call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
+  call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
+
+  ndlon  = ldomain%ni
+  ndlat  = ldomain%nj
+
+  if (masterproc) then
+    
+    allocate(clmstate_tmp_global(1:numg), stat=nerror)
+    allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+    clmstate_out(:,:,:) = nan
+
+  end if
+
+  call get_proc_total(iam, ncells, nlunits, ncols, npfts, ncohorts)
+
+  numsend = ncells
+
+  do pid = 0,npes-1
+    call get_proc_total(pid, ncells, nlunits, ncols, npfts, ncohorts)
+    numrecvv(pid) = ncells
+  end do
+  beg = begg
+  displsv(0) = 0
+  do pid = 1,npes-1
+      displsv(pid) = displsv(pid-1) + numrecvv(pid-1)
+  end do
+
+  ! state before assimilation
+  
+
+  if(masterproc) then
+    call get_state_filename_before(state_before_filename)
+    status =  nf90_create(state_before_filename, NF90_CLOBBER, il_file_id)
+    status =  nf90_def_dim(il_file_id, "lon", ndlon, dimids(1))
+    status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
+    status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
+
+    dimids_1level = (/ dimids(1), dimids(2) /)
+    status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
+    status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
+    status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
+    status =  nf90_def_var(il_file_id, "TWS", NF90_FLOAT, dimids_1level, ncvarid(4))
+    status =  nf90_enddef(il_file_id)
+  end if
+
+  do jn = 1,nlevsoi
+
+    if (masterproc) then
+      call mpi_gatherv (h2osoi_liq_state_before(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (h2osoi_liq_state_before(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+
+    if (masterproc) then
+      status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
+      status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
+        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+    end if
+
+  end do
+
+  do jn = 1,nlevsoi
+
+    if (masterproc) then
+      call mpi_gatherv (h2osoi_ice_state_before(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (h2osoi_ice_state_before(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+
+    if (masterproc) then
+      status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
+      status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
+        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+    end if
+
+  end do
+
+  if (masterproc) then
+    call mpi_gatherv (h2osno_state_before(beg), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (h2osno_state_before(beg), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+  end if
+
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
+      status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+  if (masterproc) then
+    call mpi_gatherv (tws_state_before(beg), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (tws_state_before(beg), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+  end if
+
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
+      status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+
+  if(masterproc) then
+    status = nf90_close(il_file_id)
+  end if
+
+
+
+  ! state after assimilation
+
+  if(masterproc) then
+    call get_state_filename_after(state_after_filename)
+    status =  nf90_create(state_after_filename, NF90_CLOBBER, il_file_id)
+    status =  nf90_def_dim(il_file_id, "lon", ndlon, dimids(1))
+    status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
+    status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
+
+    dimids_1level = (/ dimids(1), dimids(2) /)
+    status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
+    status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
+    status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
+    status =  nf90_def_var(il_file_id, "TWS", NF90_FLOAT, dimids_1level, ncvarid(4))
+    status =  nf90_enddef(il_file_id)
+  end if
+
+  do jn = 1,nlevsoi
+
+    if (masterproc) then
+      call mpi_gatherv (h2osoi_liq_state_after(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (h2osoi_liq_state_after(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+
+    if (masterproc) then
+      status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
+      status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
+        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+    end if
+
+  end do
+
+  do jn = 1,nlevsoi
+
+    if (masterproc) then
+      call mpi_gatherv (h2osoi_ice_state_after(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    else
+      call mpi_gatherv (h2osoi_ice_state_after(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    end if
+    if(masterproc) then
+      do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out(ji,jj,jn) = clmstate_tmp_global(g1)
+      end do
+    end if
+
+    if (masterproc) then
+      status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
+      status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
+        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+    end if
+
+  end do
+
+  if (masterproc) then
+    call mpi_gatherv (h2osno_state_after(beg), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (h2osno_state_after(beg), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+  end if
+
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
+      status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+  if (masterproc) then
+    call mpi_gatherv (tws_state_after(beg), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  else
+    call mpi_gatherv (tws_state_after(beg), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+  end if
+  if(masterproc) then
+    do g1 = 1, numg
+        ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+        jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+        clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
+    end do
+  end if
+
+  if (masterproc) then
+    status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
+      status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
+                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+  end if
+
+
+  if(masterproc) then
+    status = nf90_close(il_file_id)
+  end if
+
+  if(masterproc) then
+    deallocate(clmstate_out)
+    deallocate(clmstate_tmp_global)
+  end if
+
+end subroutine print_state_clm
 #endif
 
 subroutine get_update_filename (iofile)
@@ -233,3 +826,60 @@ subroutine get_update_filename (iofile)
     iofile = trim(caseid)//".update."//trim(cdate)//".nc"
     !iofile = trim(caseid)//".update.nc"
 end subroutine get_update_filename
+
+subroutine get_inc_filename (iofile)
+  use clm_varctl, only : caseid, inst_suffix
+  use clm_time_manager, only : get_curr_date, get_prev_date
+  ! !ARGUMENTS:
+  implicit none
+  character(len=300),intent(inout) :: iofile
+  ! LOCAL VARIABLES:
+  character(len=256) :: cdate       !date char string
+  integer :: day                    !day (1 -> 31)
+  integer :: mon                    !month (1 -> 12)
+  integer :: yr                     !year (0 -> ...)
+  integer :: sec                    !seconds into current day
+  !-----------------------------------------------------------------------
+  call get_prev_date (yr, mon, day, sec)
+  write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr,mon,day,sec
+  iofile = trim(caseid)//".inc"//trim(inst_suffix)//"."//trim(cdate)//".nc"
+
+end subroutine get_inc_filename
+
+subroutine get_state_filename_before (iofile)
+  use clm_varctl, only : caseid, inst_suffix
+  use clm_time_manager, only : get_curr_date, get_prev_date
+  ! !ARGUMENTS:
+  implicit none
+  character(len=300),intent(inout) :: iofile
+  ! LOCAL VARIABLES:
+  character(len=256) :: cdate       !date char string
+  integer :: day                    !day (1 -> 31)
+  integer :: mon                    !month (1 -> 12)
+  integer :: yr                     !year (0 -> ...)
+  integer :: sec                    !seconds into current day
+  !-----------------------------------------------------------------------
+  call get_prev_date (yr, mon, day, sec)
+  write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr,mon,day,sec
+  iofile = trim(caseid)//".state_before"//trim(inst_suffix)//"."//trim(cdate)//".nc"
+
+end subroutine get_state_filename_before
+
+subroutine get_state_filename_after (iofile)
+  use clm_varctl, only : caseid, inst_suffix
+  use clm_time_manager, only : get_curr_date, get_prev_date
+  ! !ARGUMENTS:
+  implicit none
+  character(len=300),intent(inout) :: iofile
+  ! LOCAL VARIABLES:
+  character(len=256) :: cdate       !date char string
+  integer :: day                    !day (1 -> 31)
+  integer :: mon                    !month (1 -> 12)
+  integer :: yr                     !year (0 -> ...)
+  integer :: sec                    !seconds into current day
+  !-----------------------------------------------------------------------
+  call get_prev_date (yr, mon, day, sec)
+  write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr,mon,day,sec
+  iofile = trim(caseid)//".state_after"//trim(inst_suffix)//"."//trim(cdate)//".nc"
+
+end subroutine get_state_filename_after

@@ -788,7 +788,7 @@ contains
 
   end subroutine read_temp_mean_model
 
-  subroutine domain_def_clm(lon_clmobs, lat_clmobs, dim_obs, &
+  subroutine domain_def_clm_tws(lon_clmobs, lat_clmobs, dim_obs, &
     longxy, latixy, longxy_obs, latixy_obs)
 
     use spmdMod,   only : npes, iam
@@ -968,7 +968,7 @@ contains
       print*, "latixy_obs = ", latixy_obs
     end if
 
-  end subroutine domain_def_clm
+  end subroutine domain_def_clm_tws
 
 
   !> @author Wolfgang Kurtz, Guowei He, Mukund Pondkule
