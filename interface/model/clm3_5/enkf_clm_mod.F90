@@ -54,14 +54,18 @@ module enkf_clm_mod
   integer :: clm_paramsize !hcp: Size of CLM parameter vector (f.e. LAI)
   integer :: clm_varsize
   integer :: clm_begg,clm_endg
+  integer :: clm_begl,clm_endl
   integer :: clm_begc,clm_endc
   integer :: clm_begp,clm_endp
   real(r8),allocatable :: clm_statevec(:)
+  real(r8),allocatable :: clm_statevec_orig(:)
+  real(r8),allocatable :: clm_statevec_original_input(:) ! orginal values in statevector so that I can also access them in the update
   integer,allocatable :: state_pdaf2clm_c_p(:)
   integer,allocatable :: state_pdaf2clm_j_p(:)
   ! clm_paramarr: Contains LAI used in obs_op_pdaf for computing model
   ! LST in LST assimilation (clmupdate_T)
   real(r8),allocatable :: clm_paramarr(:)  !hcp CLM parameter vector (f.e. LAI)
+  integer, allocatable :: state_clm2pdaf_p(:,:) !Index of column in hydraulic active state vector (nlevsoi,endc-begc+1)
   integer(c_int),bind(C,name="clmupdate_swc")     :: clmupdate_swc
   integer(c_int),bind(C,name="clmupdate_T")     :: clmupdate_T  ! by hcp
   integer(c_int),bind(C,name="clmupdate_texture") :: clmupdate_texture
@@ -69,9 +73,43 @@ module enkf_clm_mod
 #endif
   integer(c_int),bind(C,name="clmprint_et")       :: clmprint_et
   integer(c_int),bind(C,name="clmstatevec_allcol")       :: clmstatevec_allcol
+  integer(c_int),bind(C,name="clmstatevec_colmean")       :: clmstatevec_colmean
+  integer(c_int),bind(C,name="clmstatevec_only_active")  :: clmstatevec_only_active
+  integer(c_int),bind(C,name="clmstatevec_max_layer")  :: clmstatevec_max_layer
   integer(c_int),bind(C,name="clmt_printensemble")       :: clmt_printensemble
   integer(c_int),bind(C,name="clmwatmin_switch")         :: clmwatmin_switch
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
+
+  ! Yorck
+  integer(c_int),bind(C,name="clmupdate_tws") :: clmupdate_tws
+  integer(c_int),bind(C,name="exclude_greenland") :: exclude_greenland
+  real(r8),bind(C,name="da_interval") :: da_interval
+  integer, dimension(1:5) :: clm_varsize_tws
+  real(r8),bind(C,name="max_inc") :: max_inc
+  integer(c_int),bind(C,name="TWS_smoother") :: TWS_smoother
+  integer(c_int),bind(C,name="state_setup") :: state_setup !0: liq and ice seperated in statevector, 1: liq and ice together in statevector, 2: raw TWS values in statevector (just for testing)
+  integer(c_int),bind(C,name="update_snow") :: update_snow !0: scripts from Lukas, 1: simple factor of old and new snow multiplied with old values
+  integer(c_int),bind(C,name="remove_mean") :: remove_mean
+  integer, allocatable :: num_layer(:)
+  integer, allocatable :: num_layer_columns(:)
+
+  real(r8), allocatable :: tws_temp_mean(:,:) ! temporal mean for TWS
+  real(r8), allocatable :: lon_temp_mean(:,:) ! corresponding longitude
+  real(r8), allocatable :: lat_temp_mean(:,:) ! corresponding latitude
+
+  real(r8), allocatable :: tws_temp_mean_vector(:) ! temporal mean for TWS, in vector form, sorted just as sub-domain
+
+  integer :: num_hactiveg, num_hactivec, num_hactiveg_patch, num_hactivep
+
+  integer, allocatable :: hactiveg_levels(:,:)     ! hydrolocial active filter for all levels (gridcell) 
+  integer, allocatable :: hactivec_levels(:,:)     ! hydrolocial active filter for all levels (column) 
+  integer, allocatable :: hactivep(:)     ! hydrolocial active filter (patches)
+  integer, allocatable :: hactiveg_patch(:)     ! hydrolocial active filter (patches)
+  integer, allocatable :: gridcell_state(:)
+
+  character(c_char),dimension(100),bind(C,name="mean_filename") :: mean_filename
+
+  ! end Yorck
 
   integer  :: nstep     ! time step index
   real(r8) :: dtime     ! time step increment (sec)
@@ -89,6 +127,8 @@ module enkf_clm_mod
   logical :: flag
   integer(c_int),bind(C,name="clmprefixlen") :: clmprefixlen
   integer :: COMM_couple_clm    ! CLM-version of COMM_couple
+                                ! (currently not used for clm5_0)
+  logical :: newgridcell        !only clm5_0
 
   contains
 
