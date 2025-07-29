@@ -95,8 +95,6 @@ module enkf_clm_mod
 
   ! end Yorck
 
-#endif
-
   integer  :: nstep     ! time step index
   real(r8) :: dtime     ! time step increment (sec)
   integer  :: ier       ! error code
