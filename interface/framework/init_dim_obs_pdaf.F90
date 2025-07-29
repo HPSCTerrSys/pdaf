@@ -23,7 +23,7 @@
 !                       'init_dim_obs_pdaf' (PDAF online coupling)
 !-------------------------------------------------------------------------------------------
 
-p!$Id: init_dim_obs_pdaf.F90 1441 2013-10-04 10:33:42Z lnerger $
+!$Id: init_dim_obs_pdaf.F90 1441 2013-10-04 10:33:42Z lnerger $
 !BOP
 !
 ! !ROUTINE: init_dim_obs_pdaf --- Compute number of observations
@@ -33,7 +33,7 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
   ! !DESCRIPTION:
   ! User-supplied routine for PDAF.
-p  ! Used in the filters: SEIK/EnKF/ETKF/ESTKF
+  ! Used in the filters: SEIK/EnKF/ETKF/ESTKF
   !
   ! The routine is called at the beginning of each
   ! analysis step.  It has to initialize the size of
@@ -65,7 +65,7 @@ p  ! Used in the filters: SEIK/EnKF/ETKF/ESTKF
        obs_pdaf2nc, &
        local_dims_obs, &
        local_disp_obs, &
-pp       ! dim_obs_p, &
+       ! dim_obs_p, &
        obs_id_p, &
        obscov, obscov_inv, filtertype, &
        tws_temp_mean_d, &
