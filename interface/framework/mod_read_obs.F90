@@ -788,6 +788,7 @@ contains
 
   end subroutine read_temp_mean_model
 
+#ifdef CLMFIVE
   subroutine domain_def_clm_tws(lon_clmobs, lat_clmobs, dim_obs, &
     longxy, latixy, longxy_obs, latixy_obs)
 
@@ -969,6 +970,7 @@ contains
     end if
 
   end subroutine domain_def_clm_tws
+#endif
 
 
   !> @author Wolfgang Kurtz, Guowei He, Mukund Pondkule
