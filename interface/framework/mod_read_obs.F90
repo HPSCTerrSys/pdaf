@@ -649,11 +649,15 @@ contains
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname
 
+#ifdef CLMSA
     if (clmupdate_tws.eq.1) then
     varname = "da_interval_variable"
   else
+#endif
     varname = "da_interval         "
+#ifdef CLMSA
   end if
+#endif
 
 #ifdef CLMSA
   if (clmupdate_tws.eq.1) then
