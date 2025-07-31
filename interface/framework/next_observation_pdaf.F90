@@ -70,7 +70,10 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   use mod_read_obs, ONLY: check_n_observationfile_set_zero
   use clm_time_manager, only: get_nstep
   use enkf_clm_mod, only: clmupdate_tws
-  use clm_varcon, only: set_averaging_to_zero, ispval
+#ifdef CLMFIVE
+  use clm_varcon, only: set_averaging_to_zero
+#endif
+  use clm_varcon, only: ispval
   IMPLICIT NONE
 
 ! !ARGUMENTS:
@@ -194,6 +197,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   end if
   
 #ifdef CLMSA
+#ifdef CLMFIVE
   if(clmupdate_tws.eq.1) then
   
   nstep = get_nstep()
@@ -230,7 +234,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
   end if
 #endif
-
+#endif
 
 !  IF (stepnow + nsteps <= total_steps) THEN
 !   if (2<1) then
