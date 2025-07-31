@@ -666,7 +666,6 @@ module enkf_clm_mod
   subroutine set_clm_statevec(tstartcycle, mype)
     use clm_instMod, only : soilstate_inst, waterstate_inst
     use clm_varpar   , only : nlevsoi
-    use shr_kind_mod, only: r8 => shr_kind_r8
     ! use clm_varcon, only: nameg, namec
     ! use GetGlobalValuesMod, only: GetGlobalWrite
     use ColumnType , only : col
