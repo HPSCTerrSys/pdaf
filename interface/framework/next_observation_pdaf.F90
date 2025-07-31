@@ -69,7 +69,6 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   use mod_read_obs, ONLY: check_n_observationfile_da_interval
   use mod_read_obs, ONLY: check_n_observationfile_set_zero
   use clm_time_manager, only: get_nstep
-  use enkf_clm_mod, only: da_interval
   use enkf_clm_mod, only: clmupdate_tws
   use clm_varcon, only: set_averaging_to_zero, ispval
   IMPLICIT NONE
