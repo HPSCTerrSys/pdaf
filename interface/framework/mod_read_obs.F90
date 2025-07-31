@@ -643,7 +643,7 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = *) :: varname
+    character (len = 20) :: varname
     real(r8) :: dtime ! land model time step (sec)
 
     !character (len = *), parameter :: dim_name = "dim_obs"
@@ -652,7 +652,7 @@ contains
     if (clmupdate_tws.eq.1) then
     varname = "da_interval_variable"
   else
-    varname = "da_interval"
+    varname = "da_interval         "
   end if
 
 #ifdef CLMSA
@@ -662,9 +662,9 @@ contains
     call check(nf90_open(fn, nf90_nowrite, ncid))
     !call check(nf90_inq_dimid(ncid, dim_name, dimid))
     !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
-    status = nf90_inq_varid(ncid, varname, varid)
+    status = nf90_inq_varid(ncid, trim(varname), varid)
     if (status == nf90_noerr) then
-      call check(nf90_inq_varid(ncid, varname, varid))
+      call check(nf90_inq_varid(ncid, trim(varname), varid))
       call check( nf90_get_var(ncid, varid, aa) )     
       call check(nf90_close(ncid))
       ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, da_interval is set up as hours
@@ -681,7 +681,7 @@ contains
     !call check(nf90_inq_dimid(ncid, dim_name, dimid))
     !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
 
-    call check( nf90_inq_varid(ncid, varname, varid))
+    call check( nf90_inq_varid(ncid, trim(varname), varid))
     call check( nf90_get_var(ncid, varid, aa) )
     call check(nf90_close(ncid))
 
