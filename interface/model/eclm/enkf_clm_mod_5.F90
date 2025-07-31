@@ -4379,7 +4379,6 @@ module enkf_clm_mod
   subroutine read_temp_mean_model(temp_mean_filename)
     
     use netcdf
-    use mod_read_obs, only: check
     implicit none
     integer :: ncid, dim_lon, dim_lat, lon_varid, lat_varid, tws_varid
     character (len = *), parameter :: dim_lon_name = "lsmlon"
@@ -4394,11 +4393,11 @@ module enkf_clm_mod
 
     !print *, "Read temporal mean of CLM OL run"
 
-    call check(nf90_open(temp_mean_filename, nf90_nowrite, ncid))
-    call check(nf90_inq_dimid(ncid, dim_lon_name, dimid_lon))
-    call check(nf90_inq_dimid(ncid, dim_lat_name, dimid_lat))
-    call check(nf90_inquire_dimension(ncid, dimid_lon, recorddimname, dim_lon))
-    call check(nf90_inquire_dimension(ncid, dimid_lat, recorddimname, dim_lat))
+    call check_nc(nf90_open(temp_mean_filename, nf90_nowrite, ncid))
+    call check_nc(nf90_inq_dimid(ncid, dim_lon_name, dimid_lon))
+    call check_nc(nf90_inq_dimid(ncid, dim_lat_name, dimid_lat))
+    call check_nc(nf90_inquire_dimension(ncid, dimid_lon, recorddimname, dim_lon))
+    call check_nc(nf90_inquire_dimension(ncid, dimid_lat, recorddimname, dim_lat))
     
     if(allocated(lon_temp_mean))deallocate(lon_temp_mean)
     if(allocated(lat_temp_mean))deallocate(lat_temp_mean)
@@ -4408,29 +4407,29 @@ module enkf_clm_mod
     allocate(lon_temp_mean(dim_lon,dim_lat))
     allocate(lat_temp_mean(dim_lon,dim_lat))
 
-    call check( nf90_inq_varid(ncid, lon_name, lon_varid))
-    call check(nf90_get_var(ncid, lon_varid, lon_temp_mean))
+    call check_nc( nf90_inq_varid(ncid, lon_name, lon_varid))
+    call check_nc(nf90_get_var(ncid, lon_varid, lon_temp_mean))
 
-    call check( nf90_inq_varid(ncid, lat_name, lat_varid))
-    call check(nf90_get_var(ncid, lat_varid, lat_temp_mean))
+    call check_nc( nf90_inq_varid(ncid, lat_name, lat_varid))
+    call check_nc(nf90_get_var(ncid, lat_varid, lat_temp_mean))
 
-    call check( nf90_inq_varid(ncid, tws_name, tws_varid))
-    call check(nf90_get_var(ncid, tws_varid, tws_temp_mean))
+    call check_nc( nf90_inq_varid(ncid, tws_name, tws_varid))
+    call check_nc(nf90_get_var(ncid, tws_varid, tws_temp_mean))
 
-    call check( nf90_close(ncid) )
+    call check_nc( nf90_close(ncid) )
 
   end subroutine
 
-  ! subroutine check(status)
+  subroutine check_nc(status)
   
-  !   use netcdf
-  !   integer, intent ( in) :: status
+    use netcdf
+    integer, intent ( in) :: status
 
-  !   if(status /= nf90_noerr) then
-  !      print *, trim(nf90_strerror(status))
-  !      stop "Stopped"
-  !   end if
-  ! end subroutine check
+    if(status /= nf90_noerr) then
+       print *, trim(nf90_strerror(status))
+       stop "Stopped"
+    end if
+  end subroutine check_nc
 
 end module enkf_clm_mod
 
