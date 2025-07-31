@@ -3023,7 +3023,7 @@ module enkf_clm_mod
 
       end do
 
-    elseif (state_setup.eq.5) then   --> I use this as default
+    elseif (state_setup.eq.5) then   !--> I use this as default
 
       
       ! soil water
