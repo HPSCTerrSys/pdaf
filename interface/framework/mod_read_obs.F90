@@ -643,15 +643,20 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = *), parameter :: varname = "da_interval"
+    character (len = *) :: varname
     real(r8) :: dtime ! land model time step (sec)
 
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname
 
+    if (clmupdate_tws.eq.1) then
+    varname = "da_interval_variable"
+  else
+    varname = "da_interval"
+  end if
+
 #ifdef CLMSA
   if (clmupdate_tws.eq.1) then
-    varname = "da_interval_variable"
     dtime = get_step_size()
 
     call check(nf90_open(fn, nf90_nowrite, ncid))
