@@ -1193,10 +1193,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
 
    dim_obs = count(vec_useObs_global)
-   dim_obs_f = dim_obs
 
    IF (ALLOCATED(obs)) DEALLOCATE(obs)
-   ALLOCATE(obs(dim_obs_f))
+   ALLOCATE(obs(dim_obs))
 
    obs = pack(clm_obs,vec_useObs_global)
    obs_p = pack(clm_obs,vec_useObs)
