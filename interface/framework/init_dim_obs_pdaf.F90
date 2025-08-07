@@ -1094,6 +1094,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 #endif
   end if
 
+#ifndef PARFLOW_STAND_ALONE
+#ifndef OBS_ONLY_PARFLOW
 #ifdef CLMFIVE
   if(clmupdate_tws.eq.1) then
 
@@ -1254,11 +1256,15 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
    end if
   end if
 #endif
+#endif
+#endif
 
   !  clean up the temp data from nc file
   ! ------------------------------------
   call clean_obs_nc()
 
+#ifndef PARFLOW_STAND_ALONE
+#ifndef OBS_ONLY_PARFLOW
 #ifdef CLMFIVE
    ! Read temporal mean TWS from model for observation operator, only for GRACE data assimilation
    if (clmupdate_tws.eq.1) then
@@ -1298,6 +1304,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
          deallocate(lat_temp_mean)
       end if
    end if
+#endif
+#endif
 #endif
 
 END SUBROUTINE init_dim_obs_pdaf
