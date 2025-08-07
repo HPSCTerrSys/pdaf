@@ -3793,7 +3793,7 @@ module enkf_clm_mod
 
       end do
 
-    case(5)   --> I use this as default
+    case(5)   !--> I use this as default
 
       do count = 1, num_layer(1)
 
