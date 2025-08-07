@@ -537,7 +537,11 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 #endif
 #endif
 
+#ifndef PARFLOW_STAND_ALONE
+#ifndef OBS_ONLY_PARFLOW
   if(clmupdate_tws.ne.1) then
+#endif
+#endif
   if (screen > 2) then
       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dim_obs_p=", dim_obs_p
   end if
@@ -1092,7 +1096,11 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
     CLOSE(71)
   END IF
 #endif
+#ifndef PARFLOW_STAND_ALONE
+#ifndef OBS_ONLY_PARFLOW
   end if
+#endif
+#endif
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
