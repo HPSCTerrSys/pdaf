@@ -86,12 +86,12 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
    use clm_varpar   , only : nlevsoi
    use decompMod , only : get_proc_bounds
    use clm_varcon, only: spval
-   use clm_varctl    , only: inst_suffix
    use shr_kind_mod, only: r8 => shr_kind_r8
 #ifdef CLMFIVE
    USE clm_instMod, &
      ONLY : soilstate_inst
    use clm_instMod, only : waterstate_inst
+   use clm_varctl    , only: inst_suffix
 #endif
 #endif
   IMPLICIT NONE
