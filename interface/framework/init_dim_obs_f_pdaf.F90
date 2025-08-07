@@ -103,7 +103,11 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
        clmobs_lon, clmobs_lat, clmobs_layer, clmobs_dr, clm_obserr
   USE mod_read_obs, &
     only: clm_obscov, vec_useObs, vec_useObs_global, vec_numPoints_global, &
-    lon_temp_mean, lat_temp_mean, tws_temp_mean, read_temp_mean_model, domain_def_clm_tws
+    lon_temp_mean, lat_temp_mean, tws_temp_mean
+#ifdef CLMFIVE
+  USE mod_read_obs, &
+    only: read_temp_mean_model, domain_def_clm_tws
+#endif
   use mod_read_obs, only: dampfac_state_time_dependent_in
   use mod_read_obs, only: dampfac_param_time_dependent_in
   use mod_tsmp, &
@@ -1097,6 +1101,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 #endif
   end if
 
+#ifdef CLMFIVE
   if(clmupdate_tws.eq.1) then
 
   is_use_dr = .false.
@@ -1255,12 +1260,14 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
       IF (ALLOCATED(work)) DEALLOCATE(work)
 
    end if
-   end if
+  end if
+#endif
 
   !  clean up the temp data from nc file
   ! ------------------------------------
   call clean_obs_nc()
 
+#ifdef CLMFIVE
    ! Read temporal mean TWS from model for observation operator, only for GRACE data assimilation
    if (clmupdate_tws.eq.1) then
       ! do it only in the first call of this routine
@@ -1299,6 +1306,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
          deallocate(lat_temp_mean)
       end if
    end if
+#endif
 
 END SUBROUTINE init_dim_obs_f_pdaf
 
