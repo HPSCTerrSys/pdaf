@@ -60,7 +60,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
    USE mod_assimilation, &
      ONLY: obs_id_p, &
       tws_temp_mean_d 
-   USE mod_read_obs, ONLY: crns_flag, vec_numPoints_global !clm_obs
+   USE mod_read_obs, ONLY: vec_numPoints_global !clm_obs
    use mod_tsmp, &
        only: obs_interp_switch, &
        soilay, &
