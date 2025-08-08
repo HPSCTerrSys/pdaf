@@ -59,10 +59,16 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   USE mod_assimilation, &
        ONLY: obs_index_p, local_dims_obs, obs_id_p, obs_nc2pdaf_deprecated, &
        var_id_obs, dim_obs_p
+  USE mod_assimilation, ONLY: obs_pdaf2nc
+  USE mod_assimilation, ONLY: obs_nc2pdaf
+  USE mod_assimilation, ONLY: local_disp_obs
+  USE mod_assimilation, ONLY: tws_temp_mean_d
   USE mod_assimilation, ONLY: tws_temp_mean_d 
   USE mod_parallel_pdaf, &
        ONLY: mype_filter, npes_filter, comm_filter, MPI_DOUBLE, &
        MPI_DOUBLE_PRECISION, MPI_INT, MPI_SUM
+  USE mod_parallel_pdaf, ONLY: mype_world
+  USE mod_parallel_pdaf, ONLY: abort_parallel
   !USE mod_read_obs, & 
   !     ONLY: var_id_obs_nc 
 #ifdef CLMSA
