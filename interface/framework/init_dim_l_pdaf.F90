@@ -55,6 +55,7 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
        ONLY: init_clm_l_size
   USE enkf_clm_mod, &
        ONLY: hactiveg_levels, num_layer, state_setup, num_hactiveg_patch, hactiveg_patch, clm_varsize_tws
+  USE enkf_clm_mod, ONLY: clmupdate_tws
 #endif
   IMPLICIT NONE
 
