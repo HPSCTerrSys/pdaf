@@ -49,9 +49,12 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
     ! !USES:
     USE mod_assimilation, &
         ONLY: rms_obs, obs_pdaf2nc
+    USE mod_parallel_pdaf, ONLY: mype_world
+    USE mod_parallel_pdaf, ONLY: abort_parallel
     USE mod_assimilation, ONLY: obscov
     use mod_read_obs, only: multierr,clm_obserr, pressure_obserr
     use mod_read_obs, only: vec_useObs_global
+    USE mod_tsmp, ONLY: point_obs
     use netcdf
     use enkf_clm_mod, only: clmupdate_tws
 
