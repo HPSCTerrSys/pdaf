@@ -502,6 +502,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
         do g = begg, endg
             if(is_use_dr) then
                 deltax = abs(lon(g)-clmobs_lon(i))
+                if (deltax > 180.0) then
+                  deltax = 360.0 - deltax
+                end if
                 deltay = abs(lat(g)-clmobs_lat(i))
             end if
             ! Assigning observations to grid cells according to
@@ -659,6 +662,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
               if(is_use_dr) then
                 deltax = abs(lon(g)-clmobs_lon(i))
+                if (deltax > 180.0) then
+                  deltax = 360.0 - deltax
+                end if
                 deltay = abs(lat(g)-clmobs_lat(i))
               end if
 
@@ -968,6 +974,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
                if(is_use_dr) then
                  deltax = abs(lon(g)-clmobs_lon(i))
+                 if (deltax > 180.0) then
+                   deltax = 360.0 - deltax
+                 end if
                  deltay = abs(lat(g)-clmobs_lat(i))
                end if
 
