@@ -73,7 +73,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 #endif
   use enkf_clm_mod, only: hactiveg_levels
   USE enkf_clm_mod, ONLY: clmupdate_tws
-  use GridcellType, only: grc
+  ! use GridcellType, only: grc
 
   USE, INTRINSIC :: iso_c_binding, ONLY: C_F_POINTER
 
