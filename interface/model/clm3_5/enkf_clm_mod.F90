@@ -918,6 +918,7 @@ module enkf_clm_mod
 
     implicit none
 
+    INTEGER, INTENT(in) :: domain_p       ! Current local analysis domain
     integer, intent(out) :: dim_l
     integer              :: nshift
 
