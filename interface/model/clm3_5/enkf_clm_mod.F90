@@ -967,7 +967,6 @@ module enkf_clm_mod
 
     INTEGER :: i
     INTEGER :: n_domain
-    INTEGER :: nshift_p
 
     ! beg and end gridcell for atm
     call get_proc_bounds_atm(begg, endg)
