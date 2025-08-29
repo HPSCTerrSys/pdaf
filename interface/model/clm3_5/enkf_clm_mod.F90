@@ -951,7 +951,7 @@ module enkf_clm_mod
   subroutine g2l_state_clm(domain_p, dim_p, state_p, dim_l, state_l)
 
     use decompMod, only : get_proc_bounds_atm
-    use ColumnType , only : col
+    ! use ColumnType , only : col
 
     implicit none
 
@@ -990,7 +990,7 @@ module enkf_clm_mod
   subroutine l2g_state_clm(domain_p, dim_l, state_l, dim_p, state_p)
 
     use decompMod, only : get_proc_bounds_atm
-    use ColumnType , only : col
+    ! use ColumnType , only : col
 
     implicit none
 
