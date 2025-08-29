@@ -125,7 +125,9 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   ! *********************************************
 
 
+#ifdef CLMSA
   if (clmupdate_tws.ne.1) then
+#endif
 
   ! Check local observation dimension
   if (.not. local_dims_obs(mype_filter+1) == dim_obs_p) then
@@ -203,9 +205,9 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   ! Clean up
   DEALLOCATE(m_state_tmp,obs_nc2pdaf_deprecated_p_tmp,obs_nc2pdaf_deprecated_tmp)
 
+#ifdef CLMSA
   else
 
-#ifdef CLMSA
     m_state_sum(:) = 0
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
@@ -437,7 +439,7 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
       print *, "m_state_global = ", m_state_sum_global
     end if
 
-#endif
   end if
+#endif
 
 END SUBROUTINE obs_op_f_pdaf
