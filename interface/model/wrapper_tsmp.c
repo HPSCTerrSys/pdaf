@@ -205,9 +205,10 @@ void update_tsmp(){
     }
     if ((clmupdate_tws != 0)){
       
+#if defined CLMFIVE
       print_inc_clm();
       // print_state_clm();
-
+#endif
     }
   }
 #endif
