@@ -23,7 +23,11 @@
 !-------------------------------------------------------------------------------------------
 
 module mod_clm_statistics
-  use iso_c_binding
+  ! use iso_c_binding
+
+  implicit none
+
+  public
 
 contains
   subroutine write_clm_statistics(ts,ttot) bind(C,name="write_clm_statistics")

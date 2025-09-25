@@ -24,13 +24,15 @@
 
 module enkf_clm_mod
 
-  use iso_c_binding
+  use iso_c_binding, only: c_int, c_double, c_char
 
 ! !USES:
   use shr_kind_mod    , only : r8 => shr_kind_r8, SHR_KIND_CL
 
 ! !ARGUMENTS:
     implicit none
+
+    public
 
 #if (defined CLMSA)
   integer :: COMM_model_clm
@@ -354,10 +356,13 @@ module enkf_clm_mod
     real(r8), pointer :: psand(:,:)
     real(r8), pointer :: pclay(:,:)
     real(r8), pointer :: porgm(:,:)
-    integer :: i,j,jj,g,c,cc=0,offset=0
+    integer :: i,j,jj,g,c,cc,offset
     integer :: n_c
     character (len = 34) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 34) :: fn2    !TSMP-PDAF: function name for swc output
+
+    cc = 0
+    offset = 0
 
     swc   => waterstate_inst%h2osoi_vol_col
     psand => soilstate_inst%cellsand_col
@@ -502,7 +507,7 @@ module enkf_clm_mod
     real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
     real(r8)  :: swc_update        ! updated SWC in loop
 
-    integer :: i,j,jj,g,cc=0,offset=0
+    integer :: i,j,jj,g,cc,offset
     character (len = 31) :: fn    !TSMP-PDAF: function name for state vector outpu
     character (len = 31) :: fn2    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn3    !TSMP-PDAF: function name for state vector outpu
@@ -510,7 +515,11 @@ module enkf_clm_mod
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
 
-    logical :: swc_zero_before_update = .false.
+    logical :: swc_zero_before_update
+
+    cc = 0
+    offset = 0
+    swc_zero_before_update = .false.
 
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
@@ -776,15 +785,15 @@ module enkf_clm_mod
     use CNSharedParamsMod, only : CNParamsShareInst
     implicit none
 
-    real(r8)           :: om_tkm         = 0.25_r8
+    real(r8), parameter           :: om_tkm         = 0.25_r8
     ! thermal conductivity of organic soil (Farouki, 1986) [W/m/K]
-    real(r8)           :: om_watsat_lake = 0.9_r8
+    real(r8), parameter           :: om_watsat_lake = 0.9_r8
     ! porosity of organic soil
-    real(r8)           :: om_hksat_lake  = 0.1_r8
+    real(r8), parameter           :: om_hksat_lake  = 0.1_r8
     ! saturated hydraulic conductivity of organic soil [mm/s]
-    real(r8)           :: om_sucsat_lake = 10.3_r8
+    real(r8), parameter           :: om_sucsat_lake = 10.3_r8
     ! saturated suction for organic matter (Letts, 2000)
-    real(r8)           :: om_b_lake      = 2.7_r8
+    real(r8), parameter           :: om_b_lake      = 2.7_r8
     ! Clapp Hornberger paramater for oragnic soil (Letts, 2000) (lake)
     real(r8)           :: om_watsat
     ! porosity of organic soil
@@ -792,16 +801,16 @@ module enkf_clm_mod
     ! saturated hydraulic conductivity of organic soil [mm/s]
     real(r8)           :: om_sucsat
     ! saturated suction for organic matter (mm)(Letts, 2000)
-    real(r8)           :: om_csol        = 2.5_r8
+    real(r8), parameter           :: om_csol        = 2.5_r8
     ! heat capacity of peat soil *10^6 (J/K m3) (Farouki, 1986)
-    real(r8)           :: om_tkd         = 0.05_r8
+    real(r8), parameter           :: om_tkd         = 0.05_r8
     ! thermal conductivity of dry organic soil (Farouki, 1981)
     real(r8)           :: om_b
     ! Clapp Hornberger paramater for oragnic soil (Letts, 2000)
-    real(r8)           :: zsapric        = 0.5_r8
+    real(r8), parameter           :: zsapric        = 0.5_r8
     ! depth (m) that organic matter takes on characteristics of sapric peat
-    real(r8)           :: pcalpha        = 0.5_r8       ! percolation threshold
-    real(r8)           :: pcbeta         = 0.139_r8     ! percolation exponent
+    real(r8), parameter           :: pcalpha        = 0.5_r8       ! percolation threshold
+    real(r8), parameter           :: pcbeta         = 0.139_r8     ! percolation exponent
     real(r8)           :: perc_frac    ! "percolating" fraction of organic soil
     real(r8)           :: perc_norm    ! normalize to 1 when 100% organic soil
     real(r8)           :: uncon_hksat  ! series conductivity of mineral/organic soil

@@ -25,7 +25,7 @@
 #if defined CLMSA
 subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
-    use iso_c_binding
+    use iso_c_binding, only : c_int
     use shr_kind_mod , only : r8 => shr_kind_r8
     use subgridavemod, only : p2g, c2g
     use domainMod    , only : ldomain
@@ -36,7 +36,17 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     use spmdmod      , only : masterproc
     use clm_time_manager        , only : get_nstep
     use clm_instMod, only : soilstate_inst, waterstate_inst
-    use netcdf
+    use netcdf, only : nf90_create
+    use netcdf, only : NF90_CLOBBER
+    use netcdf, only : nf90_def_dim
+    use netcdf, only : nf90_def_var
+    use netcdf, only : NF90_DOUBLE
+    use netcdf, only : nf90_enddef
+    use netcdf, only : nf90_open
+    use netcdf, only : NF90_WRITE
+    use netcdf, only : nf90_inq_varid
+    use netcdf, only : nf90_put_var
+    use netcdf, only : nf90_close
     use enkf_clm_mod, only : clmupdate_swc,clmupdate_texture,clmprint_swc
 
     implicit none
