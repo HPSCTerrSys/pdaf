@@ -108,17 +108,17 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
   !   covar(i, i) = variance_obs
   !ENDDO
 
-  if(multierr.ne.1) then
+  if(multierr/=1) then
     DO i = 1, dim_obs
        covar(i, i) = variance_obs
     ENDDO
   endif
 
- 
-  if(multierr.eq.1) then
+
+  if(multierr==1) then
 
     ! Check that point observations are used
-    if (.not. point_obs .eq. 1) then
+    if (.not. point_obs == 1) then
       print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(1) `point_obs.eq.1` needed for using obs_pdaf2nc."
       call abort_parallel()
     end if

@@ -43,7 +43,7 @@ SUBROUTINE init_pdaf()
 !
 ! !TSMP-PDAF-DESCRIPTION:
 ! This routine initializes a pointer to the state vector that is set
-! by component-model-specific routines in `initialize_tsmp`. 
+! by component-model-specific routines in `initialize_tsmp`.
 !
 ! This routine sets the local and global state vector dimension.
 !
@@ -57,7 +57,7 @@ SUBROUTINE init_pdaf()
 ! !USES:
 !   USE mod_model, &             ! Model variables
 !        ONLY: nx, ny, nx_p
-  
+
   USE mod_parallel_pdaf, &     ! Parallelization variables for
     ! assimilation
         ONLY: n_modeltasks, task_id, COMM_filter, COMM_couple, filterpe, &
@@ -79,7 +79,7 @@ SUBROUTINE init_pdaf()
         idx_map_subvec2state, idx_map_subvec2state_fortran, model
 #if defined CLMSA
   ! kuw: get access to clm variables
-#ifndef CLMFIVE    
+#ifndef CLMFIVE
   USE shr_kind_mod , only : r8 => shr_kind_r8
   USE clm_atmlnd   , only : clm_l2a, atm_l2a, clm_mapl2a
   USE clmtype      , only : clm3, nameg
@@ -293,7 +293,7 @@ SUBROUTINE init_pdaf()
   ! hcp
   toffset = 0      ! offset of time steps shifting all analysis/assimilation steps
   ! hcp end
-  
+
 ! ***********************************
 ! *** Some optional functionality ***
 ! ***********************************

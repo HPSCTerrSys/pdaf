@@ -35,7 +35,7 @@ SUBROUTINE mpi_init(i)
 ! This routine simulates MPI functionality for
 ! a program running on a single processor. Its
 ! purpose is to avoid the need of a real MPI
-! library when running serial jobs. 
+! library when running serial jobs.
 !
 ! !REVISION HISTORY:
 ! 2004-10 - Lars Nerger - Initial code
@@ -45,7 +45,7 @@ SUBROUTINE mpi_init(i)
   IMPLICIT NONE
 
   INTEGER :: i
-  
+
   i = 0
 
 END SUBROUTINE mpi_init
@@ -56,7 +56,7 @@ SUBROUTINE mpi_finalize(i)
   IMPLICIT NONE
 
   INTEGER :: i
-  
+
   i=0
 
 END SUBROUTINE mpi_finalize

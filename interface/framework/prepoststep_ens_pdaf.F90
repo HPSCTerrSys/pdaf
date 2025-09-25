@@ -119,7 +119,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! **********************
     ! *** INITIALIZATION ***
     ! **********************
-    if (2 .eq. 1) then
+    if (2 == 1) then
     IF (mype_filter == 0) THEN
         IF (firsttime) THEN
             WRITE (*, '(8x, a)') 'Analize initial state ensemble'
@@ -206,7 +206,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
         !            0, comm_filter, MPIerr)
     call MPI_Gatherv(variance_p, dim_p, MPI_DOUBLE_PRECISION, variance, dim_state_p_count, &
         dim_state_p_stride, MPI_DOUBLE_PRECISION, 0, comm_filter, MPIerr);
-        if (MPIerr .ne. MPI_SUCCESS) then
+        if (MPIerr /= MPI_SUCCESS) then
             print *,"mpi gather failed"
             call MPI_Abort(MPI_COMM_WORLD, MPIerr)
         end if

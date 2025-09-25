@@ -35,14 +35,14 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
 ! User-supplied routine for PDAF.
 ! Used in the filters: SEIK/EnKF/LSEIK/ETKF/LETKF/ESTKF/LESTKF
 !
-! This subroutine is called during the forecast 
+! This subroutine is called during the forecast
 ! phase from PDAF\_put\_state\_X or PDAF\_assimilate\_X
-! after the propagation of each ensemble member. 
+! after the propagation of each ensemble member.
 ! The supplied state vector has to be initialized
-! from the model fields (typically via a module). 
-! With parallelization, MPI communication might be 
-! required to initialize state vectors for all 
-! subdomains on the model PEs. 
+! from the model fields (typically via a module).
+! With parallelization, MPI communication might be
+! required to initialize state vectors for all
+! subdomains on the model PEs.
 !
 ! The routine is executed by each process that is
 ! participating in the model integrations.
@@ -70,7 +70,7 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
     use GridcellType, only: gridcell_type
 #else
     USE clmtype      , only : clm3
-#endif    
+#endif
     USE clm_varpar   , only : nlevsoi
     use shr_kind_mod, only: r8 => shr_kind_r8
     use enkf_clm_mod, only: clm_statevec
@@ -78,7 +78,7 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
 #endif
 
   IMPLICIT NONE
-  
+
 ! !ARGUMENTS:
   INTEGER, INTENT(in) :: dim_p           ! PE-local state dimension
   REAL, INTENT(inout) :: state_p(dim_p)  ! local state vector
@@ -119,5 +119,5 @@ SUBROUTINE collect_state_pdaf(dim_p, state_p)
  END DO
 #endif
 
-  
+
 END SUBROUTINE collect_state_pdaf

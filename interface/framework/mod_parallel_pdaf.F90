@@ -36,7 +36,7 @@ MODULE mod_parallel_pdaf
 ! variables that are only used, if data assimialtion with PDAF
 ! is performed.
 ! In addition methods to initialize and finalize MPI are provided.
-! The initialization routine is only for the model itself, the 
+! The initialization routine is only for the model itself, the
 ! more complex initialization of communicators for xecution with
 ! PDAF is peformed in init\_parallel\_pdaf.
 !
@@ -50,13 +50,13 @@ MODULE mod_parallel_pdaf
   USE iso_c_binding, ONLY: c_int, c_double
 
   IMPLICIT NONE
-  SAVE 
+  SAVE
 
 ! !PUBLIC DATA MEMBERS:
   ! Additional variables for use with PDAF
   INTEGER(c_int), BIND(c) :: n_modeltasks         ! Number of parallel model tasks
   INTEGER :: n_filterpes  = 1         ! Number of PEs for filter analysis
-  INTEGER :: COMM_filter ! MPI communicator for filter PEs 
+  INTEGER :: COMM_filter ! MPI communicator for filter PEs
   INTEGER(c_int), BIND(c) :: mype_filter ! PE rank in COMM_filter
   INTEGER(c_int), BIND(c) :: npes_filter ! # PEs in COMM_filter
   INTEGER, BIND(c) :: COMM_couple ! MPI communicator for coupling filter and model
@@ -85,7 +85,7 @@ MODULE mod_parallel_pdaf
       CHARACTER, DIMENSION(*), INTENT(in) :: parname
     END SUBROUTINE read_enkfpar
   END INTERFACE
-  
+
 CONTAINS
 !-------------------------------------------------------------------------------
 !BOP
@@ -100,7 +100,7 @@ CONTAINS
 !EOP
 
     IMPLICIT NONE
-    
+
     CALL  MPI_Abort(MPI_COMM_WORLD, 1, MPIerr)
 
   END SUBROUTINE abort_parallel
