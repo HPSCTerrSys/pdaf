@@ -488,7 +488,8 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
             end if
             ! Assigning observations to grid cells according to
             ! snapping distance or index arrays
-            if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(cnt)) .and. (latixy_obs(i) == latixy(cnt)))) then
+            if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+              ((.not. is_use_dr).and.(longxy_obs(i) == longxy(cnt)) .and. (latixy_obs(i) == latixy(cnt)))) then
                 dim_obs_p = dim_obs_p + 1
                 obs_id_p(cnt) = i
 
@@ -644,7 +645,8 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                 deltay = abs(lat(g)-clmobs_lat(i))
               end if
 
-              if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+              if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+                ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
                 obs_pdaf2nc(local_disp_obs(mype_filter+1)+cnt) = i
                 obs_nc2pdaf(i) = local_disp_obs(mype_filter+1)+cnt
                 cnt = cnt + 1
@@ -960,7 +962,8 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                  deltay = abs(lat(g)-clmobs_lat(i))
                end if
 
-               if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+               if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+                 ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
 
                  ! Different settings of observation-location-index in
                  ! state vector depending on the method of state

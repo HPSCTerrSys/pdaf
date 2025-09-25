@@ -79,12 +79,13 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
   !kuw: local variables
   integer :: counter
-  integer :: no_obs=0
+  integer :: no_obs
   character (len = 110) :: fn
   !kuw end
 
   REAL :: da_interval_new
 
+  no_obs = 0
   time = 0.0    ! Not used in fully-parallel implementation variant
   doexit = 0
 

@@ -53,7 +53,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
     USE mod_parallel_pdaf, ONLY: abort_parallel
     use mod_read_obs, only: multierr,clm_obserr, pressure_obserr
     USE mod_tsmp, ONLY: point_obs
-    use netcdf
+    ! use netcdf
 
     IMPLICIT NONE
 

@@ -66,7 +66,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
        crns_flag
 !      tcycle
 
-   USE, INTRINSIC :: iso_c_binding
+   USE, INTRINSIC :: iso_c_binding, ONLY: C_F_POINTER
 
 #if defined CLMSA
    USE enkf_clm_mod, &
@@ -95,12 +95,12 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! *** local variables ***
 
 ! hcp test with hardcoding variable declaration
-real(8), dimension(:), allocatable :: soide !soil depth
+real, dimension(:), allocatable :: soide !soil depth
 !real(8), dimension(0:12), parameter :: &
 ! soide=(/0.d0,  0.02d0,  0.05d0,  0.1d0,  0.17d0, 0.3d0,  0.5d0, &
 !                0.8d0,   1.3d0,   2.d0,  3.d0, 5.d0,  12.d0/) !soil depth
 
-real(8) :: tot, avesm, avesm_temp, Dp
+real :: tot, avesm, avesm_temp, Dp
 integer :: nsc
 ! end of hcp
 
@@ -111,9 +111,9 @@ REAL :: weights_r1(920), weights_r2(920), weights_r3(920)
 Real :: weights_layer(8)
 Integer :: nweights(8)
 Real  :: d86_r1, d86_r2, d86_r3
-REAL :: r1 = 1.0
-REAL :: r2 = 20.0
-REAL :: r3 = 85.0
+REAL, PARAMETER :: r1 = 1.0
+REAL, PARAMETER :: r2 = 20.0
+REAL, PARAMETER :: r3 = 85.0
 REAL :: bd, y
 REAL :: sum_r1, sum_r2, sum_r3, totw
 #endif

@@ -45,12 +45,14 @@ MODULE mod_parallel_pdaf
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mpi
+  USE mpi, ONLY: MPI_STATUS_SIZE, MPI_Abort, MPI_COMM_WORLD
 
   USE iso_c_binding, ONLY: c_int, c_double
 
   IMPLICIT NONE
   SAVE
+
+  PUBLIC
 
 ! !PUBLIC DATA MEMBERS:
   ! Additional variables for use with PDAF
@@ -80,9 +82,9 @@ MODULE mod_parallel_pdaf
 
   INTERFACE
     SUBROUTINE read_enkfpar(parname) BIND(C, name='read_enkfpar')
-      USE iso_c_binding
+      ! USE iso_c_binding
       IMPLICIT NONE
-      CHARACTER, DIMENSION(*), INTENT(in) :: parname
+      CHARACTER(LEN=*), INTENT(in) :: parname
     END SUBROUTINE read_enkfpar
   END INTERFACE
 

@@ -49,6 +49,8 @@ MODULE mod_assimilation
   SAVE
 !EOP
 
+  PUBLIC
+
 ! *** Model- and data specific variables ***
 
   INTEGER :: dim_state           ! Global model state dimension

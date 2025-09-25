@@ -23,9 +23,12 @@
 !-------------------------------------------------------------------------------------------
 
 module mod_read_obs
-  use iso_C_binding
+  use iso_C_binding, only: c_int, c_ptr, c_loc
 
   implicit none
+
+  public
+
   integer, allocatable :: idx_obs_nc(:)
   integer, allocatable :: x_idx_obs_nc(:)
   integer, allocatable :: y_idx_obs_nc(:)
@@ -83,7 +86,16 @@ contains
     use mod_tsmp, &
         only: point_obs, obs_interp_switch, is_dampfac_state_time_dependent, &
         is_dampfac_param_time_dependent, crns_flag
-    use netcdf
+    use netcdf, only: nf90_max_name
+    use netcdf, only: nf90_open
+    use netcdf, only: nf90_nowrite
+    use netcdf, only: nf90_inq_dimid
+    use netcdf, only: nf90_inquire_dimension
+    use netcdf, only: nf90_inq_varid
+    use netcdf, only: nf90_get_var
+    use netcdf, only: nf90_noerr
+    use netcdf, only: nf90_strerror
+    use netcdf, only: nf90_close
     implicit none
     integer :: ncid
     character (len = *), parameter :: dim_name = "dim_obs"
@@ -440,7 +452,14 @@ contains
   subroutine get_obsindex_currentobsfile(no_obs) bind(c,name='get_obsindex_currentobsfile')
     USE mod_tsmp, ONLY: tcycle
     USE mod_assimilation, only: obs_filename
-    use netcdf
+    use netcdf, only: nf90_max_name
+    use netcdf, only: nf90_open
+    use netcdf, only: nf90_nowrite
+    use netcdf, only: nf90_inq_dimid
+    use netcdf, only: nf90_inquire_dimension
+    use netcdf, only: nf90_inq_varid
+    use netcdf, only: nf90_get_var
+    use netcdf, only: nf90_close
 
     implicit none
     integer, intent(out) :: no_obs
@@ -635,7 +654,8 @@ contains
   !> an error message if necessary.
   subroutine check(status)
 
-    use netcdf
+    use netcdf, only: nf90_noerr
+    use netcdf, only: nf90_strerror
     integer, intent ( in) :: status
 
     if(status /= nf90_noerr) then

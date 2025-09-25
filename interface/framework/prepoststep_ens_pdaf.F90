@@ -195,7 +195,8 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     end do
 #ifdef PDAF_DEBUG
     ! Debug output: summed until index local state dimension array
-    if (mype_model == 0 ) WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, "init_pdaf: dim_state_p_stride in modified:", dim_state_p_stride
+    if (mype_model == 0 ) WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+      "init_pdaf: dim_state_p_stride in modified:", dim_state_p_stride
 #endif
 
     !!!!!!!!!!!!!!!!!!!!!!!! case below contains dummy CLM component  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

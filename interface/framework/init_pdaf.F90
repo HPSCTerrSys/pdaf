@@ -94,7 +94,7 @@ SUBROUTINE init_pdaf()
 #endif
   ! kuw end
 
-  use, intrinsic :: iso_c_binding
+  use, intrinsic :: iso_c_binding, only: C_F_POINTER
 
   IMPLICIT NONE
 
@@ -211,8 +211,10 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: global state dimension
-  WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, "init_pdaf: my local state vector dimension dim_state_p:", dim_state_p
-  WRITE(*, '(a,x,a,i5,x,a,2x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, "init_pdaf: my global state vector dimension dim_state:", dim_state
+  WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+    "init_pdaf: my local state vector dimension dim_state_p:", dim_state_p
+  WRITE(*, '(a,x,a,i5,x,a,2x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+    "init_pdaf: my global state vector dimension dim_state:", dim_state
 #endif
 
   call MPI_Barrier(MPI_COMM_WORLD, ierror)

@@ -81,7 +81,7 @@ MODULE parser
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mpi
+  USE mpi, ONLY: MPI_Comm_Rank, MPI_COMM_WORLD
   USE mod_parallel_pdaf, &
     ONLY: abort_parallel
   IMPLICIT NONE

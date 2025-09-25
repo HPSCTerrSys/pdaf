@@ -87,7 +87,14 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mpi
+  USE mpi, ONLY: MPI_Initialized
+  USE mpi, ONLY: MPI_Init
+  USE mpi, ONLY: MPI_Comm_size
+  USE mpi, ONLY: MPI_Comm_rank
+  USE mpi, ONLY: MPI_Comm_split
+  USE mpi, ONLY: MPI_Barrier
+  USE mpi, ONLY: MPI_COMM_WORLD
+
   USE mod_parallel_pdaf, &
        ONLY: mype_world, npes_world, mype_model, npes_model, &
        COMM_model, mype_filter, npes_filter, COMM_filter, filterpe, &
@@ -120,6 +127,8 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
 
 ! !CALLING SEQUENCE:
 ! Called by: main program
+! Calls: MPI_Initialized
+! Calls: MPI_Init
 ! Calls: MPI_Comm_size
 ! Calls: MPI_Comm_rank
 ! Calls: MPI_Comm_split
