@@ -37,5 +37,5 @@ contains
     write(*,*) "dummy func"
     get_statistic_filename = "test"
   end function get_statistic_filename
- 
+
 end module mod_clm_statistics

@@ -75,8 +75,8 @@ contains
     real(r8), pointer :: mm(:),var(:),sd(:)
     real(r8),pointer :: ptr(:)
     integer,dimension(3) :: dimids
-    integer ji,jj
-    integer realrank,realsize
+    integer :: ji,jj
+    integer :: realrank,realsize
 
     real(r8), pointer :: lon(:)
     real(r8), pointer :: lat(:)
@@ -107,9 +107,9 @@ contains
     variable_names(4) = "sh_sd"
 
     ! define netcdf output file
-    if(masterproc .and. (realrank.eq.0)) then
+    if(masterproc .and. (realrank==0)) then
       statistic_filename = get_statistic_filename()
-      if(ts.eq.1) then
+      if(ts==1) then
         ierr =  nf90_create(statistic_filename, NF90_CLOBBER, il_file_id)
         ierr =  nf90_def_dim(il_file_id, "lon", nlon, dimids(1))
         ierr =  nf90_def_dim(il_file_id, "lat", nlat, dimids(2))
@@ -159,7 +159,7 @@ contains
     sd = sqrt(sd/(realsize-1))
 
 
-    if((realrank.eq.0)) then
+    if((realrank==0)) then
       ptr => mm
       call gather_data_to_master(ptr,clmvar_global_g,clmlevel=nameg)
 
@@ -170,11 +170,11 @@ contains
           clmvar_out(ji,jj) = clmvar_global_g(g1)
         end do
         ierr = nf90_inq_varid(il_file_id, trim(variable_names(3)) , ncvarid(3))
-        ierr = nf90_put_var( il_file_id, ncvarid(3), clmvar_out(:,:), start = (/ 1, 1,ts /), count = (/ nlon, nlat, 1 /) )
+        ierr = nf90_put_var( il_file_id, ncvarid(3), clmvar_out(:,:), start = [ 1, 1,ts ], count = [ nlon, nlat, 1 ] )
       end if
     end if
 
-    if((realrank.eq.0)) then
+    if((realrank==0)) then
       ptr => sd
       call gather_data_to_master(ptr,clmvar_global_g,clmlevel=nameg)
 
@@ -185,7 +185,7 @@ contains
           clmvar_out(ji,jj) = clmvar_global_g(g1)
         end do
         ierr = nf90_inq_varid(il_file_id, trim(variable_names(4)) , ncvarid(4))
-        ierr = nf90_put_var( il_file_id, ncvarid(4), clmvar_out(:,:), start = (/ 1, 1,ts /), count = (/ nlon, nlat, 1 /) )
+        ierr = nf90_put_var( il_file_id, ncvarid(4), clmvar_out(:,:), start = [ 1, 1,ts ], count = [ nlon, nlat, 1 ] )
       end if
     end if
 
@@ -207,7 +207,7 @@ contains
     call mpi_reduce(var,sd,nloc,MPI_REAL8,MPI_SUM,0,COMM_couple_clm,ierr)
     sd = sqrt(sd/(realsize-1))
 
-    if((realrank.eq.0)) then
+    if((realrank==0)) then
       ptr => mm
       call gather_data_to_master(ptr,clmvar_global_g,clmlevel=nameg)
 
@@ -218,11 +218,11 @@ contains
           clmvar_out(ji,jj) = clmvar_global_g(g1)
         end do
         ierr = nf90_inq_varid(il_file_id, trim(variable_names(1)) , ncvarid(1))
-        ierr = nf90_put_var( il_file_id, ncvarid(1), clmvar_out(:,:), start = (/ 1, 1,ts /), count = (/ nlon, nlat, 1 /) )
+        ierr = nf90_put_var( il_file_id, ncvarid(1), clmvar_out(:,:), start = [ 1, 1,ts ], count = [ nlon, nlat, 1 ] )
       end if
     end if
 
-    if((realrank.eq.0)) then
+    if((realrank==0)) then
       ptr => sd
       call gather_data_to_master(ptr,clmvar_global_g,clmlevel=nameg)
 
@@ -233,7 +233,7 @@ contains
           clmvar_out(ji,jj) = clmvar_global_g(g1)
         end do
         ierr = nf90_inq_varid(il_file_id, trim(variable_names(2)) , ncvarid(2))
-        ierr = nf90_put_var( il_file_id, ncvarid(2), clmvar_out(:,:), start = (/ 1, 1,ts /), count = (/ nlon, nlat, 1 /) )
+        ierr = nf90_put_var( il_file_id, ncvarid(2), clmvar_out(:,:), start = [ 1, 1,ts ], count = [ nlon, nlat, 1 ] )
       end if
     end if
 
@@ -273,7 +273,7 @@ contains
     !end do
 
     ! close netcdf output file
-    if(masterproc .and. (realrank.eq.0)) then
+    if(masterproc .and. (realrank==0)) then
       ierr = nf90_close(il_file_id)
     end if
 

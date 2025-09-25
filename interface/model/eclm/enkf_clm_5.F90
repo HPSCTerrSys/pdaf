@@ -19,7 +19,7 @@
 !
 !
 !-------------------------------------------------------------------------------------------
-!enkf_clm_5.F90: Wrapper functions for CLM 5 
+!enkf_clm_5.F90: Wrapper functions for CLM 5
 !-------------------------------------------------------------------------------------------
 module enkf_clm_5
 
@@ -73,7 +73,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
   !--------------------------------------------------------------------------
   ! PDAF variables
   !--------------------------------------------------------------------------
-  character(kind=c_char,len=1),dimension(100),intent(in) :: finname 
+  character(kind=c_char,len=1),dimension(100),intent(in) :: finname
   integer(c_int), intent(in) :: pdaf_id
   integer(c_int), intent(in) :: pdaf_max
   integer(c_int), intent(in) :: mype
@@ -179,7 +179,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 
 #if defined CLMSA
   call define_clm_statevec(mype)
-#endif 
+#endif
 
 
 end subroutine clm_init
@@ -194,7 +194,7 @@ end subroutine clm_init
 !--------------------------------------------------------------------------
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
-  use enkf_clm_mod, only : set_clm_statevec 
+  use enkf_clm_mod, only : set_clm_statevec
   use iso_C_binding
 
   implicit none
