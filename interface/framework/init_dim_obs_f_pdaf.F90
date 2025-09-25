@@ -69,22 +69,28 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
        local_dims_obs, &
        local_disp_obs, &
        dim_obs_p, &
-       obs_id_p, &
+       obs_id_p
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
 !hcp 
 !CLMSA needs the physical  coordinates of the elements of state vector 
 !and observation array.        
+  USE mod_assimilation, &
+       ONLY: &
        longxy, latixy, longxy_obs, latixy_obs, &
-       longxy_obs_floor, latixy_obs_floor, &
+       longxy_obs_floor, latixy_obs_floor
 !hcp end
 #endif
 #endif
 #ifndef CLMSA
 #ifndef OBS_ONLY_CLM
-       sc_p, idx_obs_nc_p, &
+  USE mod_assimilation, &
+       ONLY: &
+       sc_p, idx_obs_nc_p
 #endif
 #endif
+  USE mod_assimilation, &
+       ONLY: &
        var_id_obs, maxlon, minlon, maxlat, &
        minlat, maxix, minix, maxiy, miniy, lon_var_id, ix_var_id, lat_var_id, iy_var_id, &
        screen
@@ -138,8 +144,6 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
   !hcp end
 #endif
 #endif
-
-  USE, INTRINSIC :: iso_c_binding
 
   IMPLICIT NONE
   ! !ARGUMENTS:
@@ -249,14 +253,16 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
      call mpi_bcast(dampfac_state_time_dependent_in, 1, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
      if (screen > 2) then
-       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dampfac_state_time_dependent_in=", dampfac_state_time_dependent_in
+       print *, "TSMP-PDAF mype(w)=", mype_world, &
+         ": init_dim_obs_pdaf: dampfac_state_time_dependent_in=", dampfac_state_time_dependent_in
      end if
 
      ! Set C-version of dampfac_state_time_dependent with value read from obsfile
      dampfac_state_time_dependent = dampfac_state_time_dependent_in(1)
 
      if (screen > 2) then
-       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dampfac_state_time_dependent=", dampfac_state_time_dependent
+       print *, "TSMP-PDAF mype(w)=", mype_world, &
+         ": init_dim_obs_pdaf: dampfac_state_time_dependent=", dampfac_state_time_dependent
      end if
 
   end if
@@ -275,14 +281,16 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
      call mpi_bcast(dampfac_param_time_dependent_in, 1, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
      if (screen > 2) then
-       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dampfac_param_time_dependent_in=", dampfac_param_time_dependent_in
+       print *, "TSMP-PDAF mype(w)=", mype_world, &
+         ": init_dim_obs_pdaf: dampfac_param_time_dependent_in=", dampfac_param_time_dependent_in
      end if
 
      ! Set C-version of dampfac_param_time_dependent with value read from obsfile
      dampfac_param_time_dependent = dampfac_param_time_dependent_in(1)
 
      if (screen > 2) then
-       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dampfac_param_time_dependent=", dampfac_param_time_dependent
+       print *, "TSMP-PDAF mype(w)=", mype_world, &
+         ": init_dim_obs_pdaf: dampfac_param_time_dependent=", dampfac_param_time_dependent
      end if
 
   end if
@@ -812,25 +820,29 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                  ! First: ix and iy smaller than observation location
                  if (idx_obs_nc(i) .eq. idx_map_subvec2state_fortran(j)) then
                      obs_interp_indices_p(cnt, 1) = j
-                     obs_interp_weights_p(cnt, 1) = sqrt(abs(x_idx_interp_d_obs_nc(i)) * abs(x_idx_interp_d_obs_nc(i)) + abs(y_idx_interp_d_obs_nc(i)) * abs(y_idx_interp_d_obs_nc(i)))
+                     obs_interp_weights_p(cnt, 1) = sqrt(abs(x_idx_interp_d_obs_nc(i)) * abs(x_idx_interp_d_obs_nc(i)) + &
+                       abs(y_idx_interp_d_obs_nc(i)) * abs(y_idx_interp_d_obs_nc(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Second: ix larger than observation location, iy smaller
                  if (idx_obs_nc(i) + 1 .eq. idx_map_subvec2state_fortran(j)) then
                      obs_interp_indices_p(cnt, 2) = j
-                     obs_interp_weights_p(cnt, 2) = sqrt(abs(1.0-x_idx_interp_d_obs_nc(i)) * abs(1.0-x_idx_interp_d_obs_nc(i)) + abs(y_idx_interp_d_obs_nc(i)) * abs(y_idx_interp_d_obs_nc(i)))
+                     obs_interp_weights_p(cnt, 2) = sqrt(abs(1.0-x_idx_interp_d_obs_nc(i)) * abs(1.0-x_idx_interp_d_obs_nc(i)) + &
+                       abs(y_idx_interp_d_obs_nc(i)) * abs(y_idx_interp_d_obs_nc(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Third: ix smaller than observation location, iy larger
                  if (idx_obs_nc(i) + nx_glob .eq. idx_map_subvec2state_fortran(j)) then
                      obs_interp_indices_p(cnt, 3) = j
-                     obs_interp_weights_p(cnt, 3) = sqrt(abs(x_idx_interp_d_obs_nc(i)) * abs(x_idx_interp_d_obs_nc(i)) + abs(1.0-y_idx_interp_d_obs_nc(i)) * abs(1.0-y_idx_interp_d_obs_nc(i)))
+                     obs_interp_weights_p(cnt, 3) = sqrt(abs(x_idx_interp_d_obs_nc(i)) * abs(x_idx_interp_d_obs_nc(i)) + &
+                       abs(1.0-y_idx_interp_d_obs_nc(i)) * abs(1.0-y_idx_interp_d_obs_nc(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Fourth: ix and iy larger than observation location
                  if (idx_obs_nc(i) + nx_glob + 1 .eq. idx_map_subvec2state_fortran(j)) then
                      obs_interp_indices_p(cnt, 4) = j
-                     obs_interp_weights_p(cnt, 4) = sqrt(abs(1.0-x_idx_interp_d_obs_nc(i)) * abs(1.0-x_idx_interp_d_obs_nc(i)) + abs(1.0-y_idx_interp_d_obs_nc(i)) * abs(1.0-y_idx_interp_d_obs_nc(i)))
+                     obs_interp_weights_p(cnt, 4) = sqrt(abs(1.0-x_idx_interp_d_obs_nc(i)) * abs(1.0-x_idx_interp_d_obs_nc(i)) + &
+                       abs(1.0-y_idx_interp_d_obs_nc(i)) * abs(1.0-y_idx_interp_d_obs_nc(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Check if all four corners are found
@@ -969,21 +981,20 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                      end if
                      obs_index_p(cnt) = state_clm2pdaf_p(c,clmobs_layer(i))
                    else
-#endif
                      obs_index_p(cnt) = c-begc+1 + ((endc-begc+1) * (clmobs_layer(i)-1))
-#ifdef CLMFIVE
                    end if
+#else
+                   obs_index_p(cnt) = c-begc+1 + ((endc-begc+1) * (clmobs_layer(i)-1))
 #endif
                  else
 #ifdef CLMFIVE
                    if(clmstatevec_only_active.eq.1) then
                      obs_index_p(cnt) = state_clm2pdaf_p(c,clmobs_layer(i))
                    else
-
-#endif
                      obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
-#ifdef CLMFIVE
                    end if
+#else
+                   obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
 #endif
                  end if
 
@@ -1015,25 +1026,29 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                  if((longxy_obs_floor(i) == longxy(g-begg+1)) .and. (latixy_obs_floor(i) == latixy(g-begg+1))) then
 
                      obs_interp_indices_p(cnt, 1) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
-                     obs_interp_weights_p(cnt, 1) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
+                     obs_interp_weights_p(cnt, 1) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + &
+                       abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Second: latitude larger than observation location, longitude smaller than observation location
                  if((longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs_floor(i) == latixy(g-begg+1))) then
                      obs_interp_indices_p(cnt, 2) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
-                     obs_interp_weights_p(cnt, 2) =sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
+                     obs_interp_weights_p(cnt, 2) =sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + &
+                       abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Third: latitude smaller than observation location, longitude larger than observation location
                  if((longxy_obs_floor(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1))) then
                      obs_interp_indices_p(cnt, 3) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
-                     obs_interp_weights_p(cnt, 3) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
+                     obs_interp_weights_p(cnt, 3) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + &
+                       abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Fourth: latitude and longitude larger than observation location
                  if((longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1))) then
                      obs_interp_indices_p(cnt, 4) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
-                     obs_interp_weights_p(cnt, 4) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
+                     obs_interp_weights_p(cnt, 4) = sqrt(abs(lon(g)-clmobs_lon(i)) * abs(lon(g)-clmobs_lon(i)) + &
+                       abs(lat(g)-clmobs_lat(i)) * abs(lat(g)-clmobs_lat(i)))
                      cnt_interp = cnt_interp + 1
                  end if
                  ! Check if all four corners are found

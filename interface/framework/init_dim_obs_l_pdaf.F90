@@ -59,11 +59,12 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   USE mod_read_obs, &
        ONLY: x_idx_obs_nc, y_idx_obs_nc, z_idx_obs_nc, idx_obs_nc, clmobs_lon, &
        clmobs_lat, var_id_obs_nc, dim_nx, dim_ny 
-  USE mod_tsmp, &
 #if defined CLMSA
+  USE mod_tsmp, &
   ONLY: idx_map_subvec2state_fortran, tag_model_parflow, enkf_subvecsize, &
        tag_model_clm, point_obs, model
 #else
+  USE mod_tsmp, &
   ONLY: idx_map_subvec2state_fortran, tag_model_parflow, enkf_subvecsize, &
        tag_model_clm, nx_glob, ny_glob, nz_glob, &
        xcoord, ycoord, zcoord, &
