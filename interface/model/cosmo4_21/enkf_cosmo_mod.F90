@@ -92,7 +92,7 @@ USE data_pollen,         ONLY:   cpollen, cpollentens, cpollen_bd,           &
 !AK (20.03.12)
 USE src_tracer_supply,   ONLY:   organize_tracer_init, organize_tracer,       &
                                  organize_tracer_bound, organize_tracer_source
-!AK (20.03.12)
+!AK (20.03.12) 
 !==============================================================================
 
 IMPLICIT NONE
@@ -151,7 +151,7 @@ SUBROUTINE initialize_loop (ntstep, nbd1, nbd2, nold, nnow, nnew)
 !------------------------------------------------------------------------------
 !
 ! Description:
-!   This routine initializes each time step. It checks whether certain
+!   This routine initializes each time step. It checks whether certain 
 !   actions have to be performed and sets the logical variables from
 !   the parameterlist. Organizational variables are updated.
 !
@@ -414,7 +414,7 @@ REAL (KIND=ireals)         ::        &
     ELSE
       ! Boundary values of cloud ice are interpreted from qc and
       ! qv is recalculated from relative humidity over ice below
-      ! a threshold temperature.
+      ! a threshold temperature. 
       DO k = 1, ke
 !CDIR COLLAPSE
         qi(:,:,k,nnew) = 0.0_ireals
@@ -739,7 +739,7 @@ REAL (KIND=ireals)         ::        &
                  istartpar, iendpar, jstartpar, jendpar )
   ENDIF
 #endif
-  ! compute density of moist air for time-level nnow
+  ! compute density of moist air for time-level nnow        
   CALL calrho ( t(:,:,:,nnow), pp(:,:,:,nnow), qv(:,:,:,nnow), qc(:,:,:,nnow),&
                 qrs, p0, rho, ie, je, ke, r_d, rvd_m_o)
 
@@ -784,8 +784,8 @@ SUBROUTINE exchange_leapfrog
 
   IF (lprog_qi .AND. lzconv .AND. .NOT. lprogprec) THEN
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,ke,ke,ke,ke,1,0,0,0,0,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,ke,ke,ke,ke,1,0,0,0,0,0/)
     CALL exchg_boundaries                                                   &
        (nnew+39, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -798,8 +798,8 @@ SUBROUTINE exchange_leapfrog
         qrs(:,:,:)    , dqvdt(:,:,:)  , qvsflx(:,:) )
   ELSEIF (lprog_qi .AND. lzconv .AND. lprogprec) THEN
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,ke,ke,ke,ke,ke,ke,ke,ke,1,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,ke,ke,ke,ke,ke,ke,ke,ke,1,0/)
     CALL exchg_boundaries                                                   &
        (nnew+39, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -813,7 +813,7 @@ SUBROUTINE exchange_leapfrog
         qs(:,:,:,nnow), qs(:,:,:,nnew), pp(:,:,:,nnow), pp(:,:,:,nnew),     &
         qrs(:,:,:)    , dqvdt(:,:,:)  , qvsflx(:,:) )
     IF (itype_gscp==4) THEN
-      kzdims(1:24) =[ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24) =(/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                 &
        ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,       &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -824,8 +824,8 @@ SUBROUTINE exchange_leapfrog
     ENDIF
   ELSEIF (lprog_qi .AND. .NOT. lzconv .AND. .NOT. lprogprec) THEN
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,ke,ke,ke,0,0,0,0,0,0,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,ke,ke,ke,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                   &
        (nnew+36, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -839,8 +839,8 @@ SUBROUTINE exchange_leapfrog
         qrs(:,:,:)    )
   ELSEIF (lprog_qi .AND. .NOT. lzconv) THEN
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0/)
     CALL exchg_boundaries                                                   &
        (nnew+36, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -854,7 +854,7 @@ SUBROUTINE exchange_leapfrog
         qs(:,:,:,nnow), qs(:,:,:,nnew), pp(:,:,:,nnow), pp(:,:,:,nnew),     &
         qrs(:,:,:)    )
     IF (itype_gscp==4) THEN
-      kzdims(1:24) =[ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24) =(/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                 &
        ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,       &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -865,8 +865,8 @@ SUBROUTINE exchange_leapfrog
     ENDIF
   ELSEIF (.NOT. lprog_qi .AND. lzconv) THEN
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,ke,1,0,0,0,0,0,0,0,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,ke,1,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                   &
        (nnew+33, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -880,8 +880,8 @@ SUBROUTINE exchange_leapfrog
     IF (lprogprec) THEN
       IF (itype_gscp > 1) THEN
         kzdims(1:24) =                                                      &
-           [ke,ke,ke,ke,ke,0,0,0,0,0,0,0,                                  &
-             0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,ke,ke,ke,0,0,0,0,0,0,0,                                  &
+             0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
          ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
           ie, je, kzdims, jstartpar, jendpar,                               &
@@ -892,8 +892,8 @@ SUBROUTINE exchange_leapfrog
           qs(:,:,:,nnow), qs(:,:,:,nnew), qrs(:,:,:) )
       ELSE
         kzdims(1:24) =                                                      &
-           [ke,ke,ke,0,0,0,0,0,0,0,0,0,                                    &
-             0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,ke,0,0,0,0,0,0,0,0,0,                                    &
+             0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
          ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
           ie, je, kzdims, jstartpar, jendpar,                               &
@@ -905,8 +905,8 @@ SUBROUTINE exchange_leapfrog
     ENDIF
   ELSE
     kzdims(1:24) =                                                          &
-       [ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
-         ke,ke,0,0,0,0,0,0,0,0,0,0]
+       (/ke,ke,ke,ke,ke1,ke1,ke,ke,ke,ke,ke,ke,                             &
+         ke,ke,0,0,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                   &
        (nnew+30, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,  &
         ie, je, kzdims, jstartpar, jendpar,                                 &
@@ -920,8 +920,8 @@ SUBROUTINE exchange_leapfrog
     IF (lprogprec) THEN
       IF (itype_gscp > 1) THEN
         kzdims(1:24) =                                                      &
-           [ke,ke,ke,ke,ke,0,0,0,0,0,0,0,                                  &
-             0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,ke,ke,ke,0,0,0,0,0,0,0,                                  &
+             0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
          ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
           ie, je, kzdims, jstartpar, jendpar,                               &
@@ -932,8 +932,8 @@ SUBROUTINE exchange_leapfrog
           qs(:,:,:,nnow), qs(:,:,:,nnew), qrs(:,:,:) )
       ELSE
         kzdims(1:24) =                                                      &
-           [ke,ke,ke,0,0,0,0,0,0,0,0,0,                                    &
-             0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,ke,0,0,0,0,0,0,0,0,0,                                    &
+             0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
          ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
           ie, je, kzdims, jstartpar, jendpar,                               &
@@ -950,7 +950,7 @@ SUBROUTINE exchange_leapfrog
     IF (lgas) THEN
       DO isp = 1,isp_gas
         kzdims(1:24) =                                                      &
-           [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
            ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
             ie, je, kzdims, jstartpar, jendpar,                             &
@@ -963,7 +963,7 @@ SUBROUTINE exchange_leapfrog
     IF (laero) THEN
       DO isp = 1,isp_aero
         kzdims(1:24) =                                                      &
-           [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                               &
            ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
             ie, je, kzdims, jstartpar, jendpar,                             &
@@ -980,7 +980,7 @@ SUBROUTINE exchange_leapfrog
   IF (l_pollen) THEN
     DO isp = 1,isp_pollen
       kzdims(1:24) =                                                        &
-         [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+         (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                 &
          ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
           ie, je, kzdims, jstartpar, jendpar,                               &
@@ -998,8 +998,8 @@ SUBROUTINE exchange_leapfrog
     DO iprog=1, 7
       nprog = nprog + ltracer(iprog,iig)
     ENDDO
-    IF (nprog >= 1) THEN
-      kzdims(1:24)=[ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    IF (nprog .GE. 1) THEN
+      kzdims(1:24)=(/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                &
         (0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,      &
                                                                ie, je,     &
@@ -1017,12 +1017,12 @@ END SUBROUTINE exchange_leapfrog
 !==============================================================================
 
 SUBROUTINE exchange_runge_kutta
-
+  
   IF (lprog_qi) THEN
     IF (lprogprec) THEN
       ! this is former itype_gscp = 5
       IF (itype_gscp == 3) THEN
-        kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
          (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
           ie, je, kzdims, jstartpar, jendpar,                                  &
@@ -1034,7 +1034,7 @@ SUBROUTINE exchange_runge_kutta
           qs(:,:,:,nnew), pp(:,:,:,nnew), qrs(:,:,:) )
       END IF
       IF (itype_gscp == 4) THEN
-        kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0]
+        kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
          (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
           ie, je, kzdims, jstartpar, jendpar,                                  &
@@ -1047,7 +1047,7 @@ SUBROUTINE exchange_runge_kutta
       ENDIF
     ELSE ! .NOT. lprogprec:
       ! this is former itype_gscp = 3
-      kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1060,9 +1060,9 @@ SUBROUTINE exchange_runge_kutta
     ENDIF
   ELSE ! .NOT. lprog_qi:
     IF (lprogprec) THEN
-      IF (itype_gscp > 1) THEN
+      IF (itype_gscp > 1) THEN        
         ! this is former itype_gscp = 4
-        kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
          (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
           ie, je, kzdims, jstartpar, jendpar,                                  &
@@ -1073,7 +1073,7 @@ SUBROUTINE exchange_runge_kutta
           qv(:,:,:,nnew), qc(:,:,:,nnew), qr(:,:,:,nnew), qs(:,:,:,nnew),      &
           pp(:,:,:,nnew), qrs(:,:,:) )
       ELSE ! kessler_pp:
-        kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
          (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,   &
           ie, je, kzdims, jstartpar, jendpar,                                  &
@@ -1082,10 +1082,10 @@ SUBROUTINE exchange_runge_kutta
           20000+ntstep, ldatatypes, ncomm_type, izerror, yzerrmsg,             &
           u (:,:,:,nnew), v (:,:,:,nnew), w (:,:,:,nnew), t (:,:,:,nnew),      &
           qv(:,:,:,nnew), qc(:,:,:,nnew), qr(:,:,:,nnew), pp(:,:,:,nnew),      &
-          qrs(:,:,:) )
-      ENDIF
+          qrs(:,:,:) )          
+      ENDIF          
     ELSE ! .NOT. lprogprec:
-      kzdims(1:24)=[ke,ke,ke1,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24)=(/ke,ke,ke1,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        (50+nnew, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1096,10 +1096,10 @@ SUBROUTINE exchange_runge_kutta
         qv(:,:,:,nnew), qc(:,:,:,nnew), pp(:,:,:,nnew), qrs(:,:,:) )
     ENDIF
   END IF
-
+  
   IF ( lzconv ) THEN
     IF ( lprog_tke ) THEN
-      kzdims(1:24)=[ke,1,ke1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24)=(/ke,1,ke1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        (0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,           &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1108,7 +1108,7 @@ SUBROUTINE exchange_runge_kutta
         20000+ntstep, .FALSE., ncomm_type, izerror, yzerrmsg,                  &
         dqvdt(:,:,:), qvsflx(:,:), tke(:,:,:,nnew) )
     ELSE
-      kzdims(1:24)=[ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24)=(/ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        (0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,           &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1119,7 +1119,7 @@ SUBROUTINE exchange_runge_kutta
     END IF
   ELSE
     IF ( lprog_tke ) THEN
-      kzdims(1:24)=[ke1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      kzdims(1:24)=(/ke1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        (0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,           &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1136,7 +1136,7 @@ SUBROUTINE exchange_runge_kutta
     IF (lgas) THEN
       DO isp = 1,isp_gas
         kzdims(1:24) =                                                         &
-           [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
            (2, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,       &
             ie, je, kzdims, jstartpar, jendpar,                                &
@@ -1149,7 +1149,7 @@ SUBROUTINE exchange_runge_kutta
     IF (laero) THEN
       DO isp = 1,isp_aero
         kzdims(1:24) =                                                         &
-           [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+           (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
         CALL exchg_boundaries                                                  &
            (2, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,       &
             ie, je, kzdims, jstartpar, jendpar,                                &
@@ -1166,7 +1166,7 @@ SUBROUTINE exchange_runge_kutta
   IF (l_pollen) THEN
     DO isp = 1,isp_pollen
       kzdims(1:24) =                                                           &
-         [ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+         (/ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
          (2, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,         &
           ie, je, kzdims, jstartpar, jendpar,                                  &
@@ -1184,8 +1184,8 @@ SUBROUTINE exchange_runge_kutta
     DO iprog=1, 7
       nprog = nprog + ltracer(iprog,iig)
     ENDDO
-    IF (nprog >= 1) THEN
-      kzdims(1:24)=[ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    IF (nprog .GE. 1) THEN
+      kzdims(1:24)=(/ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                   &
         (2, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,ie, je,  &
         kzdims, jstartpar, jendpar, nbl_exchg, nboundlines, my_cart_neigh,    &
@@ -1205,7 +1205,7 @@ END SUBROUTINE exchange_runge_kutta
 SUBROUTINE exchange_2timelevel
 
   IF (lprog_qi .AND. lzconv) THEN
-    kzdims(1:24) =[ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    kzdims(1:24) =(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                      &
        (nnew+39, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1216,7 +1216,7 @@ SUBROUTINE exchange_2timelevel
         qv(:,:,:,nnew), qc(:,:,:,nnew), qi(:,:,:,nnew), pp(:,:,:,nnew),        &
         qrs(:,:,:)    , dqvdt(:,:,:)  , qvsflx(:,:) )
   ELSEIF (lprog_qi .AND. .NOT. lzconv) THEN
-    kzdims(1:24) =[ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    kzdims(1:24) =(/ke,ke,ke1,ke,ke,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                      &
        (nnew+36, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1227,7 +1227,7 @@ SUBROUTINE exchange_2timelevel
         qv(:,:,:,nnew), qc(:,:,:,nnew), qi(:,:,:,nnew), pp(:,:,:,nnew),        &
         qrs(:,:,:)    )
   ELSEIF (.NOT. lprog_qi .AND. lzconv) THEN
-    kzdims(1:24) =[ke,ke,ke1,ke,ke,ke,ke,ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    kzdims(1:24) =(/ke,ke,ke1,ke,ke,ke,ke,ke,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                      &
        (nnew+33, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1238,7 +1238,7 @@ SUBROUTINE exchange_2timelevel
         qv(:,:,:,nnew), qc(:,:,:,nnew), pp(:,:,:,nnew),                        &
         dqvdt(:,:,:)  , qvsflx(:,:) )
   ELSE
-    kzdims(1:24) =[ke,ke,ke1,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    kzdims(1:24) =(/ke,ke,ke1,ke,ke,ke,ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
     CALL exchg_boundaries                                                      &
        (nnew+30, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,     &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1255,8 +1255,8 @@ SUBROUTINE exchange_2timelevel
     DO iprog=1, 7
       nprog = nprog + ltracer(iprog,iig)
     ENDDO
-    IF (nprog >= 1) THEN
-      kzdims(1:24)=[ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    IF (nprog .GE. 1) THEN
+      kzdims(1:24)=(/ke,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                &
         (nnew+30, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute, ie, je,&
         kzdims, jstartpar, jendpar, nbl_exchg, nboundlines, my_cart_neigh,   &
@@ -1270,8 +1270,8 @@ SUBROUTINE exchange_2timelevel
   IF (lprogprec) THEN
     IF (itype_gscp == 4) THEN
       kzdims(1:24) =                                                           &
-         [ke,ke,ke,ke,0,0,0,0,0,0,0,0,                                        &
-           0,0,0,0,0,0,0,0,0,0,0,0]
+         (/ke,ke,ke,ke,0,0,0,0,0,0,0,0,                                        &
+           0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,          &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1281,8 +1281,8 @@ SUBROUTINE exchange_2timelevel
         qr(:,:,:,nnew), qs(:,:,:,nnew), qg(:,:,:,nnew), qrs(:,:,:) )
     ELSEIF (itype_gscp > 1) THEN
       kzdims(1:24) =                                                           &
-         [ke,ke,ke,0,0,0,0,0,0,0,0,0,                                         &
-           0,0,0,0,0,0,0,0,0,0,0,0]
+         (/ke,ke,ke,0,0,0,0,0,0,0,0,0,                                         &
+           0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,          &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1292,8 +1292,8 @@ SUBROUTINE exchange_2timelevel
         qr(:,:,:,nnew), qs(:,:,:,nnew), qrs(:,:,:) )
     ELSE
       kzdims(1:24) =                                                           &
-         [ke,ke,0,0,0,0,0,0,0,0,0,0,                                          &
-           0,0,0,0,0,0,0,0,0,0,0,0]
+         (/ke,ke,0,0,0,0,0,0,0,0,0,0,                                          &
+           0,0,0,0,0,0,0,0,0,0,0,0/)
       CALL exchg_boundaries                                                    &
        ( 0, sendbuf, isendbuflen, imp_reals, icomm_cart, num_compute,          &
         ie, je, kzdims, jstartpar, jendpar,                                    &
@@ -1313,7 +1313,7 @@ SUBROUTINE exchange_l2dim
 
   DO k = 1, ke
     DO j = 1,nboundlines
-
+          
       t (:,jstart-j,k,nnew) = t (:,jend  +1-j,k,nnew)
       pp(:,jstart-j,k,nnew) = pp(:,jend  +1-j,k,nnew)
       qv(:,jstart-j,k,nnew) = qv(:,jend  +1-j,k,nnew)
@@ -1358,7 +1358,7 @@ SUBROUTINE exchange_l2dim
       v(:,jstartv-j,k,nnew) = v(:,jendv  +1-j,k,nnew)
       u(:,jendu  +j,k,nnew) = u(:,jstartu-1+j,k,nnew)
       v(:,jendv  +j,k,nnew) = v(:,jstartv-1+j,k,nnew)
-
+      
     ENDDO
   ENDDO
 
@@ -1375,12 +1375,12 @@ SUBROUTINE exchange_l2dim
       qvsflx (:,jend  +j) = qvsflx (:,jstart-1+j)
     ENDDO
   ENDIF
-
+     
   IF ( .NOT.l2tls ) THEN
 
     DO k = 1, ke
       DO j = 1,nboundlines
-
+        
         t (:,jstart-j,k,nnow) = t (:,jend  +1-j,k,nnow)
         pp(:,jstart-j,k,nnow) = pp(:,jend  +1-j,k,nnow)
         qv(:,jstart-j,k,nnow) = qv(:,jend  +1-j,k,nnow)
@@ -1411,7 +1411,7 @@ SUBROUTINE exchange_l2dim
         v(:,jstartv-j,k,nnow) = v(:,jendv  +1-j,k,nnow)
         u(:,jendu  +j,k,nnow) = u(:,jstartu-1+j,k,nnow)
         v(:,jendv  +j,k,nnow) = v(:,jstartv-1+j,k,nnow)
-
+        
       ENDDO
     ENDDO
 
@@ -1423,7 +1423,7 @@ SUBROUTINE exchange_l2dim
     ENDDO
 
   ENDIF
-
+      
 END SUBROUTINE exchange_l2dim
 
 !==============================================================================
@@ -1431,7 +1431,7 @@ END SUBROUTINE exchange_l2dim
 SUBROUTINE set_qrqsqg_boundaries
 
   ! Now we have to set the nnew values for qr and qs in a consistent way:
-  ! this is an intermediate solution, as long as no better treatment of
+  ! this is an intermediate solution, as long as no better treatment of 
   ! the boundary values is found
 
   ! Treatment of rain and snow
@@ -1629,14 +1629,14 @@ SUBROUTINE set_qrqsqg_boundaries
         IF (my_cart_neigh(1) == -1) THEN
           DO  k = 1, ke
             DO i = 1, nboundlines
-!CDIR NOLOOPCHG
+!CDIR NOLOOPCHG 
               DO  j = jstart, jend
                 qg(i,j,k,nnew) = qg(istart,j,k,nnew)
               ENDDO
             ENDDO
           ENDDO
         ENDIF
-        ! eastern boundary
+        ! eastern boundary 
         IF (my_cart_neigh(3) == -1) THEN
           DO  k = 1, ke
             DO i = ie-nboundlines+1, ie
@@ -1671,14 +1671,14 @@ SUBROUTINE set_qrqsqg_boundaries
         IF (my_cart_neigh(1) == -1) THEN
           DO  k = 1, ke
             DO i = 1, nboundlines
-!CDIR NOLOOPCHG
+!CDIR NOLOOPCHG 
               DO  j = jstart, jend
                 qg(i,j,k,nnew) = 0.0_ireals
               ENDDO
             ENDDO
           ENDDO
         ENDIF
-        ! eastern boundary
+        ! eastern boundary 
         IF (my_cart_neigh(3) == -1) THEN
           DO  k = 1, ke
             DO i = ie-nboundlines+1, ie

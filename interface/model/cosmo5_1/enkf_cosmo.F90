@@ -1,6 +1,6 @@
 subroutine cosmo_init(pdaf_id)  bind(C,name="cosmo_init")
 
-use iso_C_binding
+use iso_C_binding  
 use enkf_cosmo_mod
 
 integer(c_int), intent(in) :: pdaf_id
@@ -218,7 +218,7 @@ cosmo_input_suffix = pdaf_id
   ENDIF
 
 #ifdef NETCDF
-  IF( lasync_io .AND. nc_asyn_io>0 ) THEN
+  IF( lasync_io .AND. nc_asyn_io>0 ) THEN 
     CALL allocate_io_sendbuffer(yzerrmsg, izerror)
     IF (izerror /= 0) THEN
       ierrstat = 3321
@@ -404,7 +404,7 @@ cosmo_input_suffix = pdaf_id
       ENDIF
     ENDIF
   ENDIF
-
+  
 #ifdef COSMOART
   ! Initialization of COSMO_ART
   IF (l_cosmo_art) THEN
@@ -487,7 +487,7 @@ cosmo_input_suffix = pdaf_id
 #endif
   ENDIF
 
-  ! Initialization of blocks fields
+  ! Initialization of blocks fields 
   ! This needs to be done after all arrays have been allocated
   IF (lphys) THEN
      ! Register block fields
@@ -531,7 +531,7 @@ cosmo_input_suffix = pdaf_id
     ENDIF
     lsppt   = lzspptd
   ENDIF
-
+  
   ! Close file for control output
   IF (my_cart_id == 0) THEN
     CLOSE (nuspecif, STATUS='KEEP')
@@ -572,7 +572,7 @@ cosmo_input_suffix = pdaf_id
   ! There are different types of possible disturbances, see the documentation
   ! of the corresponding namelist parameters in INPUT_IDEAL, and there is the possibility
   ! to specify more than one disturbance (up to 50 right now).
-
+  
   IF (lartif_data) THEN
     CALL set_tempdist(nnew)
 
@@ -659,8 +659,8 @@ subroutine cosmo_advance(cos_dt)  bind(C,name="cosmo_advance")
 
 use iso_C_binding
 use enkf_cosmo_mod
-integer(c_int),intent(in) :: cos_dt
-
+integer(c_int),intent(in) :: cos_dt  
+  
 !------------------------------------------------------------------------------
 !- Section 6: Time stepping
 !------------------------------------------------------------------------------
@@ -706,7 +706,7 @@ integer(c_int),intent(in) :: cos_dt
     IF (ltime) CALL get_timings (i_add_computations, ntstep, dt, izerror)
 
     !--------------------------------------------------------------------------
-    !- Section 6.2.1: physics
+    !- Section 6.2.1: physics 
     !--------------------------------------------------------------------------
 
 #ifdef COSMOART
@@ -759,9 +759,9 @@ integer(c_int),intent(in) :: cos_dt
     !--------------------------------------------------------------------------
 
     IF (lartif_data) THEN
-      ! Set possible artificial heating rate disturbance(s) in the soil
+      ! Set possible artificial heating rate disturbance(s) in the soil 
       ! (affects t_so or t_s/t_m/t_cl depending on soil model
-      ! and takes effect only IF lsoil=.TRUE.).
+      ! and takes effect only IF lsoil=.TRUE.). 
       ! Because the soil model has already done the time integration,
       ! the artificial disturbances have to be imposed on
       ! timelevel nnew:
@@ -937,7 +937,7 @@ integer(c_int),intent(in) :: cos_dt
     !--------------------------------------------------------------------------
     !- Section 6.5: water budget
     !--------------------------------------------------------------------------
-
+ 
     IF (ldiagnos .AND. (l2tls .OR. (ntstep > 0))) THEN
       ! for the leapfrog scheme the summations in diagbudget must not be done
       ! in the first intermediate step ntstep==0. These calculations are done
@@ -1046,10 +1046,10 @@ integer(c_int),intent(in) :: cos_dt
     !--------------------------------------------------------------------------
     !- Section 6.7: Exchange of boundary data
     !--------------------------------------------------------------------------
-
+ 
       ! The calls to exchg_boundaries have to be here in any case, even for a
-      ! sequential version, because of possible periodic boundary conditions
-      ! the check, which kind of communication is necessary, is done within
+      ! sequential version, because of possible periodic boundary conditions 
+      ! the check, which kind of communication is necessary, is done within 
       ! the subroutine now.
 
       ! Check, whether additional communication for the convection is
@@ -1125,7 +1125,7 @@ integer(c_int),intent(in) :: cos_dt
 
 #ifdef RADARFWO
     !--------------------------------------------------------------------------
-    !- Section 6.8b: radar forward operator and optionally preparing
+    !- Section 6.8b: radar forward operator and optionally preparing 
     !                of radar feedback files for radar data assimilation
     !                (the latter needs radar observation files)
     !--------------------------------------------------------------------------
@@ -1153,7 +1153,7 @@ integer(c_int),intent(in) :: cos_dt
     IF (l_cosmo_art_nl) THEN
       l_cosmo_art=l_cosmo_art_nl
     ENDIF
-#endif
+#endif 
 
     CALL organize_data ('result', ntstep, izerror, yzerrmsg)
     IF (izerror /= 0_iintegers) THEN
@@ -1187,7 +1187,7 @@ integer(c_int),intent(in) :: cos_dt
     !--------------------------------------------------------------------------
     !- Section 6.10: Finalization of this time step
     !--------------------------------------------------------------------------
-
+ 
 #if defined RTTOV7 || defined RTTOV9 || defined RTTOV10
     ! deallocate the satellite variables
     IF (luse_rttov) THEN
@@ -1261,7 +1261,7 @@ subroutine cosmo_finalize() bind(C,name="cosmo_finalize")
 use iso_C_binding
 use enkf_cosmo_mod
 
-
+  
 !------------------------------------------------------------------------------
 !- Section 7: Final clean up
 !------------------------------------------------------------------------------
