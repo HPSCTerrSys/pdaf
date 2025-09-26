@@ -43,5 +43,5 @@ jobs:
   # Ignored errors were unclear / needed for PDAF
       - name: Check Fortran coding style
         continue-on-error: false
-        run: fortitude check --statistics --ignore=C072,C091,C092,C003 --line-length=132 interface/framework interface/model/eclm
+        run: fortitude check --statistics --ignore=C003,C072,C091,C092 --line-length=132 interface/framework interface/model/eclm
 
