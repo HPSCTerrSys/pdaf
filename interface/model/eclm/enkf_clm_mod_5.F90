@@ -498,6 +498,7 @@ module enkf_clm_mod
     real(r8), pointer :: dz(:,:)          ! layer thickness depth (m)
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
+    real(r8), pointer :: snow_depth(:)
     real(r8)  :: rliq,rice
     real(r8)  :: watmin_check      ! minimum soil moisture for checking clm_statevec (mm)
     real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
