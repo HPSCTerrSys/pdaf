@@ -469,6 +469,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
         do g = begg, endg
             if(is_use_dr) then
                 deltax = abs(lon(g)-clmobs_lon(i))
+                if (deltax > 180.0) then
+                  deltax = 360.0 - deltax
+                end if
                 deltay = abs(lat(g)-clmobs_lat(i))
             end if
             ! Assigning observations to grid cells according to
@@ -620,6 +623,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
               if(is_use_dr) then
                 deltax = abs(lon(g)-clmobs_lon(i))
+                if (deltax > 180.0) then
+                  deltax = 360.0 - deltax
+                end if
                 deltay = abs(lat(g)-clmobs_lat(i))
               end if
 
@@ -929,6 +935,9 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
                if(is_use_dr) then
                  deltax = abs(lon(g)-clmobs_lon(i))
+                 if (deltax > 180.0) then
+                   deltax = 360.0 - deltax
+                 end if
                  deltay = abs(lat(g)-clmobs_lat(i))
                end if
 
@@ -959,7 +968,16 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
                    end if
 #endif
                  else
-                   obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
+#ifdef CLMFIVE
+                   if(clmstatevec_only_active.eq.1) then
+                     obs_index_p(cnt) = state_clm2pdaf_p(c,clmobs_layer(i))
+                   else
+
+#endif
+                     obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
+#ifdef CLMFIVE
+                   end if
+#endif
                  end if
 
                  !write(*,*) 'obs_index_p(',cnt,') is',obs_index_p(cnt)

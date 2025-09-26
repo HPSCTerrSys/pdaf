@@ -517,8 +517,8 @@ contains
     !if(allocated(y_idx_obs_nc))deallocate(y_idx_obs_nc)
     !if(allocated(z_idx_obs_nc))deallocate(z_idx_obs_nc)
     !kuw: clean clm observations
-    IF (.NOT. filtertype == 8) THEN
-      ! For LEnKF lat/lon are used
+    IF (.NOT. filtertype == 5 .AND. .NOT. filtertype == 7 .AND. .NOT. filtertype == 8) THEN
+      ! For LETKF, LESTKF, LEnKF lat/lon are used
       if(allocated(clmobs_lon))deallocate(clmobs_lon)
       if(allocated(clmobs_lat))deallocate(clmobs_lat)
     END IF
@@ -584,6 +584,47 @@ contains
       call check(nf90_close(ncid))
 
   end subroutine check_n_observationfile
+
+  !> @author Yorck Ewerdwalbesloh, Johannes Keller
+  !> @date 11.09.2023
+  !> @brief Return data assimilation interval from file
+  !> @param[in] fn Filename of the observation file
+  !> @param[out] aa new da_interval (number of time steps until next assimilation time step)
+  !> @details
+  !>     Reads the content of the variable name `da_interval` from NetCDF
+  !>     file `fn` using subroutines from the NetCDF module.
+  !>     The result is returned in `aa`.
+  !>
+  !>     The result is used to adapt the da_interval until the next observation file.
+  !>
+  !>     Adapted for TSMP-PDAF by Johannes Keller, 28.05.2025.
+  subroutine check_n_observationfile_da_interval(fn,aa)
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use netcdf, only: nf90_max_name, nf90_open, nf90_nowrite, &
+      nf90_inq_varid, nf90_get_var, nf90_close, nf90_noerr
+
+    implicit none
+
+    character(len=*),intent(in) :: fn
+    real, intent(out)        :: aa
+
+
+    integer :: ncid, varid, status !,dimid
+    character (len = *), parameter :: varname = "da_interval"
+    real(r8) :: dtime ! land model time step (sec)
+
+    !character (len = *), parameter :: dim_name = "dim_obs"
+    !character(len = nf90_max_name) :: recorddimname
+
+    call check(nf90_open(fn, nf90_nowrite, ncid))
+    !call check(nf90_inq_dimid(ncid, dim_name, dimid))
+    !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
+
+    call check( nf90_inq_varid(ncid, varname, varid))
+    call check( nf90_get_var(ncid, varid, aa) )
+    call check(nf90_close(ncid))
+
+  end subroutine check_n_observationfile_da_interval
 
   !> @author Wolfgang Kurtz, Guowei He, Mukund Pondkule
   !> @date 03.03.2023
