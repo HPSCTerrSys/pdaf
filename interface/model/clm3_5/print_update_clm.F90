@@ -82,15 +82,15 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
     if(masterproc) then
       call get_update_filename(update_filename)
-      if(ts==1) then
+      if(ts.eq.1) then
         status =  nf90_create(update_filename, NF90_CLOBBER, il_file_id)
         status =  nf90_def_dim(il_file_id, "x", ndlon, dimids(1))
         status =  nf90_def_dim(il_file_id, "y", ndlat, dimids(2))
         status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
         status =  nf90_def_dim(il_file_id, "t", ttot, dimids(4))
-        if(clmprint_swc==1)     status =  nf90_def_var(il_file_id, "swc", NF90_DOUBLE, dimids, ncvarid(1))
-        if(clmupdate_texture==1) status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
-        if(clmupdate_texture==1) status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
+        if(clmprint_swc.eq.1)     status =  nf90_def_var(il_file_id, "swc", NF90_DOUBLE, dimids, ncvarid(1))
+        if(clmupdate_texture.eq.1) status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
+        if(clmupdate_texture.eq.1) status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
         status =  nf90_enddef(il_file_id)
       else
         status = nf90_open(update_filename,NF90_WRITE,il_file_id)
@@ -98,7 +98,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     endif
 
 
-    if(clmprint_swc==1) then
+    if(clmprint_swc.eq.1) then
       swc  => clm3%g%l%c%cws%h2osoi_vol
       ! swc
       clmstate_tmp_local = transpose(swc)
@@ -116,12 +116,12 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
         end do
         status = nf90_inq_varid(il_file_id, "swc" , ncvarid(1))
         status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
-                 start = [ 1, 1, 1, ts], count = [ ndlon, ndlat, nlevsoi, 1 ] )
+                 start = (/ 1, 1, 1, ts/), count = (/ ndlon, ndlat, nlevsoi, 1 /) )
         !status = nf90_close(il_file_id)
       end if
     end if
 
-    if(clmupdate_texture==1) then
+    if(clmupdate_texture.eq.1) then
       psand => clm3%g%l%c%cps%psand
       pclay => clm3%g%l%c%cps%pclay
       ! sand
@@ -140,7 +140,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
         end do
         status = nf90_inq_varid(il_file_id, "sand" , ncvarid(2))
         status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
-                 start = [ 1, 1, 1, ts], count = [ ndlon, ndlat, nlevsoi, 1 ] )
+                 start = (/ 1, 1, 1, ts/), count = (/ ndlon, ndlat, nlevsoi, 1 /) )
         !status = nf90_close(il_file_id)
       end if
 
@@ -160,7 +160,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
         end do
         status = nf90_inq_varid(il_file_id, "clay" , ncvarid(3))
         status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,:), &
-                 start = [ 1, 1, 1, ts], count = [ ndlon, ndlat, nlevsoi, 1 ] )
+                 start = (/ 1, 1, 1, ts/), count = (/ ndlon, ndlat, nlevsoi, 1 /) )
         !status = nf90_close(il_file_id)
       end if
     end if

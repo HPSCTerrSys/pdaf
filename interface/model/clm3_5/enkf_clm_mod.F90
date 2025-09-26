@@ -124,8 +124,8 @@ module enkf_clm_mod
     clm_begp     = begp
     clm_endp     = endp
 
-    if(clmupdate_swc==1) then
-      if(clmstatevec_allcol==1) then
+    if(clmupdate_swc.eq.1) then
+      if(clmstatevec_allcol.eq.1) then
         error stop "Not implemented: clmstatevec_allcol.ne.0"
       else
         ! One value per grid-cell
@@ -135,22 +135,22 @@ module enkf_clm_mod
       end if
     endif
 
-    if(clmupdate_swc==2) then
+    if(clmupdate_swc.eq.2) then
       clm_varsize      =  (endg-begg+1) * nlevsoi
       clm_statevecsize =  (endg-begg+1) * (nlevsoi+1)
     endif
 
-    if(clmupdate_texture==1) then
+    if(clmupdate_texture.eq.1) then
         clm_statevecsize = clm_statevecsize + 2*((endg-begg+1)*nlevsoi)
     endif
 
-    if(clmupdate_texture==2) then
+    if(clmupdate_texture.eq.2) then
       error stop "Not implemented: clmupdate_texture.eq.2"
     endif
 
     !hcp LST DA
-    if(clmupdate_T==1) then
-      clm_varsize      =  endg-begg+1
+    if(clmupdate_T.eq.1) then
+      clm_varsize      =  endg-begg+1 
       clm_paramsize =  endg-begg+1         !LAI
       clm_statevecsize =  (endg-begg+1)*2  !TG, then TV
     endif
@@ -163,7 +163,7 @@ module enkf_clm_mod
 
     !write(*,*) 'clm_statevecsize is ',clm_statevecsize
     IF (allocated(clm_statevec)) deallocate(clm_statevec)
-    if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0)) then
+    if ((clmupdate_swc.ne.0) .or. (clmupdate_T.ne.0) .or. (clmupdate_texture.ne.0)) then
       !hcp added condition
       allocate(clm_statevec(clm_statevecsize))
       allocate(state_pdaf2clm_c_p(clm_statevecsize))
@@ -172,7 +172,7 @@ module enkf_clm_mod
 
     !write(*,*) 'clm_paramsize is ',clm_paramsize
     if (allocated(clm_paramarr)) deallocate(clm_paramarr)         !hcp
-    if ((clmupdate_T/=0)) then  !hcp
+    if ((clmupdate_T.ne.0)) then  !hcp
       allocate(clm_paramarr(clm_paramsize))
     end if
 
@@ -207,7 +207,7 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble < 0) THEN
 
-      IF(clmupdate_swc/=0) THEN
+      IF(clmupdate_swc.NE.0) THEN
         ! TSMP-PDAF: Debug output of CLM swc
         WRITE(fn2, "(a,i5.5,a,i5.5,a)") "swcstate_", mype, ".integrate.", tstartcycle + 1, ".txt"
         OPEN(unit=71, file=fn2, action="write")
@@ -219,16 +219,16 @@ module enkf_clm_mod
 #endif
 
     ! calculate shift when CRP data are assimilated
-    if(clmupdate_swc==2) then
+    if(clmupdate_swc.eq.2) then
       offset = clm_endg-clm_begg+1
     endif
 
-    if(clmupdate_swc/=0) then
+    if(clmupdate_swc.ne.0) then
         ! write swc values to state vector
         cc = 1
         do i=1,nlevsoi
 
-          if(clmstatevec_allcol==1) then
+          if(clmstatevec_allcol.eq.1) then
 
             error stop "Not implemented: clmstatevec_allcol.ne.0"
 
@@ -248,7 +248,7 @@ module enkf_clm_mod
     endif
 
     !hcp  LAI
-    if(clmupdate_T==1) then
+    if(clmupdate_T.eq.1) then
       cc = 1
         do j=clm_begg,clm_endg
           clm_statevec(cc) = tgrou(j)
@@ -261,7 +261,7 @@ module enkf_clm_mod
     !end hcp  LAI
 
     ! write average swc to state vector (CRP assimilation)
-    if(clmupdate_swc==2) then
+    if(clmupdate_swc.eq.2) then
       cc = 1
       do j=clm_begg,clm_endg
         do i=1,nlevsoi
@@ -274,13 +274,13 @@ module enkf_clm_mod
     endif
 
     ! write texture values to state vector (if desired)
-    if(clmupdate_texture/=0) then
+    if(clmupdate_texture.ne.0) then
       cc = 1
       do i=1,nlevsoi
         do j=clm_begg,clm_endg
           clm_statevec(cc+1*clm_varsize+offset) = psand(j,i)
           clm_statevec(cc+2*clm_varsize+offset) = pclay(j,i)
-          if(clmupdate_texture==2) then
+          if(clmupdate_texture.eq.2) then
             error stop "Not implemented: clmupdate_texture.eq.2"
           end if
           cc = cc + 1
@@ -365,7 +365,7 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
 
-      IF(clmupdate_swc/=0) THEN
+      IF(clmupdate_swc.NE.0) THEN
         ! TSMP-PDAF: For debug runs, output the state vector in files
         WRITE(fn5, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".bef_up.", tstartcycle, ".txt"
         OPEN(unit=71, file=fn5, action="write")
@@ -383,20 +383,20 @@ module enkf_clm_mod
 #endif
 
     ! calculate shift when CRP data are assimilated
-    if(clmupdate_swc==2) then
+    if(clmupdate_swc.eq.2) then
       offset = clm_endg-clm_begg+1
     endif
 
     ! write updated swc back to CLM
-    if(clmupdate_swc/=0) then
+    if(clmupdate_swc.ne.0) then
 
         ! Set minimum soil moisture for checking the state vector and
         ! for setting minimum swc for CLM
-        if(clmwatmin_switch==3) then
+        if(clmwatmin_switch.eq.3) then
           ! CLM3.5 type watmin
           watmin_check = 0.00
           watmin_set = 0.05
-        else if(clmwatmin_switch==5) then
+        else if(clmwatmin_switch.eq.5) then
           ! CLM5.0 type watmin
           watmin_check = watmin
           watmin_set = watmin
@@ -416,13 +416,13 @@ module enkf_clm_mod
               ! Set cc (the state vector index) from the
               ! CLM5-grid-index and the `CLM5-layer-index times
               ! num_gridcells`
-              if(clmstatevec_allcol==1) then
+              if(clmstatevec_allcol.eq.1) then
                 error stop "Not implemented: clmstatevec_allcol.ne.0"
               else
                 cc = (j - clm_begg + 1) + (i - 1) * (clm_endg - clm_begg + 1)
               end if
 
-              if(swc(j,i)==0.0) then
+              if(swc(j,i).eq.0.0) then
                 swc_zero_before_update = .true.
                 ! Zero-SWC leads to zero denominator in computation of
                 ! rliq/rice, therefore setting rliq/rice to special
@@ -437,9 +437,9 @@ module enkf_clm_mod
                 !h2osoi_vol(c,j) = h2osoi_liq(c,j)/(dz(c,j)*denh2o) + h2osoi_ice(c,j)/(dz(c,j)*denice)
               end if
 
-              if(clm_statevec(cc+offset)<=watmin_check) then
+              if(clm_statevec(cc+offset).le.watmin_check) then
                 swc(j,i) = watmin_set
-              else if(clm_statevec(cc+offset)>=watsat(j,i)) then
+              else if(clm_statevec(cc+offset).ge.watsat(j,i)) then
                 swc(j,i) = watsat(j,i)
               else
                 swc(j,i)   = clm_statevec(cc+offset)
@@ -456,7 +456,7 @@ module enkf_clm_mod
                 !
                 ! If you want to make sure that no zero SWCs appear in
                 ! the code, comment out the error stop
-
+                
 #ifdef PDAF_DEBUG
                 ! error stop "ERROR: Update of zero-swc"
                 print *, "WARNING: Update of zero-swc"
@@ -477,7 +477,7 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
         IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
 
-          IF(clmupdate_swc/=0) THEN
+          IF(clmupdate_swc.NE.0) THEN
             ! TSMP-PDAF: For debug runs, output the state vector in files
             WRITE(fn3, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".update.", tstartcycle, ".txt"
             OPEN(unit=71, file=fn3, action="write")
@@ -503,11 +503,11 @@ module enkf_clm_mod
     endif
 
     !hcp: TG, TV
-    if(clmupdate_T==1) then
+    if(clmupdate_T.EQ.1) then
        cc = 1
          do j=clm_begg,clm_endg
-           tgrou(j) = clm_statevec(cc)
-           tvege(j) = clm_statevec(cc+clm_varsize)
+           tgrou(j) = clm_statevec(cc) 
+           tvege(j) = clm_statevec(cc+clm_varsize) 
            cc = cc + 1
          end do
          write(*,*) 'After update, tgrou(beg) tvege(beg)=',tgrou(clm_begg), tvege(clm_begg)
@@ -522,7 +522,7 @@ module enkf_clm_mod
     !end do
 
     ! write updated texture back to CLM
-    if(clmupdate_texture==1) then
+    if(clmupdate_texture.eq.1) then
       cc = 1
       do i=1,nlevsoi
         do j=clm_begg,clm_endg
@@ -557,11 +557,11 @@ module enkf_clm_mod
          clay = pclay(c,lev)
          sand = psand(c,lev)
 
-         if(sand<=0.0) sand = 1.0
-         if(clay<=0.0) clay = 1.0
+         if(sand.le.0.0) sand = 1.0
+         if(clay.le.0.0) clay = 1.0
 
          ttot = sand + clay
-         if(ttot>100) then
+         if(ttot.gt.100) then
              sand = sand/ttot * 100.0
              clay = clay/ttot * 100.0
          end if
@@ -745,7 +745,7 @@ module enkf_clm_mod
     ! initialize vector with zero values
     longxy(:) = 0
     latixy(:) = 0
-
+  
     ! fill vector with index values
     counter = 1
     do ii = 1, nj
@@ -923,21 +923,21 @@ module enkf_clm_mod
     integer, intent(out) :: dim_l
     integer              :: nshift
 
-    if(clmupdate_swc==1) then
+    if(clmupdate_swc.eq.1) then
       dim_l = nlevsoi
       nshift = nlevsoi
     endif
 
-    if(clmupdate_swc==2) then
+    if(clmupdate_swc.eq.2) then
       dim_l = nlevsoi + 1
       nshift = nlevsoi + 1
     endif
 
-    if(clmupdate_texture==1) then
+    if(clmupdate_texture.eq.1) then
       dim_l = 2*nlevsoi + nshift
     endif
 
-    if(clmupdate_texture==2) then
+    if(clmupdate_texture.eq.2) then
       error stop "Not implemented: clmupdate_texture.eq.2"
     endif
 
