@@ -58,12 +58,18 @@ SUBROUTINE init_pdaf()
 !   USE mod_model, &             ! Model variables
 !        ONLY: nx, ny, nx_p
 
+  ! USE mpi, ONLY: MPI_Success
+  USE mpi, ONLY: MPI_COMM_WORLD
+  USE mpi, ONLY: MPI_INTEGER
+  USE mpi, ONLY: MPI_Gather
+  USE mpi, ONLY: MPI_BCAST
+  USE mpi, ONLY: MPI_Barrier
   USE mod_parallel_pdaf, &     ! Parallelization variables for
     ! assimilation
         ONLY: n_modeltasks, task_id, COMM_filter, COMM_couple, filterpe, &
         abort_parallel, &
         mype_world, COMM_model, npes_model, &
-        mpi_success, mpi_comm_world, mpi_integer, mype_model
+        mype_model
   USE mod_assimilation, &      ! Variables for assimilation
         ONLY: dim_state_p, dim_state, screen, filtertype, subtype, toffset,&
         dim_ens, rms_obs, model_error, model_err_amp, incremental, &

@@ -45,7 +45,9 @@ MODULE mod_parallel_pdaf
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mpi, ONLY: MPI_STATUS_SIZE, MPI_Abort, MPI_COMM_WORLD
+  USE mpi, ONLY: MPI_STATUS_SIZE
+  USE mpi, ONLY: MPI_Abort
+  USE mpi, ONLY: MPI_COMM_WORLD
 
   USE iso_c_binding, ONLY: c_int, c_double
 
