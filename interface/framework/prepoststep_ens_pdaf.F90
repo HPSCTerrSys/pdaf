@@ -61,12 +61,17 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! Later revisions - see svn log
     !
     ! !USES:
+    USE mpi, ONLY: MPI_COMM_WORLD
+    USE mpi, ONLY: MPI_DOUBLE_PRECISION
+    USE mpi, ONLY: MPI_SUCCESS
+    USE mpi, ONLY: MPI_BARRIER
+    USE mpi, ONLY: MPI_GATHERV
+    USE mpi, ONLY: MPI_ABORT
     USE mod_assimilation, &
         ONLY: dim_state, dim_state_p_count
     USE mod_parallel_pdaf, &
-        ONLY: mype_filter, npes_filter, COMM_filter, MPI_DOUBLE_PRECISION, &
-        MPIerr, MPIstatus, filterpe, mype_model, npes_model, mype_world, &
-        MPI_COMM_WORLD, MPI_SUCCESS
+        ONLY: mype_filter, npes_filter, COMM_filter, &
+        MPIerr, MPIstatus, filterpe, mype_model, npes_model, mype_world
     use mod_tsmp, &
         only: tag_model_parflow, pf_statevecsize, nprocclm, model
 

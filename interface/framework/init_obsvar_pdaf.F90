@@ -56,10 +56,13 @@ SUBROUTINE init_obsvar_pdaf(step, dim_obs_p, obs_p, meanvar)
 !
 ! !USES:
 !USE mpi
+USE mpi, ONLY: MPI_ALLREDUCE
+USE mpi, ONLY: MPI_REAL8
+USE mpi, ONLY: MPI_SUM
 USE mod_assimilation, &
     ONLY: rms_obs, pressure_obserr_p, clm_obserr_p
 USE mod_parallel_pdaf, &
-    ONLY: COMM_filter, MPIerr, MPI_REAL8, MPI_SUM, npes_filter
+    ONLY: COMM_filter, MPIerr, npes_filter
 #if defined CLMSA
 USE mod_tsmp, &
        ONLY: tag_model_clm, model

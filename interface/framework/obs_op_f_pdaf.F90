@@ -56,14 +56,19 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   ! Later revisions - see svn log
   !
   ! !USES:
+  USE mpi, ONLY: MPI_DOUBLE
+  USE mpi, ONLY: MPI_DOUBLE_PRECISION
+  USE mpi, ONLY: MPI_INT
+  USE mpi, ONLY: MPI_SUM
+  USE mpi, ONLY: MPI_ALLGATHERV
   USE mod_assimilation, &
        ONLY: obs_index_p, local_dims_obs, local_disp_obs, obs_id_p, obs_nc2pdaf_deprecated, &
        var_id_obs, dim_obs_p
   USE mod_assimilation, ONLY: obs_pdaf2nc
   USE mod_assimilation, ONLY: obs_nc2pdaf
   USE mod_parallel_pdaf, &
-       ONLY: mype_world, mype_filter, npes_filter, comm_filter, MPI_DOUBLE, &
-       MPI_DOUBLE_PRECISION, MPI_INT, MPI_SUM, abort_parallel
+       ONLY: mype_world, mype_filter, npes_filter, comm_filter, &
+       abort_parallel
   !USE mod_read_obs, &
   !     ONLY: var_id_obs_nc
 
