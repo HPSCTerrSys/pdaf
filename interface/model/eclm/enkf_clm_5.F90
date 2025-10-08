@@ -69,6 +69,9 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!>> TSMP PDAF addition beginning
   use iso_C_binding, only: c_char, c_int
   use enkf_clm_mod, only: COMM_model_clm
+#if defined CLMSA
+  use enkf_clm_mod, only: define_clm_statevec
+#endif
 !!<< TSMP PDAF addition end
 
   implicit none
