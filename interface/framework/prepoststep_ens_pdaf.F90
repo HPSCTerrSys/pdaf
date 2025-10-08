@@ -214,7 +214,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
         dim_state_p_stride, MPI_DOUBLE_PRECISION, 0, comm_filter, MPIerr);
         if (MPIerr /= MPI_SUCCESS) then
             print *,"mpi gather failed"
-            call MPI_Abort(MPI_COMM_WORLD, MPIerr)
+            call MPI_Abort(MPI_COMM_WORLD, 1, MPIerr)
         end if
         print *, "prepoststep: gathering variance succeeded"
     end if
