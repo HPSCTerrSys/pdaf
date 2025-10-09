@@ -1017,6 +1017,7 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
              end if
 
+           end if
          end do
        end do
 
