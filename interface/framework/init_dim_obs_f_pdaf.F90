@@ -952,17 +952,20 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
      cnt = 1
 
      do i = 1, dim_obs
+        obs(i) = clm_obs(i)
 
-       obs(i) = clm_obs(i)
+       if(clmupdate_swc==1) then
 
-       if(clmupdate_swc.eq.1) then
+       do g = begg,endg
+         newgridcell = .true.
 
-         do g = begg,endg
-           newgridcell = .true.
+         do c = begc,endc
 
-           do c = begc,endc
+           cg =   mycgridcell(c)
 
-             cg =   mycgridcell(c)
+           if(cg == g) then
+
+             if(newgridcell) then
 
                if(is_use_dr) then
                  deltax = abs(lon(g)-clmobs_lon(i))
@@ -1016,16 +1019,15 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                  if(multierr==1) clm_obserr_p(cnt) = clm_obserr(i)
                  cnt = cnt + 1
                end if
-               newgridcell = .false.
 
-               end if
+               newgridcell = .false.
 
              end if
 
-           end do
          end do
+       end do
 
-       else if(clmupdate_T.eq.1 .or. clmupdate_T.eq.2 .or. clmupdate_T.eq.3 .or. clmupdate_T.eq.4) then
+       else if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4) then
 #ifdef CLMFIVE
          ! patch loop
          do g = begg,endg
@@ -1036,7 +1038,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
              pg = patch%gridcell(p)
              pc = patch%column(p)
 
-             if(pg .eq. g) then
+             if(pg == g) then
                if(newgridcell) then
                  ! Sets first patch/column in a gridcell. TODO: Make
                  ! patch / column information part of the observation
@@ -1047,7 +1049,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                    deltay = abs(lat(g)-clmobs_lat(i))
                  end if
 
-                 if(((is_use_dr).and.(deltax.le.clmobs_dr(1)).and.(deltay.le.clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+                 if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
 
                    ! Set index in state vector, LST will be computed
                    ! for first patch appearing here
@@ -1055,7 +1057,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
                    !write(*,*) 'obs_index_p(',cnt,') is',obs_index_p(cnt)
                    obs_p(cnt) = clm_obs(i)
-                   if(multierr.eq.1) clm_obserr_p(cnt) = clm_obserr(i)
+                   if(multierr==1) clm_obserr_p(cnt) = clm_obserr(i)
                    cnt = cnt + 1
 
                  end if
@@ -1076,13 +1078,13 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
              deltay = abs(lat(g)-clmobs_lat(i))
            end if
 
-           if(((is_use_dr).and.(deltax.le.clmobs_dr(1)).and.(deltay.le.clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
              obs_index_p(cnt) = g-begg+1
            end if
 
            !write(*,*) 'obs_index_p(',cnt,') is',obs_index_p(cnt)
            obs_p(cnt) = clm_obs(i)
-           if(multierr.eq.1) clm_obserr_p(cnt) = clm_obserr(i)
+           if(multierr==1) clm_obserr_p(cnt) = clm_obserr(i)
            cnt = cnt + 1
 
          end do
@@ -1101,13 +1103,13 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
              deltay = abs(lat(g)-clmobs_lat(i))
            end if
 
-           if(((is_use_dr).and.(deltax.le.clmobs_dr(1)).and.(deltay.le.clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
              obs_index_p(cnt) = g-begg+1 +  ((endg-begg+1) * (clmobs_layer(i)-1))
            end if
 
            !write(*,*) 'obs_index_p(',cnt,') is',obs_index_p(cnt)
            obs_p(cnt) = clm_obs(i)
-           if(multierr.eq.1) clm_obserr_p(cnt) = clm_obserr(i)
+           if(multierr==1) clm_obserr_p(cnt) = clm_obserr(i)
            cnt = cnt + 1
 
          end do

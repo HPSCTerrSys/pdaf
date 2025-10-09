@@ -945,21 +945,31 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
      cnt = 1
 
      do i = 1, dim_obs
-
-       obs(i) = clm_obs(i)
+        obs(i) = clm_obs(i)
 
        if(clmupdate_swc==1) then
 
-         do g = begg,endg
-           newgridcell = .true.
+       do g = begg,endg
+         newgridcell = .true.
 
-           do c = begc,endc
+         do c = begc,endc
 
-             cg =   mycgridcell(c)
+           cg =   mycgridcell(c)
 
-             if(cg == g) then
+           if(cg == g) then
 
-               if(newgridcell) then
+             if(newgridcell) then
+
+               if(is_use_dr) then
+                 deltax = abs(lon(g)-clmobs_lon(i))
+                 if (deltax > 180.0) then
+                   deltax = 360.0 - deltax
+                 end if
+                 deltay = abs(lat(g)-clmobs_lat(i))
+               end if
+
+               if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+                 ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
 
                  ! Different settings of observation-location-index in
                  ! state vector depending on the method of state
@@ -1007,8 +1017,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
 
              end if
 
-           end do
          end do
+       end do
 
        else if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4) then
 #ifdef CLMFIVE
