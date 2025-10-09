@@ -36,13 +36,13 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 ! Used in the filters: LSEIK/LETKF/LESTKF
 !
 ! The routine is called during the analysis step
-! on each local analysis domain. It has to 
+! on each local analysis domain. It has to
 ! compute the product of the inverse of the local
 ! observation error covariance matrix with
-! the matrix of locally observed ensemble 
+! the matrix of locally observed ensemble
 ! perturbations.
-! Next to computing the product,  a localizing 
-! weighting (similar to covariance localization 
+! Next to computing the product,  a localizing
+! weighting (similar to covariance localization
 ! often used in EnKF) can be applied to matrix A.
 !
 ! !REVISION HISTORY:
@@ -52,9 +52,13 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 ! !USES:
   USE mod_assimilation, &
        ONLY: cradius, locweight, sradius, obs_index_p, &
-        rms_obs, distance 
+        rms_obs, distance
+  USE mod_assimilation, ONLY: obs_index_l
   USE mod_parallel_pdaf, &
        ONLY: mype_filter
+  USE mod_read_obs, ONLY: multierr
+  USE mod_read_obs, ONLY: clm_obserr
+  USE mod_read_obs, ONLY: pressure_obserr
 
   IMPLICIT NONE
 
@@ -125,7 +129,7 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
         END IF
      END IF
   ENDIF
-  
+
   ! *** initialize numbers (this is for constant observation errors)
   ! Set observation variance and inverse here
   ivariance_obs = 1.0 / rms_obs**2
@@ -174,7 +178,7 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
      END IF
 
      IF (locweight /= 4) THEN
-        ! All localizations except regulated weight based on variance at 
+        ! All localizations except regulated weight based on variance at
         ! single observation point
         CALL PDAF_local_weight(wtype, rtype, cradius, sradius, distance(i), &
              dim_obs_l, rank, A_l, var_obs, weight(i), verbose_w)
@@ -192,6 +196,8 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 ! ********************
 ! *** Apply weight ***
 ! ********************
+ SELECT CASE (multierr)
+ CASE(0)
 
   DO j = 1, rank
      DO i = 1, dim_obs_l
@@ -199,7 +205,23 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
      END DO
   END DO
 
+ CASE(1)
+
+   DO j = 1, rank
+     DO i = 1, dim_obs_l
+#if defined CLMSA
+       ! OBS_INDEX_L: returns NC-ordered index
+       ! CLM_OBSERR: NC-ordered array
+       C_l(i, j) =  1.0/(clm_obserr(obs_index_l(i))*clm_obserr(obs_index_l(i))) * weight(i) * A_l(i, j)
+#else
+       C_l(i, j) =  1.0/(pressure_obserr(obs_index_l(i))*pressure_obserr(obs_index_l(i))) * weight(i) * A_l(i, j)
+#endif
+     END DO
+   END DO
+
+ END SELECT
+
 ! *** Clean up ***
   DEALLOCATE(weight)
-  
+
 END SUBROUTINE prodRinvA_l_pdaf

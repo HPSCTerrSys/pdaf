@@ -17,17 +17,19 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
 ! Later revisions - see svn log
 !
 ! !USES:
-  USE mod_assimilation, &
+!  USE mod_assimilation, &
 !    ONLY: cradius, sradius, locweight, obs_pdaf2nc
 ! hcp
-! we need to store the coordinates of the state vector 
+! we need to store the coordinates of the state vector
 ! and obs array in longxy, latixy, and longxy_obs, latixy_obs
 ! respectively
 #if defined CLMSA
+  USE mod_assimilation, &
     ONLY: cradius, sradius, locweight, obs_pdaf2nc, &
           longxy, latixy, longxy_obs, latixy_obs
 !hc  end
 #else
+  USE mod_assimilation, &
     ONLY: cradius, sradius, locweight, obs_pdaf2nc
 #endif
 !fin hcp
@@ -38,7 +40,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
    USE shr_kind_mod , only : r8 => shr_kind_r8
    USE mod_read_obs, ONLY: clmobs_lon
    USE mod_read_obs, ONLY: clmobs_lat
-   USE enkf_clm_mod, ONLY: init_clm_l_size, clmupdate_T
+   USE enkf_clm_mod, ONLY: clmupdate_T
    USE enkf_clm_mod, ONLY: clm_begc
    USE enkf_clm_mod, ONLY: clm_endc
    USE enkf_clm_mod, ONLY: state_pdaf2clm_c_p
@@ -49,11 +51,12 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
    USE mod_parallel_pdaf, ONLY: abort_parallel
 !fin hcp
 
-  USE mod_tsmp,&
 #if defined CLMSA
+  USE mod_tsmp,&
     ONLY:  tag_model_parflow, tag_model_clm, &
            enkf_subvecsize, model
 #else
+  USE mod_tsmp,&
     ONLY: tag_model_parflow, tag_model_clm, &
           enkf_subvecsize, &
           nx_glob, ny_glob, nz_glob, &
@@ -82,9 +85,9 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
 
 ! *** local variables ***
   INTEGER :: i, j          ! Index of observation component
-  REAL    :: dx,dy,distance  ! Distance between points in the domain 
+  REAL    :: dx,dy,distance  ! Distance between points in the domain
   REAL    :: weight        ! Localization weight
-  REAL    :: tmp(1,1)= 1.0 ! Temporary, but unused array
+  REAL    :: tmp(1,1)      ! Temporary, but unused array
   INTEGER :: wtype         ! Type of weight function
   INTEGER :: rtype         ! Type of weight regulation
 !hcp
@@ -105,6 +108,8 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
+
+  tmp(1,1) = 1.0
 
   ! Screen output
   WRITE (*,'(8x, a)') &
@@ -144,7 +149,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
     call C_F_POINTER(zcoord,zcoord_fortran,[enkf_subvecsize])
 
     ! Check that point observations are used
-    if (.not. point_obs .eq. 1) then
+    if (.not. point_obs == 1) then
       print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(2) `point_obs.eq.1` needed for using obs_pdaf2nc."
       call abort_parallel()
     end if
@@ -163,34 +168,34 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
          dx = abs(x_idx_obs_nc(obs_pdaf2nc(j)) - int(xcoord_fortran(icoord))-1)
          dy = abs(y_idx_obs_nc(obs_pdaf2nc(j)) - int(ycoord_fortran(icoord))-1)
          distance = sqrt(real(dx)**2 + real(dy)**2)
-    
+
          ! Compute weight
          CALL PDAF_local_weight(wtype, rtype, cradius, sradius, distance, 1, 1, tmp, 1.0, weight, 0)
-    
+
          ! Apply localization
          HP(j,i) = weight * HP(j,i)
 
        END DO
     END DO
-    
+
     ! localize HPH^T
     DO j = 1, dim_obs
        DO i = 1, dim_obs
-    
+
          ! Compute distance
          dx = abs(x_idx_obs_nc(obs_pdaf2nc(j)) - x_idx_obs_nc(obs_pdaf2nc(i)))
          dy = abs(y_idx_obs_nc(obs_pdaf2nc(j)) - y_idx_obs_nc(obs_pdaf2nc(i)))
          distance = sqrt(real(dx)**2 + real(dy)**2)
-    
+
          ! Compute weight
          CALL PDAF_local_weight(wtype, rtype, cradius, sradius, distance, 1, 1, tmp, 1.0, weight, 0)
-    
+
          ! Apply localization
          HPH(j,i) = weight * HPH(j,i)
 
        END DO
     END DO
-    
+
   ENDIF ! model==tag_model_parflow
 #endif
 
@@ -200,7 +205,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
    IF(model==tag_model_clm)THEN
 
     ! localize HP
-    ! ----------- 
+    ! -----------
 
     ! Lon/Lat information from CLM
 #ifdef CLMFIVE
@@ -226,7 +231,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
          ! dx = abs(longxy_obs(j) - longxy(state_pdaf2clm_c_p(i)))
          ! dy = abs(latixy_obs(j) - latixy(state_pdaf2clm_c_p(i)))
 
-         ! Units: lat/lon
+         ! Units: lat/lon (degrees)
          dx = abs(clmobs_lon(obs_pdaf2nc(j)) - lon(mycgridcell(state_pdaf2clm_c_p(i))))
          dy = abs(clmobs_lat(obs_pdaf2nc(j)) - lat(mycgridcell(state_pdaf2clm_c_p(i))))
 
@@ -247,27 +252,27 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
          ! Factor ca. 111km comes from R*pi/180, where R is earth
          ! radius and pi/180 is because we input lat/lon in degrees
          distance = 111.19492664455873 * sqrt(real(dx)**2 + real(dy)**2)
-    
+
          ! Compute weight
          CALL PDAF_local_weight(wtype, rtype, cradius, sradius, distance, 1, 1, tmp, 1.0, weight, 0)
-    
+
          ! Apply localization
          HP(j,i) = weight * HP(j,i)
 
       END DO
     END DO
-    
+
     ! localize HPH^T
     DO j = 1, dim_obs
        DO i = 1, dim_obs
-    
+
          ! Compute distance: obs - obs
 
          ! Units: Index numbering
          ! dx = abs(longxy_obs(j) - longxy_obs(i))
          ! dy = abs(latixy_obs(j) - latixy_obs(i))
 
-         ! Units: lat/lon
+         ! Units: lat/lon (degrees)
          dx = abs(clmobs_lon(obs_pdaf2nc(j)) - clmobs_lon(obs_pdaf2nc(i)))
          dy = abs(clmobs_lat(obs_pdaf2nc(j)) - clmobs_lat(obs_pdaf2nc(i)))
 
@@ -288,10 +293,10 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
          ! Factor ca. 111km comes from R*pi/180, where R is earth
          ! radius and pi/180 is because we input lat/lon in degrees
          distance = 111.19492664455873 * sqrt(real(dx)**2 + real(dy)**2)
-    
+
          ! Compute weight
          CALL PDAF_local_weight(wtype, rtype, cradius, sradius, distance, 1, 1, tmp, 1.0, weight, 0)
-    
+
          ! Apply localization
          HPH(j,i) = weight * HPH(j,i)
 
@@ -306,7 +311,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
     ! used here.
     if(allocated(clmobs_lon))deallocate(clmobs_lon)
     if(allocated(clmobs_lat))deallocate(clmobs_lat)
-    
+
   ENDIF ! model==tag_model_clm
 #endif
 !hcp end
