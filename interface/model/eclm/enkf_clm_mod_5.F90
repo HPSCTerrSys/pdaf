@@ -633,7 +633,7 @@ module enkf_clm_mod
                   ! moistures. For variables with very small values in
                   ! the state vector, this would have to be adapted
                   ! (e.g. to relative difference).
-                  if( abs(clm_statevec(state_clm2pdaf_p(j,i)) - clm_statevec_orig(state_clm2pdaf_p(j,i))) .le. 1.0e-7) then
+                  if( abs(clm_statevec(state_clm2pdaf_p(j,i)) - clm_statevec_orig(state_clm2pdaf_p(j,i))) <= 1.0e-7) then
                     cycle
                   end if
 
