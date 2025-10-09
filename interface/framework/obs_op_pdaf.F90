@@ -155,7 +155,7 @@ if (clmupdate_T==1) then
 
 endif
 
-if (clmupdate_T.EQ.2 .OR. clmupdate_T.EQ.3 .OR. clmupdate_T.EQ.4) then
+if (clmupdate_T==2 .OR. clmupdate_T==3 .OR. clmupdate_T==4) then
 
   lpointobs = .false.
 

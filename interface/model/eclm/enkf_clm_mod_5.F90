@@ -303,7 +303,7 @@ module enkf_clm_mod
     endif
 
     !hcp LST DA
-    if(clmupdate_T.eq.1) then
+    if(clmupdate_T==1) then
 
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
       allocate(state_clm2pdaf_p(begp:endp,1))
@@ -339,7 +339,7 @@ module enkf_clm_mod
     !end hcp
 
     ! skin temperature state vector
-    if(clmupdate_T.eq.2) then
+    if(clmupdate_T==2) then
 
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
       allocate(state_clm2pdaf_p(begp:endp,1))
@@ -376,7 +376,7 @@ module enkf_clm_mod
 
     endif
 
-    if(clmupdate_T.eq.3) then
+    if(clmupdate_T==3) then
 
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
       allocate(state_clm2pdaf_p(begp:endp,1))
@@ -416,7 +416,7 @@ module enkf_clm_mod
 
     endif
 
-    if(clmupdate_T.eq.4) then
+    if(clmupdate_T==4) then
 
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
       allocate(state_clm2pdaf_p(begp:endp,1))
@@ -470,7 +470,7 @@ module enkf_clm_mod
 
     !write(*,*) 'clm_paramsize is ',clm_paramsize
     if (allocated(clm_paramarr)) deallocate(clm_paramarr)         !hcp
-    if ((clmupdate_T.eq.1)) then  !hcp
+    if ((clmupdate_T==1)) then  !hcp
       allocate(clm_paramarr(clm_paramsize))
     end if
 
@@ -545,7 +545,7 @@ module enkf_clm_mod
         CLOSE(71)
       END IF
 
-      IF(clmupdate_T.NE.0) THEN
+      IF(clmupdate_T/=0) THEN
         ! TSMP-PDAF: Debug output of CLM t_soisno, first layer
         WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".integrate.", tstartcycle + 1, ".txt"
         OPEN(unit=71, file=fn2, action="write")
@@ -611,7 +611,7 @@ module enkf_clm_mod
     endif
 
     !hcp  LAI
-    if(clmupdate_T.eq.1) then
+    if(clmupdate_T==1) then
       do cc = 1, clm_varsize
         ! t_grnd iterated over cols
         ! t_veg  iterated over patches
@@ -628,7 +628,7 @@ module enkf_clm_mod
     !end hcp  LAI
 
     ! skin temperature state vector
-    if(clmupdate_T.eq.2) then
+    if(clmupdate_T==2) then
       do cc = 1, clm_varsize
         ! t_skin iterated over patches
         clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
@@ -638,7 +638,7 @@ module enkf_clm_mod
     endif
 
     ! skin temperature state vector updating soil temperature
-    if(clmupdate_T.eq.3) then
+    if(clmupdate_T==3) then
       do cc = 1, clm_varsize
         ! t_skin iterated over patches
         clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
@@ -650,7 +650,7 @@ module enkf_clm_mod
     endif
 
     ! soil temperature state vector updating soil temperature
-    if(clmupdate_T.eq.4) then
+    if(clmupdate_T==4) then
       do cc = 1, clm_varsize
         clm_statevec(cc)               = t_soisno(state_pdaf2clm_c_p(cc), state_pdaf2clm_j_p(cc))
       end do
@@ -944,7 +944,7 @@ module enkf_clm_mod
     endif
 
     !hcp: TG, TV
-    if(clmupdate_T.EQ.1) then
+    if(clmupdate_T==1) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
         t_grnd(c) = clm_statevec(state_clm2pdaf_p(p,1))
@@ -954,7 +954,7 @@ module enkf_clm_mod
     ! end hcp TG, TV
 
     ! skin temperature state vector
-    if(clmupdate_T.EQ.2) then
+    if(clmupdate_T==2) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
         t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
@@ -964,7 +964,7 @@ module enkf_clm_mod
     endif
 
     ! skin temperature state vector updating soil temperature
-    if(clmupdate_T.EQ.3) then
+    if(clmupdate_T==3) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
         t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
@@ -976,7 +976,7 @@ module enkf_clm_mod
     endif
 
     ! soil temperature state vector updating soil temperature
-    if(clmupdate_T.EQ.4) then
+    if(clmupdate_T==4) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
         t_soisno(c,1)  = clm_statevec(state_clm2pdaf_p(p,1))
@@ -1011,7 +1011,7 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
 
-      IF(clmupdate_swc.NE.0) THEN
+      IF(clmupdate_swc/=0) THEN
         ! TSMP-PDAF: For debug runs, output the state vector in files
         WRITE(fn3, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".update.", tstartcycle, ".txt"
         OPEN(unit=71, file=fn3, action="write")
@@ -1031,7 +1031,7 @@ module enkf_clm_mod
         CLOSE(71)
       END IF
 
-      IF(clmupdate_T.NE.0) THEN
+      IF(clmupdate_T/=0) THEN
         ! TSMP-PDAF: For debug runs, output the state vector in files
         WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".update.", tstartcycle, ".txt"
         OPEN(unit=71, file=fn2, action="write")
