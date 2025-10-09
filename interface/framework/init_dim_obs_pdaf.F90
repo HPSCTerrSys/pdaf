@@ -1043,7 +1043,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
                    deltay = abs(lat(g)-clmobs_lat(i))
                  end if
 
-                 if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+                 if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+                   ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
 
                    ! Set index in state vector, LST will be computed
                    ! for first patch appearing here
@@ -1072,7 +1073,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
              deltay = abs(lat(g)-clmobs_lat(i))
            end if
 
-           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+             ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
              obs_index_p(cnt) = g-begg+1
            end if
 
@@ -1097,7 +1099,8 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
              deltay = abs(lat(g)-clmobs_lat(i))
            end if
 
-           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+           if(((is_use_dr).and.(deltax<=clmobs_dr(1)).and.(deltay<=clmobs_dr(2))).or. &
+             ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
              obs_index_p(cnt) = g-begg+1 +  ((endg-begg+1) * (clmobs_layer(i)-1))
            end if
 

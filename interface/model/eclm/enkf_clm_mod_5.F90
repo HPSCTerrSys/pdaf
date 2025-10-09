@@ -643,7 +643,8 @@ module enkf_clm_mod
         ! t_skin iterated over patches
         clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
         do lev=1,nlevgrnd
-          clm_statevec(cc+lev*clm_varsize)   = t_soisno(state_pdaf2clm_c_p(cc+lev*clm_varsize), state_pdaf2clm_j_p(cc+lev*clm_varsize))
+          clm_statevec(cc+lev*clm_varsize) = t_soisno(state_pdaf2clm_c_p(cc+lev*clm_varsize), &
+            state_pdaf2clm_j_p(cc+lev*clm_varsize))
         end do
         clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = t_veg(state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize))
       end do
