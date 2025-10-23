@@ -36,8 +36,8 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   ! Used in the filters: LSEIK/LETKF/LESTKF
   !
   ! The routine is called during the loop over
-  ! all local analysis domains. It has to set 
-  ! the dimension of the local observation vector 
+  ! all local analysis domains. It has to set
+  ! the dimension of the local observation vector
   ! for the current local analysis domain.
   !
   ! !REVISION HISTORY:
@@ -58,13 +58,14 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
        ONLY: lon_var_id, ix_var_id, lat_var_id, iy_var_id
   USE mod_read_obs, &
        ONLY: x_idx_obs_nc, y_idx_obs_nc, z_idx_obs_nc, idx_obs_nc, clmobs_lon, &
-       clmobs_lat, var_id_obs_nc, dim_nx, dim_ny 
+       clmobs_lat, var_id_obs_nc, dim_nx, dim_ny
   ! USE mod_read_obs, ONLY: vec_useObs_global
-  USE mod_tsmp, &
 #if defined CLMSA
+  USE mod_tsmp, &
   ONLY: idx_map_subvec2state_fortran, tag_model_parflow, enkf_subvecsize, &
        tag_model_clm, point_obs, model
 #else
+  USE mod_tsmp, &
   ONLY: idx_map_subvec2state_fortran, tag_model_parflow, enkf_subvecsize, &
        tag_model_clm, nx_glob, ny_glob, nz_glob, &
        xcoord, ycoord, zcoord, &
@@ -74,6 +75,18 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   use enkf_clm_mod, only: hactiveg_levels
   USE enkf_clm_mod, ONLY: clmupdate_tws
   ! use GridcellType, only: grc
+
+#if defined CLMSA
+  USE enkf_clm_mod, ONLY: state_loc2clm_c_p
+  use shr_kind_mod, only: r8 => shr_kind_r8
+
+#ifdef CLMFIVE
+  USE GridcellType, ONLY: grc
+  USE ColumnType, ONLY : col
+#else
+  USE clmtype, ONLY : clm3
+#endif
+#endif
 
   USE, INTRINSIC :: iso_c_binding, ONLY: C_F_POINTER
 
@@ -100,7 +113,12 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   INTEGER  :: domain_p_coord   ! Current local analysis domain for coord arrays
 
   !kuw
-  integer :: dx,dy, max_var_id, ierror
+#if defined CLMSA
+  real :: dx,dy
+#else
+  integer :: dx,dy
+#endif
+  integer :: max_var_id, ierror
   integer :: obsind(dim_obs)
   real    :: obsdist(dim_obs)
 
@@ -114,6 +132,16 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   ! lat   => grc%latdeg
 
   ! kuw end
+
+#if defined CLMSA
+  ! INTEGER :: dim_l
+  ! INTEGER :: ncellxy
+  ! INTEGER :: k
+  real(r8), pointer :: lon(:)
+  real(r8), pointer :: lat(:)
+  integer, pointer :: mycgridcell(:) !Pointer for CLM3.5/CLM5.0 col->gridcell index arrays
+  REAL :: yhalf
+#endif
 
   ! **********************************************
   ! *** Initialize local observation dimension ***
@@ -150,14 +178,14 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   obsind    = 0
   obsdist   = 0.0
   dim_obs_l = 0
-  if(point_obs.eq.0) then
+  if(point_obs==0) then
      if(model == tag_model_parflow) THEN
      max_var_id = MAXVAL(var_id_obs_nc(:,:))
      allocate(log_var_id(max_var_id))
      log_var_id(:) = .TRUE.
 
      do m = 1, dim_nx
-        do k = 1, dim_ny   
+        do k = 1, dim_ny
            i = (m-1)* dim_ny + k
            do j = 1, max_var_id
               if(log_var_id(j) .and. var_id_obs_nc(k,m) == j) then
@@ -176,14 +204,14 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
                     dim_obs_l = dim_obs_l + 1
                     obsind(i) = 1
                     log_var_id(j) = .FALSE.
-                    obsdist(i) = dist  
+                    obsdist(i) = dist
                  end if
               end if
            end do
         end do
      end do
      end if
-  else   
+  else
      if(model == tag_model_parflow) THEN
         do i = 1,dim_obs
            dx = abs(x_idx_obs_nc(i) - int(xcoord_fortran(domain_p_coord))-1)
@@ -205,14 +233,14 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   obsind    = 0
   obsdist   = 0.0
   dim_obs_l = 0
-  if(point_obs.eq.0 .and. clmupdate_tws.ne.1) then
+  if(point_obs==0 .and. clmupdate_tws.ne.1) then
      max_var_id = MAXVAL(var_id_obs_nc(:,:))
      allocate(log_var_id(max_var_id))
      log_var_id(:) = .TRUE.
 
      if(model == tag_model_clm) THEN
      do m = 1, dim_nx
-        do k = 1, dim_ny   
+        do k = 1, dim_ny
            i = (m-1)* dim_ny + k
            do j = 1, max_var_id
               if(log_var_id(j) .and. var_id_obs_nc(k,m) == j) then
@@ -233,7 +261,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
      enddo
 
      do m = 1, dim_nx
-        do k = 1, dim_ny   
+        do k = 1, dim_ny
            i = (m-1)* dim_ny + k
            do j = 1, max_var_id
               if(log_var_id(j) .and. var_id_obs_nc(k,m) == j) then
@@ -254,12 +282,46 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
         enddo
      enddo
      end if
-  else 
+  else
      if(model == tag_model_clm) THEN
+
+#ifdef CLMSA
+    ! Lon/Lat information from CLM
+#ifdef CLMFIVE
+    ! Obtain CLM lon/lat information
+    lon   => grc%londeg
+    lat   => grc%latdeg
+    ! Obtain CLM column-gridcell information
+    mycgridcell => col%gridcell
+#else
+    lon   => clm3%g%londeg
+    lat   => clm3%g%latdeg
+    mycgridcell => clm3%g%l%c%gridcell
+#endif
+#endif
+
      do i = 1,dim_obs
+#ifdef CLMSA
+        ! Units: lat/lon (degrees)
+        ! More doc on following lines: See `localize_covar_pdaf`
+
+       ! Compared to LOCALIZE_COVAR_PDAF: No OBS_PDAF2NC. This is in
+       ! order to have OBS_INDEX_L return a NC-ordered array, not
+       ! PDAF-ordered array.
+        dx = abs(clmobs_lon(i) - lon(mycgridcell(state_loc2clm_c_p(domain_p))))
+        dy = abs(clmobs_lat(i) - lat(mycgridcell(state_loc2clm_c_p(domain_p))))
+        IF (dx > 180.0) THEN
+          dx = 360.0 - dx
+        END IF
+        yhalf = ( clmobs_lat(i) + lat(mycgridcell(state_loc2clm_c_p(domain_p))) ) / 2.0
+        dx = dx * cos(yhalf * 3.14159265358979323846 / 180.0)
+        dist = 111.19492664455873 * sqrt(real(dx)**2 + real(dy)**2)
+#else
+        ! Units: Index numbering
         dx = abs(longxy_obs(i) - longxy(domain_p))
         dy = abs(latixy_obs(i) - latixy(domain_p))
         dist = sqrt(real(dx)**2 + real(dy)**2)
+#endif
         obsdist(i) = dist
         if (dist <= real(cradius)) then
            dim_obs_l = dim_obs_l + 1
@@ -303,10 +365,10 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
     !    end if
     ! end do
  
-     end if 
+     end if
   end if
 #endif
-#endif  
+#endif
 !------------------------------------------------------------------------
 
   ! kuw: allocate and determine local observation index and distance
@@ -320,14 +382,14 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 
   cnt = 1
   do i = 1,dim_obs
-     if(obsind(i).eq.1) then
+     if(obsind(i)==1) then
         obs_index_l(cnt) = i
         distance(cnt)    = obsdist(i)
-        !print *,'mype_filter distance(cnt)  ', mype_filter, distance(cnt) 
+        !print *,'mype_filter distance(cnt)  ', mype_filter, distance(cnt)
         cnt = cnt + 1
      end if
   end do
-  
+
   ! if allocated than deallocate logical variable ID log_var_id for setting location
   ! observation vector using remote sensing data
   IF (ALLOCATED(log_var_id)) DEALLOCATE(log_var_id)

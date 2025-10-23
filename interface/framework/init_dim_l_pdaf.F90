@@ -37,7 +37,7 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
 !
 ! The routine is called during analysis step
 ! in the loop over all local analysis domain.
-! It has to set the dimension of local model 
+! It has to set the dimension of local model
 ! state on the current analysis domain.
 !
 ! !REVISION HISTORY:
@@ -48,14 +48,13 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
   USE mod_tsmp, ONLY: tag_model_parflow, &
        tag_model_clm, model
   USE mod_tsmp, &
-       ONLY: init_parf_l_size
+       ONLY: init_dim_l_pfl
   use clm_varpar   , only : nlevsoi
 #ifdef CLMSA
   USE enkf_clm_mod, &
-       ONLY: init_clm_l_size
-  USE enkf_clm_mod, &
        ONLY: hactiveg_levels, num_layer, state_setup, num_hactiveg_patch, hactiveg_patch, clm_varsize_tws
   USE enkf_clm_mod, ONLY: clmupdate_tws
+  USE enkf_clm_mod, ONLY: init_dim_l_clm
 #endif
   IMPLICIT NONE
 
@@ -75,19 +74,31 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
 ! ****************************************
 ! *** Initialize local state dimension ***
 ! ****************************************
-#if (defined PARFLOW_STAND_ALONE || defined COUP_OAS_PFL)
-  if (model.eq.tag_model_parflow) then
-     ! Set the size of the local analysis domain 
-     call init_parf_l_size(dim_l)
-  end if
-#endif  
 
-#ifndef CLMSA
-  if (model.eq.tag_model_clm) then
-     ! Set the size of the local analysis domain   
-     dim_l = 1     
-  end if   
-#else
+#if defined PARFLOW_STAND_ALONE
+  ! Set the size of the local analysis domain
+  call init_dim_l_pfl(dim_l)
+#endif
+
+#if defined COUP_OAS_PFL
+  if (model == tag_model_parflow) then
+     ! Set the size of the local analysis domain
+     call init_dim_l_pfl(dim_l)
+  end if
+  if (model == tag_model_clm) then
+     ! Set the size of the local analysis domain
+     dim_l = 1
+  end if
+#endif
+
+#if defined CLMSA
+  ! Set the size of the local analysis domain
+  ! for clm stand alone mode only
+
+  if (clmupdate_tws.ne.1) then  
+  call init_dim_l_clm(domain_p, dim_l)
+  end if
+
   ! Set the size of the local analysis domain  
   ! for clm stand alone mode only
   if (clmupdate_tws.eq.1) then  
@@ -168,11 +179,6 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
   
     end select
     
-  else
-
-  call init_clm_l_size(dim_l)
-
   end if
-#endif
- 
+
 END SUBROUTINE init_dim_l_pdaf
