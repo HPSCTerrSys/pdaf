@@ -778,6 +778,7 @@ contains
   !> This subroutine reads a provided temporal mean model file
   subroutine read_temp_mean_model(temp_mean_filename)
 
+    use netcdf, only: nf90_max_name
     use netcdf, only: nf90_open
     use netcdf, only: nf90_nowrite
     use netcdf, only: nf90_inq_dimid
