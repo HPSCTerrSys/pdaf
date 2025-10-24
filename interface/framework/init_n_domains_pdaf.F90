@@ -88,14 +88,14 @@ SUBROUTINE init_n_domains_pdaf(step, n_domains_p)
 #endif
 
 #if defined CLMSA
-  if (clmupdate_tws.ne.1) then
+  if (clmupdate_tws/=1) then
   call init_n_domains_clm(n_domains_p)
   end if
 
-  if (clmupdate_tws.eq.1) then
+  if (clmupdate_tws==1) then
   n_domains_p = num_hactiveg
   else
-  ! Here simply the process-local state dimension  
+  ! Here simply the process-local state dimension
   n_domains_p = endg - begg + 1
   end if
 #endif

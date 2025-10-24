@@ -134,7 +134,7 @@ USE enkf_clm_mod, ONLY: clmupdate_tws
      meanvar_p = 0
      sum_p = 0
      counter = 0
-     if (clmupdate_tws.eq.1) then
+     if (clmupdate_tws==1) then
        clm_obserr_p = pack(clm_obserr,vec_useObs_global)
      end if
      do i = 1, dim_obs_p
@@ -148,7 +148,7 @@ USE enkf_clm_mod, ONLY: clmupdate_tws
      ! summing the average of observation errors and communicating it back to each rank
      call MPI_Allreduce(meanvar_p, meanvar, 1, MPI_REAL8, MPI_SUM, COMM_filter, MPIerr)
      ! to get the mean dividing the mean observation error by size of processors
-     meanvar = meanvar/npes_filter    
+     meanvar = meanvar/npes_filter
 
     case(2)
       meanvar_p = 0

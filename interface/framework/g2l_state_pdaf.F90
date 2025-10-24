@@ -93,34 +93,34 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
   end if
   !call g2l_state(domain_p, c_loc(state_p), dim_l, c_loc(state_l))
 #else
-  if (clmupdate_tws.ne.1) then
+  if (clmupdate_tws/=1) then
   call g2l_state_clm(domain_p, dim_p, state_p, dim_l, state_l)
   end if
 
-  if (clmupdate_tws.eq.1) then
+  if (clmupdate_tws==1) then
 
-  
+
     ! first depth dependent variables --> liq and ice (together in statevector or not)
     ! dim_l is number of layers of gridcell + 3 (3 for other compartments that are added to the statevector)
-    ! lets loop over known layers 
-    
-    ! first do canopy water to check how many variables are for this gridcell available next to snow and surface water as well as the layers 
+    ! lets loop over known layers
+
+    ! first do canopy water to check how many variables are for this gridcell available next to snow and surface water as well as the layers
     ! compartments to subtract from dim_l to get layers variables:
-  
-    if (clm_varsize_tws(5).ne.0) then
+
+    if (clm_varsize_tws(5)/=0) then
       sub=3
     else
       sub=2
     end if
-  
-  
+
+
     select case (state_setup)
     case(0) ! liq and ice seperated
       g = hactiveg_levels(domain_p,1)
       do i = 1, (dim_l-sub)/2 ! two entries for liq and ice seperated
         do j = 1, num_layer(i) ! i is the layer that we are in right now
           if (g==hactiveg_levels(j,i)) then ! if the counter is the gridcell of the local domain, we know the position in the statevector
-  
+
             if (i == 1) then ! if first layer
               state_l(i) = state_p(j)     ! first liquid water as it is first in the statevector
               state_l(i+(dim_l-3)/2) = state_p(j+clm_varsize_tws(1))
@@ -128,11 +128,11 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
               state_l(i) = state_p(j + sum(num_layer(1:i-1)))
               state_l(i+(dim_l-3)/2) = state_p(j + sum(num_layer(1:i-1)) + clm_varsize_tws(1))
             end if
-  
+
           end if
         end do
       end do
-  
+
       do j = 1, num_layer(1)
         if (g==hactiveg_levels(j,1)) then
           if (sub==3) then
@@ -145,24 +145,24 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           end if
         end if
       end do
-  
+
     case(1)
-  
+
       g = hactiveg_levels(domain_p,1)
       do i = 1, dim_l-sub ! liq and ice added up
         do j = 1, num_layer(i) ! i is the layer that we are in right now
           if (g==hactiveg_levels(j,i)) then ! if the counter is the gridcell of the local domain, we know the position in the statevector
-  
+
             if (i == 1) then ! if first layer
               state_l(i) = state_p(j)     ! first liquid water as it is first in the statevector
             else
               state_l(i) = state_p(j + sum(num_layer(1:i-1)))
             end if
-  
+
           end if
         end do
       end do
-  
+
       do j = 1, num_layer(1)
         if (g==hactiveg_levels(j,1)) then
           if (sub==3) then
@@ -175,7 +175,7 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           end if
         end if
       end do
-    
+
     case(2) ! only tws in statevector
       g = hactiveg_levels(domain_p,1)
       do j = 1, num_layer(1)
@@ -183,29 +183,29 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           state_l(1) = state_p(j)
         end if
       end do
-  
+
     case(3)
-  
+
       g = hactiveg_levels(domain_p,1)
-  
+
       do j = 1, num_layer(1)
         if (g==hactiveg_levels(j,1)) then
           state_l(1) = state_p(j)
           state_l(2) = state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2))
         end if
       end do
-  
+
     case(4)
-  
+
       g = hactiveg_levels(domain_p,1)
-  
+
       do j = 1, num_layer(1)
         if (g==hactiveg_levels(j,1)) then
           state_l(1) = state_p(j)
           state_l(dim_l) = state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2))
         end if
       end do
-  
+
       if (dim_l==3) then
         do j = 1, num_layer(8)
           if (g==hactiveg_levels(j,8)) then
@@ -213,18 +213,18 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           end if
         end do
       end if
-  
+
     case(5)
-  
+
       g = hactiveg_levels(domain_p,1)
-  
+
       do j = 1, num_layer(1)
         if (g==hactiveg_levels(j,1)) then
           state_l(1) = state_p(j)
           state_l(dim_l) = state_p(j + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3))
         end if
       end do
-  
+
       if (dim_l>=3) then
         do j = 1, num_layer(4)
           if (g==hactiveg_levels(j,4)) then
@@ -232,7 +232,7 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           end if
         end do
       end if
-  
+
       if (dim_l>=4) then
         do j = 1, num_layer(13)
           if (g==hactiveg_levels(j,13)) then
@@ -240,10 +240,10 @@ SUBROUTINE g2l_state_pdaf(step, domain_p, dim_p, state_p, dim_l, state_l)
           end if
         end do
       end if
-  
+
     end select
 
   end if
 #endif
-  
+
 END SUBROUTINE g2l_state_pdaf

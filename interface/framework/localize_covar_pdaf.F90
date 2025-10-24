@@ -113,7 +113,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
 
   REAL, ALLOCATABLE    :: obs_lon(:)
   REAL, ALLOCATABLE    :: obs_lat(:)
-  
+
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
@@ -227,9 +227,9 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
     mycgridcell => clm3%g%l%c%gridcell
 #endif
 
- if(clmupdate_tws.ne.1) then
-    
-    
+ if(clmupdate_tws/=1) then
+
+
    IF(model==tag_model_clm)THEN
 
     DO j = 1, dim_obs
@@ -325,7 +325,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
     if(allocated(clmobs_lat))deallocate(clmobs_lat)
 
   ENDIF ! model==tag_model_clm
-  
+
  else
 
    if (allocated(obs_lon)) deallocate(obs_lon)

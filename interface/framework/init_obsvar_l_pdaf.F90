@@ -138,7 +138,7 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
        count = count+1
      end if
    end do
-   
+
    meanvar_l = sum_l/count
 
  case(2)
@@ -148,7 +148,7 @@ SUBROUTINE init_obsvar_l_pdaf(domain_p, step, dim_obs_l, obs_l, meanvar_l)
    do i = 1, dim_obs_l
      if(vec_useObs_global(obs_index_l(i))) then
        sum_l = sum_l + clm_obscov(obs_index_l(i),obs_index_l(i))
-       count = count + 1 
+       count = count + 1
      end if
    end do
    ! averaging the sum of observation errors with total no of non-zero observations

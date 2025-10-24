@@ -127,7 +127,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
       call abort_parallel()
     end if
 
-    if (clmupdate_tws.ne.1) then
+    if (clmupdate_tws/=1) then
     do i=1,dim_obs
 #if defined CLMSA
       covar(i,i) = clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
@@ -176,7 +176,7 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
     !isdiag=.false.
     ! kuw end
 
-if(multierr.eq.2) then
+if(multierr==2) then
   covar = obscov
   isdiag = .FALSE.
 endif

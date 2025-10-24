@@ -49,7 +49,7 @@ SUBROUTINE prodRinvA_pdaf(step, dim_obs_p, rank_dim_ens, obs_p, A_p, C_p)
         ONLY: rms_obs
    USE mod_assimilation, &
         ONLY: dim_obs, obscov_inv
-  
+
    use mod_read_obs, only: multierr,clm_obserr, pressure_obserr
    use mod_read_obs, only: clm_obscov, vec_useObs, vec_useObs_global
 
@@ -113,7 +113,7 @@ SUBROUTINE prodRinvA_pdaf(step, dim_obs_p, rank_dim_ens, obs_p, A_p, C_p)
   END DO
 
   CASE (1)   ! Diagonal covariance matrix, read from observation file
-    print *, 'prodrinva_pdaf: Observation covariance matrix: case 1'    
+    print *, 'prodrinva_pdaf: Observation covariance matrix: case 1'
     clm_obserr_model = pack(clm_obserr,vec_useObs)
     DO j = 1, rank_dim_ens
       DO i = 1, dim_obs_p
@@ -122,12 +122,12 @@ SUBROUTINE prodRinvA_pdaf(step, dim_obs_p, rank_dim_ens, obs_p, A_p, C_p)
     END DO
 
   CASE (2)	! Fully occupied covariance matrix, read from observation file
-    print *, 'prodrinva_pdaf: Observation covariance matrix: case 2' 
+    print *, 'prodrinva_pdaf: Observation covariance matrix: case 2'
     ! Find out observations that shoud be considered, obscov_inv contains all used observations
     j = 1
     DO i = 1, size(vec_useObs_global,1)
       if(vec_useObs_global(i).eqv..true.) then
-        if(vec_useObs(i).eqv..true.) then 
+        if(vec_useObs(i).eqv..true.) then
           vec_useObs_p(j) = .true.
         else
           vec_useObs_p(j) = .false.

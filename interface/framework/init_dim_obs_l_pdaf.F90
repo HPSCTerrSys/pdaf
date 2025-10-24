@@ -233,7 +233,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
   obsind    = 0
   obsdist   = 0.0
   dim_obs_l = 0
-  if(point_obs==0 .and. clmupdate_tws.ne.1) then
+  if(point_obs==0 .and. clmupdate_tws/=1) then
      max_var_id = MAXVAL(var_id_obs_nc(:,:))
      allocate(log_var_id(max_var_id))
      log_var_id(:) = .TRUE.
@@ -339,12 +339,12 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
     ! else
     !    print*, "lon is not allocated"
     ! end if
- 
+
     ! obs_lon = pack(clmobs_lon,vec_useObs_global)
     ! obs_lat = pack(clmobs_lat,vec_useObs_global)
     ! !if (allocated(clmobs_lon)) deallocate(clmobs_lon)
     ! !if (allocated(clmobs_lat)) deallocate(clmobs_lat)
- 
+
     ! do i = 1, dim_obs
     !    ! check which gridcell domain_p is
     !    g = hactiveg_levels(domain_p,1)
@@ -364,7 +364,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
     !       obsind(i) = 1
     !    end if
     ! end do
- 
+
      end if
   end if
 #endif

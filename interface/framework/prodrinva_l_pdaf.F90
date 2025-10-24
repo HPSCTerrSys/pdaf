@@ -52,7 +52,7 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 ! !USES:
   USE mod_assimilation, &
        ONLY: cradius, locweight, sradius, obs_index_p, &
-        rms_obs, distance 
+        rms_obs, distance
   USE mod_assimilation, &
     ONLY: obscov, obscov_inv, obs_index_l, dim_obs
   use mod_read_obs, only: multierr, clm_obserr, clm_obscov, vec_useObs, vec_useObs_global
@@ -217,9 +217,9 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
          C_l(i, j) =  ivariance_obs * weight(i) * A_l(i, j)
      END DO
   END DO
-   
+
   case(1)
-    
+
     clm_obserr_model = pack(clm_obserr,vec_useObs_global)
     DO j = 1, rank
       DO i = 1, dim_obs_l
@@ -232,7 +232,7 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
     countR = 1
     countC = 1
     do i = 1, dim_obs_l
-      do j = 1,dim_obs_l 
+      do j = 1,dim_obs_l
         !if (i==j) then !test
         obscov_l(countR,countC) = obscov(obs_index_l(i),obs_index_l(j))
         !else

@@ -99,7 +99,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   time = 0.0    ! Not used in fully-parallel implementation variant
   doexit = 0
 
-  if(clmupdate_tws.ne.1) then
+  if(clmupdate_tws/=1) then
 
   !kuw: implementation for at least 1 existing observation per observation file
   !!print *, "stepnow", stepnow
@@ -196,11 +196,11 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   !kuw end
 
   end if
-  
+
 #ifdef CLMSA
 #ifdef CLMFIVE
-  if(clmupdate_tws.eq.1) then
-  
+  if(clmupdate_tws==1) then
+
   nstep = get_nstep()
   nsteps = delt_obs
 
@@ -208,7 +208,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
       write(*,*) 'TSMP-PDAF (in next_observation_pdaf.F90) total_steps: ',total_steps
   end if
   ! Read steps until next observation from current observation file
-  if (stepnow.eq.toffset) then
+  if (stepnow==toffset) then
     set_averaging_to_zero = 0
     if (mype_world==0 .and. screen > 2) then
       write(*,*)'next_observation_pdaf: da_interval from enkfpf.par'
@@ -216,7 +216,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   else
     write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
     call check_n_observationfile_da_interval(fn,da_interval_variable)
-    if (da_interval_variable.ne.ispval) then
+    if (da_interval_variable/=ispval) then
       da_interval = da_interval_variable
     end if
     call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
@@ -226,7 +226,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
     write(*,*)'next_observation_pdaf: fn = ', fn
     write(*,*)'da_interval (in next_observation_pdaf):',da_interval
   end if
-  if (set_averaging_to_zero.ne.ispval) then
+  if (set_averaging_to_zero/=ispval) then
     set_averaging_to_zero = set_averaging_to_zero+nstep
   end if
   if (mype_world==0 .and. screen > 2) then

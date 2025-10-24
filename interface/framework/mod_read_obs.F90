@@ -385,7 +385,7 @@ contains
         endif
 
         !check, if covariance matrix is present in observation file
-        haserr = nf90_inq_varid(ncid, obscov_name, clmobscov_varid) 
+        haserr = nf90_inq_varid(ncid, obscov_name, clmobscov_varid)
         if(haserr == nf90_noerr) then
           multierr = 2
           if(allocated(clm_obscov)) deallocate(clm_obscov)
@@ -564,7 +564,7 @@ contains
     !if(allocated(y_idx_obs_nc))deallocate(y_idx_obs_nc)
     !if(allocated(z_idx_obs_nc))deallocate(z_idx_obs_nc)
     !kuw: clean clm observations
-    IF (.NOT. filtertype == 5 .AND. .NOT. filtertype == 7 .AND. .NOT. filtertype == 8 .and. clmupdate_tws.ne.1) THEN
+    IF (.NOT. filtertype == 5 .AND. .NOT. filtertype == 7 .AND. .NOT. filtertype == 8 .and. clmupdate_tws/=1) THEN
       ! For LETKF, LESTKF, LEnKF lat/lon are used
       if(allocated(clmobs_lon))deallocate(clmobs_lon)
       if(allocated(clmobs_lat))deallocate(clmobs_lat)
@@ -669,17 +669,17 @@ contains
     !character(len = nf90_max_name) :: recorddimname
 
 #ifdef CLMSA
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
     varname = "da_interval_variable"
   else
-#endif
     varname = "da_interval         "
-#ifdef CLMSA
   end if
+#else
+  varname = "da_interval         "
 #endif
 
 #ifdef CLMSA
-  if (clmupdate_tws.eq.1) then
+  if (clmupdate_tws==1) then
     dtime = get_step_size()
 
     call check(nf90_open(fn, nf90_nowrite, ncid))
@@ -688,7 +688,7 @@ contains
     status = nf90_inq_varid(ncid, trim(varname), varid)
     if (status == nf90_noerr) then
       call check(nf90_inq_varid(ncid, trim(varname), varid))
-      call check( nf90_get_var(ncid, varid, aa) )     
+      call check( nf90_get_var(ncid, varid, aa) )
       call check(nf90_close(ncid))
       ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, da_interval is set up as hours
       ! --> is adjusted using information from inside CLM
@@ -697,9 +697,7 @@ contains
       aa = ispval
     end if
   end if
-  if (clmupdate_tws.ne.1) then
-#endif
-
+  if (clmupdate_tws/=1) then
     call check(nf90_open(fn, nf90_nowrite, ncid))
     !call check(nf90_inq_dimid(ncid, dim_name, dimid))
     !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
@@ -707,9 +705,15 @@ contains
     call check( nf90_inq_varid(ncid, trim(varname), varid))
     call check( nf90_get_var(ncid, varid, aa) )
     call check(nf90_close(ncid))
-
-#ifdef CLMSA
   end if
+#else
+    call check(nf90_open(fn, nf90_nowrite, ncid))
+    !call check(nf90_inq_dimid(ncid, dim_name, dimid))
+    !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
+
+    call check( nf90_inq_varid(ncid, trim(varname), varid))
+    call check( nf90_get_var(ncid, varid, aa) )
+    call check(nf90_close(ncid))
 #endif
   end subroutine check_n_observationfile_da_interval
 
@@ -753,11 +757,11 @@ contains
     status = nf90_inq_varid(ncid, varname, varid)
     if (status == nf90_noerr) then
       call check(nf90_inq_varid(ncid, varname, varid))
-      call check( nf90_get_var(ncid, varid, nn) )     
+      call check( nf90_get_var(ncid, varid, nn) )
       call check(nf90_close(ncid))
       ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, set_zero is set up as hours
       ! --> is adjusted using information from inside CLM
-      if (nn.ne.ispval) then
+      if (nn/=ispval) then
         nn = nn*INT(3600/dtime)
       end if
     else
@@ -774,7 +778,13 @@ contains
   !> This subroutine reads a provided temporal mean model file
   subroutine read_temp_mean_model(temp_mean_filename)
 
-    use netcdf
+    use netcdf, only: nf90_open
+    use netcdf, only: nf90_nowrite
+    use netcdf, only: nf90_inq_dimid
+    use netcdf, only: nf90_inquire_dimension
+    use netcdf, only: nf90_inq_varid
+    use netcdf, only: nf90_get_var
+    use netcdf, only: nf90_close
     implicit none
     integer :: ncid, dim_lon, dim_lat, lon_varid, lat_varid, tws_varid
     character (len = *), parameter :: dim_lon_name = "lsmlon"
@@ -920,7 +930,7 @@ contains
     do i = 1, dim_obs
       do g = begg, endg
 
-        ! check distance from each grid point to observation location --> take the coordinate in local system that equals 
+        ! check distance from each grid point to observation location --> take the coordinate in local system that equals
         ! the one of the closest coordinate
         lat1 = lat(g) * pi / 180.0
         lon1 = lon(g) * pi / 180.0

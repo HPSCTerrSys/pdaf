@@ -103,7 +103,7 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 
   if(multierr==1) then
 
-    if (clmupdate_tws.ne.1) then
+    if (clmupdate_tws/=1) then
 
       ! Check that point observations are used
       if (.not. point_obs == 1) then
@@ -128,8 +128,8 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 
     end if
   endif
-  
-  if(multierr.eq.2) then
+
+  if(multierr==2) then
     do i = 1, size(obscov,1)
       do j = 1, size(obscov,2)
         C_p(i,j) = C_p(i,j)+obscov(i,j)

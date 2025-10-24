@@ -222,21 +222,32 @@ end subroutine print_update_clm
 
 subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
-  use iso_c_binding   
+  ! use iso_c_binding
   use shr_kind_mod , only : r8 => shr_kind_r8
-  use domainMod    , only : ldomain 
+  use domainMod    , only : ldomain
   use clm_varpar   , only : nlevsoi
   use clm_varcon   , only : nameg, spval
   use decompmod    , only : get_proc_global, get_proc_bounds, ldecomp, get_proc_total
   use spmdmod      , only : masterproc, npes, mpicom, iam
-  use clm_time_manager        , only : get_nstep    
+  use clm_time_manager        , only : get_nstep
   use clm_instMod, only : soilhydrology_inst, waterstate_inst, atm2lnd_inst
-  use netcdf
-  use enkf_clm_mod, only : num_layer, num_layer_columns, hactivec_levels, hactiveg_levels 
-  use cime_comp_mod
+  use netcdf, only : nf90_create
+  use netcdf, only : NF90_CLOBBER
+  use netcdf, only : nf90_def_dim
+  use netcdf, only : nf90_def_var
+  use netcdf, only : NF90_FLOAT
+  use netcdf, only : nf90_enddef
+  use netcdf, only : nf90_open
+  use netcdf, only : NF90_WRITE
+  use netcdf, only : nf90_inq_varid
+  use netcdf, only : nf90_put_var
+  use netcdf, only : nf90_close
+  use enkf_clm_mod, only : num_layer, num_layer_columns, hactivec_levels, hactiveg_levels
+  ! use cime_comp_mod
   use ColumnType         , only : col
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use mpi
+  use mpi, only: mpi_gatherv
+  use mpi, only: mpi_real8
 
   implicit none
 
@@ -295,7 +306,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   ndlat  = ldomain%nj
 
   if (masterproc) then
-    
+
     allocate(clmstate_tmp_global(1:numg), stat=nerror)
     allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
     clmstate_out(:,:,:) = nan
@@ -323,7 +334,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
     status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
     status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
 
-    dimids_1level = (/ dimids(1), dimids(2) /)
+    dimids_1level = [ dimids(1), dimids(2) ]
     status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
     status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
     status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
@@ -369,7 +380,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
       status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
-                start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+                start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
   end if
 
 
@@ -408,7 +419,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
       status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
-                start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+                start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
   end if
 
 
@@ -442,12 +453,12 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
         jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
         clmstate_out(ji,jj,1) = clmstate_tmp_global(g1)
     end do
-    
+
   end if
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
       status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
 
@@ -467,7 +478,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
       status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
 
@@ -489,21 +500,32 @@ end subroutine print_inc_clm
 
 subroutine print_state_clm() bind(C,name="print_state_clm")
 
-  use iso_c_binding   
+  ! use iso_c_binding
   use shr_kind_mod , only : r8 => shr_kind_r8
-  use domainMod    , only : ldomain 
+  use domainMod    , only : ldomain
   use clm_varpar   , only : nlevsoi
   use clm_varcon   , only : nameg, spval
   use decompmod    , only : get_proc_global, get_proc_bounds, ldecomp, get_proc_total
   use spmdmod      , only : masterproc, npes, mpicom, iam
-  use clm_time_manager        , only : get_nstep    
+  use clm_time_manager        , only : get_nstep
   use clm_instMod, only : soilhydrology_inst, waterstate_inst, atm2lnd_inst
-  use netcdf
+  use netcdf, only : nf90_create
+  use netcdf, only : NF90_CLOBBER
+  use netcdf, only : nf90_def_dim
+  use netcdf, only : nf90_def_var
+  use netcdf, only : NF90_FLOAT
+  use netcdf, only : nf90_enddef
+  use netcdf, only : nf90_open
+  use netcdf, only : NF90_WRITE
+  use netcdf, only : nf90_inq_varid
+  use netcdf, only : nf90_put_var
+  use netcdf, only : nf90_close
   use enkf_clm_mod, only : num_layer, num_layer_columns, hactivec_levels, hactiveg_levels, state_setup
-  use cime_comp_mod
+  ! use cime_comp_mod
   use ColumnType         , only : col
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use mpi
+  use mpi, only: mpi_gatherv
+  use mpi, only: mpi_real8
 
   implicit none
 
@@ -570,7 +592,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   ndlat  = ldomain%nj
 
   if (masterproc) then
-    
+
     allocate(clmstate_tmp_global(1:numg), stat=nerror)
     allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
     clmstate_out(:,:,:) = nan
@@ -592,7 +614,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   end do
 
   ! state before assimilation
-  
+
 
   if(masterproc) then
     call get_state_filename_before(state_before_filename)
@@ -601,7 +623,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
     status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
 
-    dimids_1level = (/ dimids(1), dimids(2) /)
+    dimids_1level = [ dimids(1), dimids(2) ]
     status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
     status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
     status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
@@ -627,7 +649,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     if (masterproc) then
       status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
       status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
-        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+        start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
     end if
 
   end do
@@ -650,7 +672,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     if (masterproc) then
       status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
       status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
-        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+        start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
     end if
 
   end do
@@ -671,7 +693,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
       status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
   if (masterproc) then
@@ -690,7 +712,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
       status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
 
@@ -709,7 +731,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     status =  nf90_def_dim(il_file_id, "lat", ndlat, dimids(2))
     status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
 
-    dimids_1level = (/ dimids(1), dimids(2) /)
+    dimids_1level = [ dimids(1), dimids(2) ]
     status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
     status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
     status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
@@ -735,7 +757,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     if (masterproc) then
       status = nf90_inq_varid(il_file_id, "SOILLIQ" , ncvarid(1))
       status = nf90_put_var( il_file_id, ncvarid(1), clmstate_out(:,:,:), &
-        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+        start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
     end if
 
   end do
@@ -758,7 +780,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
     if (masterproc) then
       status = nf90_inq_varid(il_file_id, "SOILICE" , ncvarid(2))
       status = nf90_put_var( il_file_id, ncvarid(2), clmstate_out(:,:,:), &
-        start = (/ 1, 1, 1 /), count = (/ ndlon, ndlat, nlevsoi /) )
+        start = [ 1, 1, 1 ], count = [ ndlon, ndlat, nlevsoi ] )
     end if
 
   end do
@@ -779,7 +801,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "H2OSNO" , ncvarid(3))
       status = nf90_put_var( il_file_id, ncvarid(3), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
   if (masterproc) then
@@ -798,7 +820,7 @@ subroutine print_state_clm() bind(C,name="print_state_clm")
   if (masterproc) then
     status = nf90_inq_varid(il_file_id, "TWS" , ncvarid(4))
       status = nf90_put_var( il_file_id, ncvarid(4), clmstate_out(:,:,1), &
-                start = (/ 1, 1 /), count = (/ ndlon, ndlat /) )
+                start = [ 1, 1 ], count = [ ndlon, ndlat ] )
   end if
 
 

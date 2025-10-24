@@ -68,13 +68,13 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   USE mod_assimilation, ONLY: obs_nc2pdaf
   USE mod_assimilation, ONLY: local_disp_obs
   USE mod_assimilation, ONLY: tws_temp_mean_d
-  USE mod_assimilation, ONLY: tws_temp_mean_d 
+  USE mod_assimilation, ONLY: tws_temp_mean_d
   USE mod_parallel_pdaf, &
        ONLY: mype_filter, npes_filter, comm_filter
   USE mod_parallel_pdaf, ONLY: mype_world
   USE mod_parallel_pdaf, ONLY: abort_parallel
-  !USE mod_read_obs, & 
-  !     ONLY: var_id_obs_nc 
+  !USE mod_read_obs, &
+  !     ONLY: var_id_obs_nc
 #ifdef CLMSA
   use decompMod , only : get_proc_bounds
   use enkf_clm_mod, only: clmupdate_tws, clm_varsize_tws, state_setup, &
@@ -128,8 +128,7 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
 
 
 #ifdef CLMSA
-  if (clmupdate_tws.ne.1) then
-#endif
+  NOGRACE: if (clmupdate_tws/=1) then
 
   ! Check local observation dimension
   if (.not. local_dims_obs(mype_filter+1) == dim_obs_p) then
@@ -157,8 +156,37 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
        MPI_DOUBLE_PRECISION, m_state_f, local_dims_obs, local_disp_obs, &
        MPI_DOUBLE_PRECISION, comm_filter, ierror)
 
+  end if NOGRACE
+#else
+  ! Check local observation dimension
+  if (.not. local_dims_obs(mype_filter+1) == dim_obs_p) then
+    print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR in local observation dimension"
+    print *, "mype_filter=", mype_filter
+    print *, "local_dims_obs(mype_filter+1)=", local_dims_obs(mype_filter+1)
+    print *, "dim_obs_p=", dim_obs_p
+    call abort_parallel()
+  end if
+
+  ! Initialize process-local observed state
+  ALLOCATE(m_state_tmp(dim_obs_p))
+
+  DO i = 1, dim_obs_p
+     m_state_tmp(i) = state_p(obs_index_p(i))
+  END DO
+
+  !print *,'local_dims_obs(mype_filter+1) ', local_dims_obs(mype_filter+1)
+  !print *,'dim_obs_p ', dim_obs_p
+
+  ! Gather full observed state using local_dims_obs, local_disp_obs
+
+  ! gather local observed states of different sizes in a vector
+  CALL mpi_allgatherv(m_state_tmp, dim_obs_p, &
+       MPI_DOUBLE_PRECISION, m_state_f, local_dims_obs, local_disp_obs, &
+       MPI_DOUBLE_PRECISION, comm_filter, ierror)
+
+#endif
 #ifdef CLMSA
-  else
+  GRACE: if (clmupdate_tws==1) then
 
     m_state_sum(:) = 0
 
@@ -352,13 +380,13 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
       obs_point = obs_id_p(g)
 
       if (obs_point /= 0) then
-        ! now, the gridcell that was looked upon has been added to the sum for its corresponging observations to reproduce it. However, GRACE measures anomalies 
+        ! now, the gridcell that was looked upon has been added to the sum for its corresponging observations to reproduce it. However, GRACE measures anomalies
         ! (TWS changes). Due to this reason, a mean per gridcell has to be removed from this sum. The value from the mean corresponds to the mean per gridcell in an
         ! reference run with unperturbed forcings and surface data.
         !print*, 'difference TWS and reproduced (', g , ') = ', TWS(g)-tws_from_statevector(g)
-        if (tws_temp_mean_d(g).ne.spval .and. tws_from_statevector(g).ne.spval) then
+        if (tws_temp_mean_d(g)/=spval .and. tws_from_statevector(g)/=spval) then
 
-          if (remove_mean.eq.0) then
+          if (remove_mean==0) then
 
             m_state_sum(obs_point) = m_state_sum(obs_point) + tws_from_statevector(g)-tws_temp_mean_d(g)
 
@@ -367,11 +395,11 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
             m_state_sum(obs_point) = m_state_sum(obs_point) + tws_from_statevector(g)
 
           end if
-        else if (tws_temp_mean_d(g).eq.spval .and. .not. tws_from_statevector(g).eq.spval) then
+        else if (tws_temp_mean_d(g)==spval .and. .not. tws_from_statevector(g)==spval) then
           print*, "error, tws temporal mean is spval and reproduced values is not spval for g = ", g
           print*, "reproduced = ", tws_from_statevector(g)
           stop
-        else if (.not. tws_temp_mean_d(g).eq.spval .and. tws_from_statevector(g).eq.spval) then
+        else if (.not. tws_temp_mean_d(g)==spval .and. tws_from_statevector(g)==spval) then
           print*, "error, tws temporal mean is not spval and reproduced values is spvalfor g = ", g
           print*, "temp_mean = ", tws_temp_mean_d(g)
           stop
@@ -391,7 +419,7 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
       print *, "m_state_global = ", m_state_sum_global
     end if
 
-  end if
+  end if GRACE
 #endif
 
 END SUBROUTINE obs_op_f_pdaf

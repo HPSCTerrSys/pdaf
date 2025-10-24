@@ -88,8 +88,8 @@ module enkf_clm_mod
 
   integer :: num_hactiveg, num_hactivec, num_hactiveg_patch, num_hactivep
 
-  integer, allocatable :: hactiveg_levels(:,:)     ! hydrolocial active filter for all levels (gridcell) 
-  integer, allocatable :: hactivec_levels(:,:)     ! hydrolocial active filter for all levels (column) 
+  integer, allocatable :: hactiveg_levels(:,:)     ! hydrolocial active filter for all levels (gridcell)
+  integer, allocatable :: hactivec_levels(:,:)     ! hydrolocial active filter for all levels (column)
   integer, allocatable :: hactivep(:)     ! hydrolocial active filter (patches)
   integer, allocatable :: hactiveg_patch(:)     ! hydrolocial active filter (patches)
   integer, allocatable :: gridcell_state(:)
@@ -354,7 +354,7 @@ module enkf_clm_mod
     endif
     !end hcp
 
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
 
       ! first we build a filter to determine which columns are active / are not active
       ! we also build a gridcell filter for gridcell averges
@@ -373,7 +373,7 @@ module enkf_clm_mod
 
         g = col%gridcell(c) ! gridcell of column
 
-        if ((exclude_greenland.eq.0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
+        if ((exclude_greenland==0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
 
           if (col%hydrologically_active(c)) then
 
@@ -383,11 +383,11 @@ module enkf_clm_mod
 
               do j = 1,nlevsoi
                 ! get number in layers
-    
+
                 if (j<=col%nbedrock(c)) then
                   num_layer(j) = num_layer(j) + 1
                 end if
-    
+
               end do
 
               num_hactiveg = num_hactiveg + 1
@@ -405,7 +405,7 @@ module enkf_clm_mod
 
             num_hactivec = num_hactivec + 1
 
-          end if 
+          end if
         end if
 
       end do
@@ -418,7 +418,7 @@ module enkf_clm_mod
         c = patch%column(p)
         g = col%gridcell(c)
 
-        if ((exclude_greenland.eq.0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
+        if ((exclude_greenland==0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
 
           if (col%hydrologically_active(c) .and. patch%active(p)) then
             if (.not. found(g)) then ! if the gridcell is not found before
@@ -448,10 +448,10 @@ module enkf_clm_mod
         fa = 0
         fg = 0
         do c = clm_begc, clm_endc
-          
+
           g = col%gridcell(c) ! gridcell of column
 
-          if ((exclude_greenland.eq.0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
+          if ((exclude_greenland==0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
 
             if (col%hydrologically_active(c)) then
 
@@ -470,7 +470,7 @@ module enkf_clm_mod
                 fa = fa + 1
                 hactivec_levels(fa,j) = c
               end if
-              
+
             end if
 
           end if
@@ -485,7 +485,7 @@ module enkf_clm_mod
         c = patch%column(p)
         g = col%gridcell(c) ! gridcell of column
 
-        if ((exclude_greenland.eq.0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
+        if ((exclude_greenland==0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
           if (col%hydrologically_active(c) .and. patch%active(p)) then
 
             if (.not. found(g)) then ! if the gridcell is not found before
@@ -569,7 +569,7 @@ module enkf_clm_mod
         clm_varsize_tws(1) = num_layer(1)
         clm_statevecsize = clm_statevecsize + num_layer(1)
         clm_varsize_tws(2) = 0
-        
+
         ! snow
         clm_varsize_tws(3) = num_layer(1)
         clm_statevecsize = clm_statevecsize + num_layer(1)
@@ -582,7 +582,7 @@ module enkf_clm_mod
         clm_statevecsize = clm_statevecsize + num_layer(1)
         clm_varsize_tws(2) = num_layer(8)
         clm_statevecsize = clm_statevecsize + num_layer(8)
-        
+
         ! snow
         clm_varsize_tws(3) = num_layer(1)
         clm_statevecsize = clm_statevecsize + num_layer(1)
@@ -610,9 +610,9 @@ module enkf_clm_mod
 
         clm_varsize_tws(4) = num_layer(1)
         clm_statevecsize = clm_statevecsize + num_layer(1)
-        
+
       end select
-      
+
 
     end if
 
@@ -636,7 +636,7 @@ module enkf_clm_mod
       allocate(clm_statevec_orig(clm_statevecsize))
     end if
 
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
       IF (allocated(clm_statevec_original_input)) deallocate(clm_statevec_original_input)
       allocate(clm_statevec_original_input(1:clm_statevecsize))
 
@@ -714,7 +714,7 @@ module enkf_clm_mod
     integer :: avg_divide_patch
 
     character (len = 110) :: filename_temp
-    
+
     cc = 0
     offset = 0
 
@@ -754,9 +754,9 @@ module enkf_clm_mod
 
       !print*, 'instanteneous values in statevector'
 
-      h2osoi_liq => waterstate_inst%h2osoi_liq_col 
+      h2osoi_liq => waterstate_inst%h2osoi_liq_col
       h2osoi_ice => waterstate_inst%h2osoi_ice_col
-      h2osno => waterstate_inst%h2osno_col 
+      h2osno => waterstate_inst%h2osno_col
       h2osfc => waterstate_inst%h2osfc_col
       h2ocan => waterstate_inst%h2ocan_patch
       TWS => waterstate_inst%tws_hactive
@@ -765,9 +765,9 @@ module enkf_clm_mod
 
       !print*, 'mean values over one month in statevector'
 
-      h2osoi_liq => waterstate_inst%h2osoi_liq_col_mean 
+      h2osoi_liq => waterstate_inst%h2osoi_liq_col_mean
       h2osoi_ice => waterstate_inst%h2osoi_ice_col_mean
-      h2osno => waterstate_inst%h2osno_col_mean  
+      h2osno => waterstate_inst%h2osno_col_mean
       h2osfc => waterstate_inst%h2osfc_col_mean
       h2ocan => waterstate_inst%h2ocan_patch_mean
       TWS => waterstate_inst%tws_hactive_mean
@@ -856,9 +856,9 @@ module enkf_clm_mod
     endif
 
 
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
 
-      if (remove_mean.eq.1) then
+      if (remove_mean==1) then
 
         if (.not. allocated(tws_temp_mean_vector)) then
 
@@ -878,14 +878,14 @@ module enkf_clm_mod
               ! find lon and lat in the file that corresponds to that of the grid point of the sub process
               outer: do l = 1,size(lon_temp_mean,1)
                 do k=1,size(lon_temp_mean,2)
-                    if (lon_temp_mean(l,k).eq.lon(j) .and. lat_temp_mean(l,k).eq.lat(j)) then
+                    if (lon_temp_mean(l,k)==lon(j) .and. lat_temp_mean(l,k)==lat(j)) then
                       tws_temp_mean_vector(j) = tws_temp_mean(l,k)
                       exit outer
                     end if
                 end do
               end do outer
 
-              if (lon(j).ne.lon_temp_mean(l,k) .or. lat(j).ne.lat_temp_mean(l,k)) then
+              if (lon(j)/=lon_temp_mean(l,k) .or. lat(j)/=lat_temp_mean(l,k)) then
                 print *, "Attention: distributing model mean to clumps does not work properly"
                 print *, "idx_lon= ",l, "idx_lat= ",k
                 print *, "lon(j)= ", lon(j),"lon_temp_mean(idx_lon)= ",lon_temp_mean(l,k)
@@ -912,7 +912,7 @@ module enkf_clm_mod
 
         cc = 1
 
-        do j = 1,nlevsoi 
+        do j = 1,nlevsoi
 
           do count = 1, num_layer(j)
 
@@ -1013,10 +1013,10 @@ module enkf_clm_mod
         if (inst_suffix=='_0000' .and. clm_begc==1) then
           print*, "Filling up state vector with all compartments, sum of liq and ice"
         end if
-        
+
         cc = 1
 
-        do j = 1,nlevsoi 
+        do j = 1,nlevsoi
 
           do count = 1, num_layer(j)
 
@@ -1116,7 +1116,7 @@ module enkf_clm_mod
 
           g = hactiveg_levels(count,1)
 
-          if (remove_mean.eq.0) then
+          if (remove_mean==0) then
 
             clm_statevec(cc) = TWS(g)
             clm_statevec_original_input(cc) = TWS(g)
@@ -1131,7 +1131,7 @@ module enkf_clm_mod
           gridcell_state(cc) = g
 
           tws_state(g) = clm_statevec(cc)
-          
+
           cc = cc+1
 
         end do
@@ -1169,7 +1169,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc) = clm_statevec(cc) + avg_sum/avg_divide
 
@@ -1254,7 +1254,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc) = clm_statevec(cc) + avg_sum/avg_divide
 
@@ -1296,7 +1296,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc+clm_varsize_tws(1)) = clm_statevec(cc+clm_varsize_tws(1)) + avg_sum/avg_divide
 
@@ -1379,7 +1379,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc) = clm_statevec(cc) + avg_sum/avg_divide
 
@@ -1421,7 +1421,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc+clm_varsize_tws(1)) = clm_statevec(cc+clm_varsize_tws(1)) + avg_sum/avg_divide
 
@@ -1463,7 +1463,7 @@ module enkf_clm_mod
 
             end do
 
-            if (avg_divide.ne.0) then
+            if (avg_divide/=0) then
 
               clm_statevec(cc+clm_varsize_tws(1)+clm_varsize_tws(2)) = clm_statevec(cc+clm_varsize_tws(1)+clm_varsize_tws(2)) + avg_sum/avg_divide
 
@@ -1799,7 +1799,7 @@ module enkf_clm_mod
       call clm_texture_to_parameters
     endif
 
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
 
       call clm_update_tws
 
@@ -1808,7 +1808,9 @@ module enkf_clm_mod
   end subroutine update_clm
 
   subroutine clm_update_tws()
-    use clm_instMod
+    use clm_instMod, only: waterstate_inst
+    use clm_instMod, only: soilstate_inst
+    use clm_instMod, only: atm2lnd_inst
     use clm_varpar   , only : nlevsoi, nlevsno
     use shr_kind_mod, only: r8 => shr_kind_r8
     use clm_varcon, only: spval, watmin, denh2o, denice, averaging_var
@@ -1852,7 +1854,7 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_ice_state(:,:)
     real(r8), pointer :: h2osno_state(:)
 
-    
+
 
     ! Local variables:
     integer :: c, j, fc,cc, l,p,g, temp, count, count_columns                ! indices
@@ -1884,19 +1886,19 @@ module enkf_clm_mod
 
     select case (TWS_smoother)
     case(0)
-      h2osoi_liq_mean => waterstate_inst%h2osoi_liq_col 
+      h2osoi_liq_mean => waterstate_inst%h2osoi_liq_col
       h2osoi_ice_mean => waterstate_inst%h2osoi_ice_col
-      h2osno_mean => waterstate_inst%h2osno_col 
+      h2osno_mean => waterstate_inst%h2osno_col
     case default
-      h2osoi_liq_mean => waterstate_inst%h2osoi_liq_col_mean 
+      h2osoi_liq_mean => waterstate_inst%h2osoi_liq_col_mean
       h2osoi_ice_mean => waterstate_inst%h2osoi_ice_col_mean
-      h2osno_mean => waterstate_inst%h2osno_col_mean     
+      h2osno_mean => waterstate_inst%h2osno_col_mean
     end select
 
-    h2osoi_liq => waterstate_inst%h2osoi_liq_col 
-    h2osoi_ice => waterstate_inst%h2osoi_ice_col 
+    h2osoi_liq => waterstate_inst%h2osoi_liq_col
+    h2osoi_ice => waterstate_inst%h2osoi_ice_col
     h2osno => waterstate_inst%h2osno_col
-    snl => col%snl     
+    snl => col%snl
     dz         => col%dz
     zi         => col%zi
     z          => col%z
@@ -1921,11 +1923,11 @@ module enkf_clm_mod
     h2osno_state => waterstate_inst%h2osno_state_after
 
 
-     ! now all variables are updated. Restrictions have to be introduced to ensure that the model is still running correctly 
+     ! now all variables are updated. Restrictions have to be introduced to ensure that the model is still running correctly
 
     ! set averaging factor to zero
     averaging_var = 0
-    
+
     do j = 1,nlevsoi
       do count = 1,num_layer_columns(j)
         c = hactivec_levels(count,j)
@@ -1943,7 +1945,7 @@ module enkf_clm_mod
 
     cc = 1
 
-    if (state_setup.eq.0 .or. state_setup.eq.1) then
+    if (state_setup==0 .or. state_setup==1) then
 
       do j = 1,nlevsoi
 
@@ -1955,7 +1957,7 @@ module enkf_clm_mod
 
           if (abs(inc)>1.e-10_r8) then
 
-            if (state_setup.eq.0) then
+            if (state_setup==0) then
               inc_ice = clm_statevec(cc+clm_varsize_tws(1))
             end if
 
@@ -1976,13 +1978,13 @@ module enkf_clm_mod
 
                   ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                   ! so that the direction of the increment is right
-                  if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                  if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                     inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                   end if
 
                   h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                  if (h2osoi_liq(c,j).lt.watmin) then
+                  if (h2osoi_liq(c,j)<watmin) then
                     h2osoi_liq(c,j) = watmin
                   end if
 
@@ -1992,13 +1994,13 @@ module enkf_clm_mod
                     inc_col = 0.0
                   end if
 
-                  if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                  if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                     inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                   end if
 
                   h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                  if (h2osoi_ice(c,j).lt.0) then
+                  if (h2osoi_ice(c,j)<0) then
                     h2osoi_ice(c,j) = 0._r8
                   end if
 
@@ -2008,7 +2010,7 @@ module enkf_clm_mod
 
                   var_temp = h2osoi_liq(c,j)+h2osoi_ice(c,j)
 
-                  if (abs(inc_col).gt.max_inc*var_temp) then
+                  if (abs(inc_col)>max_inc*var_temp) then
                     inc_col = sign(max_inc*var_temp,inc_col)
                   end if
 
@@ -2103,7 +2105,7 @@ module enkf_clm_mod
               ! Tests with snow DA, scripts adapted from Lukas Strebel
               case(0)
 
-                if (inc_col.ne.0._r8) then
+                if (inc_col/=0._r8) then
 
                   if (snl(c) < 0) then ! snow layers in the column
 
@@ -2123,14 +2125,14 @@ module enkf_clm_mod
                       endif
 
                       ! fraction of SWE in each active layers
-                      if(rsnow(c).gt.0.0_r8) then
+                      if(rsnow(c)>0.0_r8) then
                         frac_swe = (h2osoi_liq(c,j) + h2osoi_ice(c,j)) / rsnow(c)
                       else
                         frac_swe = 0.0_r8 ! no fraction SWE if no snow is present in column
                       end if ! end SWE fraction if
 
                       ! fraction of liquid and ice
-                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)).gt.0.0_r8) then
+                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j))>0.0_r8) then
                         frac_liq = h2osoi_liq(c,j) / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
                         frac_ice = 1.0_r8 - frac_liq
                       else
@@ -2138,14 +2140,14 @@ module enkf_clm_mod
                         frac_ice = 0.0_r8
                       end if
 
-                      ! SWE adjustment per layer 
+                      ! SWE adjustment per layer
                       ! assumes identical layer distribution of liq and ice than before DA (frac_*)
                       gain_h2osno = (h2osno(c) - rsnow(c)) * frac_swe
                       gain_h2oliq = gain_h2osno * frac_liq
                       gain_h2oice = gain_h2osno * frac_ice
 
                       ! layer level adjustments
-                      if (snowden.gt.0.0_r8) then
+                      if (snowden>0.0_r8) then
                         gain_dzsno = gain_h2osno / snowden
                       else
                         gain_dzsno = 0.0_r8
@@ -2165,8 +2167,8 @@ module enkf_clm_mod
                       ! DART version the sum goes from ilevel:nlevsno to fit with our indexing:
                       zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
                       ! In DART the check is ilevel == nlevsno but here
-                      
-                      if (j.eq.0) then
+
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
@@ -2175,10 +2177,10 @@ module enkf_clm_mod
 
                     end do
 
-                    ! Update the total snow depth to match updates to layers for active snow layers                
+                    ! Update the total snow depth to match updates to layers for active snow layers
                     snow_depth(c) = sum(dz(c,snl(c)+1:0))
                     h2osno(c) = sum(h2osoi_ice(c,snl(c)+1:0)+h2osoi_liq(c,snl(c)+1:0))
-                    
+
                   end if
 
                 end if
@@ -2199,7 +2201,7 @@ module enkf_clm_mod
 
                   scale = inc_col/h2osno(c)
                   h2osno(c) = inc_col
-                  
+
                   do j=0,snl(c)+1,-1
                     h2osoi_liq(c,j) = h2osoi_liq(c,j)*scale
                     h2osoi_ice(c,j) = h2osoi_ice(c,j)*scale
@@ -2221,13 +2223,13 @@ module enkf_clm_mod
                   do j=0,snl(c)+1,-1
                       h2osoi_liq(c,j) = 0.0_r8
                       h2osoi_ice(c,j) = 0.00000001_r8
-                      dz(c,j)  = 0.00000001_r8  
-                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8                 
-                      if (j.eq.0) then
+                      dz(c,j)  = 0.00000001_r8
+                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
-                      end if                 
+                      end if
                   end do
 
                 else
@@ -2235,7 +2237,7 @@ module enkf_clm_mod
                   h2osoi_liq(c,0) = 0.0_r8
                   h2osoi_ice(c,0) = 0.00000001_r8
                   dz(c,0)  = 0.00000001_r8
-                  zi(c,-1) = dz(c,0)*-1.0_r8 
+                  zi(c,-1) = dz(c,0)*-1.0_r8
                   z(c,0) = zi(c,-1) / 2.0_r8
 
                 end if
@@ -2257,7 +2259,7 @@ module enkf_clm_mod
 
 
 
-    elseif (state_setup.eq.2) then
+    elseif (state_setup==2) then
 
       cc = 1
 
@@ -2286,13 +2288,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -2307,13 +2309,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -2374,7 +2376,7 @@ module enkf_clm_mod
 
                 scale = inc_col/h2osno(c)
                 h2osno(c) = inc_col
-                
+
                 do j=0,snl(c)+1,-1
                   h2osoi_liq(c,j) = h2osoi_liq(c,j)*scale
                   h2osoi_ice(c,j) = h2osoi_ice(c,j)*scale
@@ -2394,13 +2396,13 @@ module enkf_clm_mod
                   do j=0,snl(c)+1,-1
                       h2osoi_liq(c,j) = 0.0_r8
                       h2osoi_ice(c,j) = 0.00000001_r8
-                      dz(c,j)  = 0.00000001_r8  
-                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8                 
-                      if (j.eq.0) then
+                      dz(c,j)  = 0.00000001_r8
+                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
-                      end if                 
+                      end if
                   end do
 
                 else
@@ -2408,7 +2410,7 @@ module enkf_clm_mod
                   h2osoi_liq(c,0) = 0.0_r8
                   h2osoi_ice(c,0) = 0.00000001_r8
                   dz(c,0)  = 0.00000001_r8
-                  zi(c,-1) = dz(c,0)*-1.0_r8 
+                  zi(c,-1) = dz(c,0)*-1.0_r8
                   z(c,0) = zi(c,-1) / 2.0_r8
 
                 end if
@@ -2430,7 +2432,7 @@ module enkf_clm_mod
 
 
 
-    elseif (state_setup.eq.3) then
+    elseif (state_setup==3) then
 
       ! ! soil water
       cc = 1
@@ -2460,18 +2462,18 @@ module enkf_clm_mod
 
                 inc_col = inc*(h2osoi_liq_mean(c,j)+h2osoi_ice_mean(c,j))/clm_statevec_original_input(cc)
 
-                if (abs(inc_col).gt.max_inc*var_temp) then
+                if (abs(inc_col)>max_inc*var_temp) then
                   inc_col = sign(max_inc*var_temp,inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col*(h2osoi_liq(c,j)/var_temp)
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col*(h2osoi_ice(c,j)/var_temp)
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0
                 end if
 
@@ -2567,7 +2569,7 @@ module enkf_clm_mod
       !                   frac_ice = 0.0_r8
       !                 end if
 
-      !                 ! SWE adjustment per layer 
+      !                 ! SWE adjustment per layer
       !                 ! assumes identical layer distribution of liq and ice than before DA (frac_*)
       !                 gain_h2osno = (h2osno(c) - rsnow(c)) * frac_swe
       !                 gain_h2oliq = gain_h2osno * frac_liq
@@ -2594,7 +2596,7 @@ module enkf_clm_mod
       !                 ! DART version the sum goes from ilevel:nlevsno to fit with our indexing:
       !                 zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
       !                 ! In DART the check is ilevel == nlevsno but here
-                      
+
       !                 if (j.eq.0) then
       !                   z(c,j) = zi(c,j-1) / 2.0_r8
       !                 else
@@ -2604,10 +2606,10 @@ module enkf_clm_mod
 
       !               end do
 
-      !               ! Update the total snow depth to match updates to layers for active snow layers                
+      !               ! Update the total snow depth to match updates to layers for active snow layers
       !               snow_depth(c) = sum(dz(c,snl(c)+1:0))
       !               h2osno(c) = sum(h2osoi_ice(c,snl(c)+1:0)+h2osoi_liq(c,snl(c)+1:0))
-                    
+
       !             end if
 
       !           end if
@@ -2623,7 +2625,7 @@ module enkf_clm_mod
       !             inc_col = h2osno(c)+inc_col
       !             scale = inc_col/h2osno(c)
       !             h2osno(c) = inc_col
-                  
+
       !             do j=0,snl(c)+1,-1
       !               h2osoi_liq(c,j) = h2osoi_liq(c,j)*scale
       !               h2osoi_ice(c,j) = h2osoi_ice(c,j)*scale
@@ -2645,13 +2647,13 @@ module enkf_clm_mod
       !             do j=0,snl(c)+1,-1
       !                 h2osoi_liq(c,j) = 0.0_r8
       !                 h2osoi_ice(c,j) = 0.00000001_r8
-      !                 dz(c,j)  = 0.00000001_r8  
-      !                 zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8                 
+      !                 dz(c,j)  = 0.00000001_r8
+      !                 zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
       !                 if (j.eq.0) then
       !                   z(c,j) = zi(c,j-1) / 2.0_r8
       !                 else
       !                   z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
-      !                 end if                 
+      !                 end if
       !             end do
 
       !           else
@@ -2659,7 +2661,7 @@ module enkf_clm_mod
       !             h2osoi_liq(c,0) = 0.0_r8
       !             h2osoi_ice(c,0) = 0.00000001_r8
       !             dz(c,0)  = 0.00000001_r8
-      !             zi(c,-1) = dz(c,0)*-1.0_r8 
+      !             zi(c,-1) = dz(c,0)*-1.0_r8
       !             z(c,0) = zi(c,-1) / 2.0_r8
 
       !           end if
@@ -2678,9 +2680,9 @@ module enkf_clm_mod
 
       ! end do
 
-    elseif (state_setup.eq.4) then
+    elseif (state_setup==4) then
 
-      
+
       ! soil water
 
       cc = 1
@@ -2710,13 +2712,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -2731,13 +2733,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -2804,13 +2806,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -2825,13 +2827,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -2880,7 +2882,7 @@ module enkf_clm_mod
         g = hactiveg_levels(count,1)
 
         inc = clm_statevec(cc+clm_varsize_tws(1)+clm_varsize_tws(2)) - clm_statevec_original_input(cc+clm_varsize_tws(1)+clm_varsize_tws(2)) ! save increment for gridcell
-        
+
         if (abs(inc)>1.e-10_r8) then
 
           do count_columns = 1, num_layer_columns(1)
@@ -2903,7 +2905,7 @@ module enkf_clm_mod
               ! Tests with snow DA, scripts adapted from Lukas Strebel
               case(0)
 
-                if (inc_col.ne.0._r8) then
+                if (inc_col/=0._r8) then
 
                   if (snl(c) < 0) then ! snow layers in the column
 
@@ -2919,14 +2921,14 @@ module enkf_clm_mod
                       endif
 
                       ! fraction of SWE in each active layers
-                      if(rsnow(c).gt.0.0_r8) then
+                      if(rsnow(c)>0.0_r8) then
                         frac_swe = (h2osoi_liq(c,j) + h2osoi_ice(c,j)) / rsnow(c)
                       else
                         frac_swe = 0.0_r8 ! no fraction SWE if no snow is present in column
                       end if ! end SWE fraction if
 
                       ! fraction of liquid and ice
-                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)).gt.0.0_r8) then
+                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j))>0.0_r8) then
                         frac_liq = h2osoi_liq(c,j) / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
                         frac_ice = 1.0_r8 - frac_liq
                       else
@@ -2934,14 +2936,14 @@ module enkf_clm_mod
                         frac_ice = 0.0_r8
                       end if
 
-                      ! SWE adjustment per layer 
+                      ! SWE adjustment per layer
                       ! assumes identical layer distribution of liq and ice than before DA (frac_*)
                       gain_h2osno = (h2osno(c) - rsnow(c)) * frac_swe
                       gain_h2oliq = gain_h2osno * frac_liq
                       gain_h2oice = gain_h2osno * frac_ice
 
                       ! layer level adjustments
-                      if (snowden.gt.0.0_r8) then
+                      if (snowden>0.0_r8) then
                         gain_dzsno = gain_h2osno / snowden
                       else
                         gain_dzsno = 0.0_r8
@@ -2961,8 +2963,8 @@ module enkf_clm_mod
                       ! DART version the sum goes from ilevel:nlevsno to fit with our indexing:
                       zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
                       ! In DART the check is ilevel == nlevsno but here
-                      
-                      if (j.eq.0) then
+
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
@@ -2971,10 +2973,10 @@ module enkf_clm_mod
 
                     end do
 
-                    ! Update the total snow depth to match updates to layers for active snow layers                
+                    ! Update the total snow depth to match updates to layers for active snow layers
                     snow_depth(c) = sum(dz(c,snl(c)+1:0))
                     h2osno(c) = sum(h2osoi_ice(c,snl(c)+1:0)+h2osoi_liq(c,snl(c)+1:0))
-                    
+
                   end if
 
                 end if
@@ -2995,7 +2997,7 @@ module enkf_clm_mod
 
                   scale = inc_col/h2osno(c)
                   h2osno(c) = inc_col
-                  
+
                   do j=0,snl(c)+1,-1
                     h2osoi_liq(c,j) = h2osoi_liq(c,j)*scale
                     h2osoi_ice(c,j) = h2osoi_ice(c,j)*scale
@@ -3017,13 +3019,13 @@ module enkf_clm_mod
                   do j=0,snl(c)+1,-1
                       h2osoi_liq(c,j) = 0.0_r8
                       h2osoi_ice(c,j) = 0.00000001_r8
-                      dz(c,j)  = 0.00000001_r8  
-                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8                 
-                      if (j.eq.0) then
+                      dz(c,j)  = 0.00000001_r8
+                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
-                      end if                 
+                      end if
                   end do
 
                 else
@@ -3031,7 +3033,7 @@ module enkf_clm_mod
                   h2osoi_liq(c,0) = 0.0_r8
                   h2osoi_ice(c,0) = 0.00000001_r8
                   dz(c,0)  = 0.00000001_r8
-                  zi(c,-1) = dz(c,0)*-1.0_r8 
+                  zi(c,-1) = dz(c,0)*-1.0_r8
                   z(c,0) = zi(c,-1) / 2.0_r8
 
                 end if
@@ -3050,9 +3052,9 @@ module enkf_clm_mod
 
       end do
 
-    elseif (state_setup.eq.5) then   !--> I use this as default
+    elseif (state_setup==5) then   !--> I use this as default
 
-      
+
       ! soil water
 
       cc = 1
@@ -3082,13 +3084,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -3103,13 +3105,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -3177,13 +3179,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -3198,13 +3200,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -3269,13 +3271,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_liq(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_liq(c,j)) then
                   inc_col = sign(max_inc*h2osoi_liq(c,j),inc_col)
                 end if
 
                 h2osoi_liq(c,j) = h2osoi_liq(c,j) + inc_col
 
-                if (h2osoi_liq(c,j).lt.watmin) then
+                if (h2osoi_liq(c,j)<watmin) then
                   h2osoi_liq(c,j) = watmin
                 end if
 
@@ -3290,13 +3292,13 @@ module enkf_clm_mod
 
                 ! if increment larger than maximal increment, adjust it to maximal increment with the sign of old increment
                 ! so that the direction of the increment is right
-                if (abs(inc_col).gt.max_inc*h2osoi_ice(c,j)) then
+                if (abs(inc_col)>max_inc*h2osoi_ice(c,j)) then
                   inc_col = sign(max_inc*h2osoi_ice(c,j),inc_col)
                 end if
 
                 h2osoi_ice(c,j) = h2osoi_ice(c,j) + inc_col
 
-                if (h2osoi_ice(c,j).lt.0) then
+                if (h2osoi_ice(c,j)<0) then
                   h2osoi_ice(c,j) = 0._r8
                 end if
 
@@ -3360,7 +3362,7 @@ module enkf_clm_mod
                 inc_col = 0.0
               end if
 
-              if (abs(inc_col).gt.max_inc*h2osno(c)) then
+              if (abs(inc_col)>max_inc*h2osno(c)) then
                 inc_col = sign(max_inc*h2osno(c),inc_col)
               end if
 
@@ -3368,7 +3370,7 @@ module enkf_clm_mod
               ! Tests with snow DA, scripts adapted from Lukas Strebel
               case(0)
 
-                if (inc_col.ne.0._r8) then
+                if (inc_col/=0._r8) then
 
                   if (snl(c) < 0) then ! snow layers in the column
 
@@ -3384,14 +3386,14 @@ module enkf_clm_mod
                       endif
 
                       ! fraction of SWE in each active layers
-                      if(rsnow(c).gt.0.0_r8) then
+                      if(rsnow(c)>0.0_r8) then
                         frac_swe = (h2osoi_liq(c,j) + h2osoi_ice(c,j)) / rsnow(c)
                       else
                         frac_swe = 0.0_r8 ! no fraction SWE if no snow is present in column
                       end if ! end SWE fraction if
 
                       ! fraction of liquid and ice
-                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j)).gt.0.0_r8) then
+                      if ((h2osoi_liq(c,j) + h2osoi_ice(c,j))>0.0_r8) then
                         frac_liq = h2osoi_liq(c,j) / (h2osoi_liq(c,j) + h2osoi_ice(c,j))
                         frac_ice = 1.0_r8 - frac_liq
                       else
@@ -3399,14 +3401,14 @@ module enkf_clm_mod
                         frac_ice = 0.0_r8
                       end if
 
-                      ! SWE adjustment per layer 
+                      ! SWE adjustment per layer
                       ! assumes identical layer distribution of liq and ice than before DA (frac_*)
                       gain_h2osno = (h2osno(c) - rsnow(c)) * frac_swe
                       gain_h2oliq = gain_h2osno * frac_liq
                       gain_h2oice = gain_h2osno * frac_ice
 
                       ! layer level adjustments
-                      if (snowden.gt.0.0_r8) then
+                      if (snowden>0.0_r8) then
                         gain_dzsno = gain_h2osno / snowden
                       else
                         gain_dzsno = 0.0_r8
@@ -3426,8 +3428,8 @@ module enkf_clm_mod
                       ! DART version the sum goes from ilevel:nlevsno to fit with our indexing:
                       zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
                       ! In DART the check is ilevel == nlevsno but here
-                      
-                      if (j.eq.0) then
+
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
@@ -3436,10 +3438,10 @@ module enkf_clm_mod
 
                     end do
 
-                    ! Update the total snow depth to match updates to layers for active snow layers                
+                    ! Update the total snow depth to match updates to layers for active snow layers
                     snow_depth(c) = sum(dz(c,snl(c)+1:0))
                     h2osno(c) = sum(h2osoi_ice(c,snl(c)+1:0)+h2osoi_liq(c,snl(c)+1:0))
-                    
+
                   end if
 
                 end if
@@ -3455,7 +3457,7 @@ module enkf_clm_mod
                   inc_col = h2osno(c)+inc_col
                   scale = inc_col/h2osno(c)
                   h2osno(c) = inc_col
-                  
+
                   do j=0,snl(c)+1,-1
                     h2osoi_liq(c,j) = h2osoi_liq(c,j)*scale
                     h2osoi_ice(c,j) = h2osoi_ice(c,j)*scale
@@ -3477,13 +3479,13 @@ module enkf_clm_mod
                   do j=0,snl(c)+1,-1
                       h2osoi_liq(c,j) = 0.0_r8
                       h2osoi_ice(c,j) = 0.00000001_r8
-                      dz(c,j)  = 0.00000001_r8  
-                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8                 
-                      if (j.eq.0) then
+                      dz(c,j)  = 0.00000001_r8
+                      zi(c,j-1) = sum(dz(c,j:0))*-1.0_r8
+                      if (j==0) then
                         z(c,j) = zi(c,j-1) / 2.0_r8
                       else
                         z(c,j) = sum(zi(c,j-1:j)) / 2.0_r8
-                      end if                 
+                      end if
                   end do
 
                 else
@@ -3491,7 +3493,7 @@ module enkf_clm_mod
                   h2osoi_liq(c,0) = 0.0_r8
                   h2osoi_ice(c,0) = 0.00000001_r8
                   dz(c,0)  = 0.00000001_r8
-                  zi(c,-1) = dz(c,0)*-1.0_r8 
+                  zi(c,-1) = dz(c,0)*-1.0_r8
                   z(c,0) = zi(c,-1) / 2.0_r8
 
                 end if
@@ -3536,7 +3538,7 @@ module enkf_clm_mod
 
     case(0) ! all compartments, liq and ice water indidually
 
-      do j = 1,nlevsoi 
+      do j = 1,nlevsoi
 
         do count = 1, num_layer(j)
 
@@ -3596,7 +3598,7 @@ module enkf_clm_mod
 
     case(1) ! all compartments, sum of ice and liq soil water to overcome balancing errors due to different partitioning of water caused by different temperature
 
-      do j = 1,nlevsoi 
+      do j = 1,nlevsoi
 
         do count = 1, num_layer(j)
 
@@ -3689,7 +3691,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
             h2osoi_liq_state(g,1) = h2osoi_liq_state(g,1) + avg_sum/avg_divide
           end if
 
@@ -3751,7 +3753,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
 
             h2osoi_liq_state(g,1) = h2osoi_liq_state(g,1) + avg_sum/avg_divide
 
@@ -3786,7 +3788,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
 
             h2osoi_liq_state(g,2) = h2osoi_liq_state(g,2) + avg_sum/avg_divide
 
@@ -3849,7 +3851,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
 
             h2osoi_liq_state(g,1) = h2osoi_liq_state(g,1) + avg_sum/avg_divide
 
@@ -3884,7 +3886,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
 
             h2osoi_liq_state(g,2) = h2osoi_liq_state(g,2) + avg_sum/avg_divide
 
@@ -3919,7 +3921,7 @@ module enkf_clm_mod
 
           end do
 
-          if (avg_divide.ne.0) then
+          if (avg_divide/=0) then
 
             h2osoi_liq_state(g,3) = h2osoi_liq_state(g,3) + avg_sum/avg_divide
 
@@ -3951,7 +3953,7 @@ module enkf_clm_mod
 
         end do
 
-        if (avg_divide.ne.0) then
+        if (avg_divide/=0) then
 
           h2osno_state(g) = avg_sum/avg_divide
 
@@ -3962,7 +3964,7 @@ module enkf_clm_mod
     end select
 
 
-  end subroutine
+  end subroutine clm_update_tws
 
   subroutine clm_correct_texture()
 
@@ -4529,13 +4531,13 @@ module enkf_clm_mod
       dim_l = 3*nlevsoi + nshift
     endif
 
-    if (clmupdate_tws.eq.1) then
+    if (clmupdate_tws==1) then
       select case (state_setup)
       case(0)
         dim_l = 2*nlevsoi+3
       case(2)
         dim_l = 1
-      case default 
+      case default
         dim_l = 1*nlevsoi+3
       end select
     end if
@@ -4625,8 +4627,15 @@ module enkf_clm_mod
   !> @details
   !> This subroutine reads a provided temporal mean model file
   subroutine read_temp_mean_model(temp_mean_filename)
-    
-    use netcdf
+
+    use netcdf, only: nf90_max_name
+    use netcdf, only: nf90_open
+    use netcdf, only: nf90_nowrite
+    use netcdf, only: nf90_inq_dimid
+    use netcdf, only: nf90_inquire_dimension
+    use netcdf, only: nf90_inq_varid
+    use netcdf, only: nf90_get_var
+    use netcdf, only: nf90_close
     implicit none
     integer :: ncid, dim_lon, dim_lat, lon_varid, lat_varid, tws_varid
     character (len = *), parameter :: dim_lon_name = "lsmlon"
@@ -4646,7 +4655,7 @@ module enkf_clm_mod
     call check_nc(nf90_inq_dimid(ncid, dim_lat_name, dimid_lat))
     call check_nc(nf90_inquire_dimension(ncid, dimid_lon, recorddimname, dim_lon))
     call check_nc(nf90_inquire_dimension(ncid, dimid_lat, recorddimname, dim_lat))
-    
+
     if(allocated(lon_temp_mean))deallocate(lon_temp_mean)
     if(allocated(lat_temp_mean))deallocate(lat_temp_mean)
     if(allocated(tws_temp_mean))deallocate(tws_temp_mean)
@@ -4666,11 +4675,12 @@ module enkf_clm_mod
 
     call check_nc( nf90_close(ncid) )
 
-  end subroutine
+  end subroutine read_temp_mean_model
 
   subroutine check_nc(status)
-  
-    use netcdf
+
+    use netcdf, only: nf90_noerr
+    use netcdf, only: nf90_strerror
     integer, intent ( in) :: status
 
     if(status /= nf90_noerr) then
