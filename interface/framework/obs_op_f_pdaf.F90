@@ -59,7 +59,6 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   USE mpi, ONLY: MPI_DOUBLE_PRECISION
   USE mpi, ONLY: MPI_ALLGATHERV
   USE mpi, ONLY: MPI_DOUBLE
-  USE mpi, ONLY: MPI_DOUBLE_PRECISION
   USE mpi, ONLY: MPI_INT
   USE mpi, ONLY: MPI_SUM
   USE mod_assimilation, &
