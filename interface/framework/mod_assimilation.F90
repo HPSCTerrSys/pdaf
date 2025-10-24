@@ -96,6 +96,17 @@ MODULE mod_assimilation
   INTEGER, ALLOCATABLE :: obs_nc2pdaf(:)   ! index for mapping mstate to local domain
   !kuw end
 
+
+  ! Yorck
+
+  REAL :: da_interval_variable ! interval until next observation, used by next_observation_pdaf.F90, better solution for next assimilation time step
+  ! has to be read from observation file --> no empty observation files have to be written
+  REAL, ALLOCATABLE :: obscov(:,:) ! observation covariance matrix
+  REAL, ALLOCATABLE :: obscov_inv(:,:) ! inverse of the observation covariance matrix
+  character (len = 110) :: temp_mean_filename ! User defined filename of temporal mean
+
+  ! END Yorck
+
   ! Multi-scale DA
 
   ! store the maximum and minimum limits for remote sensing data with
@@ -134,6 +145,10 @@ MODULE mod_assimilation
 ! ! Settings for observations - available as command line options
   INTEGER :: delt_obs      ! time step interval between assimilation steps
   REAL    :: rms_obs       ! RMS error size for observation generation
+
+  REAL    :: rms_obs_GRACE
+  REAL    :: rms_obs_SM
+
   INTEGER :: dim_obs       ! Number of observations
 
 ! ! General control of PDAF - available as command line options
@@ -198,6 +213,7 @@ MODULE mod_assimilation
                           !     (6) hybrid 3D-Var using LESTKF for ensemble update
                           !     (7) hybrid 3D-Var using ESTKF for ensemble update
   INTEGER :: incremental  ! Perform incremental updating in LSEIK
+  LOGICAL :: use_omi      ! Set whether OMI interface is used
   INTEGER :: dim_lag      ! Number of time instances for smoother
 
 ! ! Filter settings - available as command line options
@@ -251,6 +267,12 @@ MODULE mod_assimilation
                            !   (2) 5th-order polynomial weight function
   REAL    :: sradius       ! Support radius for 5th order polynomial
                            !   or radius for 1/e for exponential weighting
+
+
+  REAL    :: cradius_GRACE
+  REAL    :: sradius_GRACE
+  REAL    :: cradius_SM
+  REAL    :: sradius_SM
 !    ! SEIK-subtype4/LSEIK-subtype4/ESTKF/LESTKF
   INTEGER :: type_sqrt     ! Type of the transform matrix square-root
                            !   (0) symmetric square root

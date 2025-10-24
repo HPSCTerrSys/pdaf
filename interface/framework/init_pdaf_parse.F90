@@ -52,7 +52,15 @@ SUBROUTINE init_pdaf_parse()
        rms_obs, model_error, model_err_amp, incremental, type_forget, &
        forget, rank_analysis_enkf, locweight, cradius, &
        sradius, filename, type_trans, dim_obs, &
-       type_sqrt, obs_filename, dim_lag
+       type_sqrt, obs_filename, dim_lag, temp_mean_filename
+  USE mod_assimilation, ONLY: use_omi
+
+  use mod_assimilation,&
+       only: cradius_GRACE, sradius_GRACE, &
+       cradius_SM, sradius_SM
+
+  use obs_GRACE_pdafomi, only: rms_obs_GRACE
+  use obs_SM_pdafomi, only: rms_obs_SM
 
   IMPLICIT NONE
 
@@ -82,6 +90,15 @@ SUBROUTINE init_pdaf_parse()
   CALL parse(handle, toffset)
   handle = 'rms_obs'                 ! Assumed uniform RMS error of the observations
   CALL parse(handle, rms_obs)
+
+  rms_obs_GRACE = rms_obs  ! backward compatibility
+  handle = 'rms_obs_GRACE'          ! RMS error for GRACE observations
+  CALL parse(handle, rms_obs_GRACE)
+  rms_obs_SM = rms_obs              ! backward compatibility
+  handle = 'rms_obs_SM'             ! RMS error for SM observations
+  CALL parse(handle, rms_obs_SM)
+
+
   handle = 'dim_obs'                 ! Number of observations
   CALL parse(handle, dim_obs)
 
@@ -96,6 +113,8 @@ SUBROUTINE init_pdaf_parse()
   CALL parse(handle, subtype)
   handle = 'incremental'             ! Set whether to use incremental updating
   CALL parse(handle, incremental)
+  handle = 'use_omi'                 ! Set whether to use OMI interface
+  CALL parse(handle, use_omi)
 
   ! Filter-specific settings
   handle = 'type_trans'              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF
@@ -123,6 +142,20 @@ SUBROUTINE init_pdaf_parse()
              ! for 5th-order polynomial or radius for 1/e in exponential weighting
   CALL parse(handle, sradius)
 
+  ! Settings for different observation types
+  cradius_GRACE = cradius  ! For backward compatibility
+  handle = 'cradius_GRACE'          ! Set cut-off radius for GRACE observations
+  call parse(handle, cradius_GRACE)
+  sradius_GRACE = sradius  ! For backward compatibility
+  handle = 'sradius_GRACE'          ! Set support radius for GRACE observations
+  call parse(handle, sradius_GRACE)
+  cradius_SM = cradius              ! For backward compatibility
+  handle = 'cradius_SM'             ! Set cut-off radius for SM observations
+  call parse(handle, cradius_SM)
+  sradius_SM = sradius              ! For backward compatibility
+  handle = 'sradius_SM'             ! Set support radius for SM observations
+  call parse(handle, sradius_SM)
+
   ! Setting for file output
   handle = 'filename'                ! Set name of output file
   CALL parse(handle, filename)
@@ -130,6 +163,10 @@ SUBROUTINE init_pdaf_parse()
   ! *** user defined observation filename *** !
   handle = 'obs_filename'
   call parse(handle, obs_filename)
+
+  ! *** Yorck: user defined filename for temporal mean of TWS to be subtracted in observation operator *** !
+  handle = 'temp_mean_filename'
+  call parse(handle, temp_mean_filename)
 
   !kuw: add smoother support
   handle = 'smoother_lag'

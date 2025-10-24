@@ -52,7 +52,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 !
 ! !USES:
   USE mod_assimilation, &
-       ONLY: delt_obs, toffset, screen
+       ONLY: delt_obs, toffset, screen, da_interval_variable
   USE mod_parallel_pdaf, &
        ONLY: mype_world
   USE mod_tsmp, &
@@ -62,9 +62,15 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   USE mod_tsmp, ONLY: flexible_da_interval
   USE mod_assimilation, &
        ONLY: obs_filename
+  USE mod_assimilation, ONLY: use_omi
   use mod_read_obs, &
-       only: check_n_observationfile
-  use mod_read_obs, ONLY: check_n_observationfile_da_interval
+       only: check_n_observationfile, check_n_observationfile_da_interval, check_n_observationfile_set_zero, &
+              check_n_observationfile_next_type, update_obs_type
+  use clm_time_manager, &
+       only: get_nstep
+  use enkf_clm_mod, &
+       only: da_interval
+  use clm_varcon, only: set_averaging_to_zero, ispval
   IMPLICIT NONE
 
 ! !ARGUMENTS:
@@ -80,7 +86,9 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   !kuw: local variables
   integer :: counter
   integer :: no_obs
+  integer :: nstep
   character (len = 110) :: fn
+  character(len=32) :: obs_type_str
   !kuw end
 
   REAL :: da_interval_new
@@ -89,6 +97,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   time = 0.0    ! Not used in fully-parallel implementation variant
   doexit = 0
 
+  NOOMI:if (.not. use_omi)  then
   !kuw: implementation for at least 1 existing observation per observation file
   !!print *, "stepnow", stepnow
   !write(*,*)'stepnow (in next_observation_pdaf):',stepnow
@@ -185,6 +194,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
 
 
+  end if NOOMI
 
 !  IF (stepnow + nsteps <= total_steps) THEN
 !   if (2<1) then
@@ -213,6 +223,71 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 !   doexit = ??
   !print *, "next_observation_pdaf finished"
 
+#ifdef CLMSA
+#ifdef CLMFIVE
+  OMI:if (use_omi)  then
+  nstep = get_nstep()
+  nsteps = delt_obs
+
+  if (mype_world==0 .and. screen > 2) then
+      write(*,*) 'TSMP-PDAF (in next_observation_pdaf.F90) total_steps: ',total_steps
+  end if
+
+  ! Read steps until next observation from current observation file
+  if (stepnow==toffset) then
+    set_averaging_to_zero = 0
+    if (mype_world==0 .and. screen > 2) then
+      write(*,*)'next_observation_pdaf: da_interval from enkfpf.par'
+    end if
+  else
+    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
+    call check_n_observationfile_da_interval(fn,da_interval_variable)
+    if (da_interval_variable/=ispval) then
+      da_interval = da_interval_variable
+    end if
+    call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
+  end if
+
+  if (mype_world==0 .and. screen > 2) then
+    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
+    write(*,*)'next_observation_pdaf: fn = ', fn
+    write(*,*)'da_interval (in next_observation_pdaf):',da_interval
+  end if
+
+  if (set_averaging_to_zero/=ispval) then
+    set_averaging_to_zero = set_averaging_to_zero+nstep
+  end if
+
+  if (mype_world==0 .and. screen > 2) then
+    write(*,*) 'set_averaging_to_zero (in next_observation_pdaf):',set_averaging_to_zero
+  end if
+
+  if (stepnow==toffset) then
+    if (mype_world==0 .and. screen > 2) then
+      write(*,*)'next_observation_pdaf: observation type from enkfpf.par'
+    end if
+  else
+  ! update observation type with next file
+    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow + delt_obs
+    if (mype_world==0 .and. screen > 2) then
+      write(*,*)'next_observation_pdaf: fn = ', fn
+      write(*,*)'Call check_n_observationfile_next_type'
+    end if
+    call check_n_observationfile_next_type(fn, obs_type_str)
+    if (trim(obs_type_str) /= '') then
+      call update_obs_type(obs_type_str)
+    end if
+
+    if (mype_world==0 .and. screen > 2) then
+      write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
+    end if
+
+  end if
+  end if OMI
+#endif
+#endif
+
 END SUBROUTINE next_observation_pdaf
+
 
 

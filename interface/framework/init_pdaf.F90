@@ -80,6 +80,7 @@ SUBROUTINE init_pdaf()
         type_winf, limit_winf, &
         type_hyb, hyb_gamma, hyb_kappa, &
         pf_res_type, pf_noise_type, pf_noise_amp
+  USE mod_assimilation, ONLY: use_omi
   USE mod_tsmp, &
         ONLY: pf_statevecsize, nprocpf, tag_model_parflow, tag_model_clm, nprocclm, pf_statevec, pf_statevec_fortran, &
         idx_map_subvec2state, idx_map_subvec2state_fortran, model
@@ -250,6 +251,8 @@ SUBROUTINE init_pdaf()
   type_trans = 0     ! Type of ensemble transformation (deterministic or random)
   type_sqrt = 0      ! SEIK/LSEIK/ESTKF/LESTKF: Type of transform matrix square-root
   incremental = 0    ! SEIK/LSEIK: (1) to perform incremental updating
+
+  use_omi = .false.    ! Default: Do not use OMI interface
 
   !EnKF
   rank_analysis_enkf = 0  ! EnKF: rank to be considered for inversion of HPH in analysis step

@@ -79,6 +79,11 @@ MOD_ASSIM = 	mod_parallel_pdaf.o \
 OBJ_MODEL_PDAF =pdaf_terrsysmp.o\
 		integrate_pdaf.o
 
+# Routines of observation handling (PDAF-OMI)
+OBJ_USER_PDAFOMI = obs_GRACE_pdafomi.o \
+		obs_SM_pdafomi.o \
+		callback_obs_pdafomi.o
+
 # Interface to PDAF - model sided
 OBJ_PDAF_INT =  init_parallel_pdaf.o \
 		finalize_pdaf.o \
@@ -121,7 +126,7 @@ OBJ_USER_LOCAL = init_n_domains_pdaf.o \
 		localize_covar_pdaf.o
 
 # Full list of user-supplied routines for online modes
-OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
+OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL) $(OBJ_USER_PDAFOMI)
 
 ######################################################
 

@@ -43,6 +43,7 @@ extern void clm_advance(int *ntstep, int *tstartcycle, int *mype);
 extern void update_clm(int *tstartcycle, int *mype);
 #if defined CLMSA
 extern void print_update_clm(int *ts, int *ttot);
+extern void print_inc_clm();
 #endif
 extern void write_clm_statistics(int *ts, int *ttot);
 extern void clm_finalize();
@@ -59,6 +60,7 @@ GLOBAL char pfoutfile_stat[500];
 GLOBAL char pfproblemname[100];
 GLOBAL char clminfile[100*2];
 GLOBAL char outdir[100];
+GLOBAL char mean_filename[100];
 
 /* integers */
 GLOBAL int nprocpf;
@@ -88,6 +90,7 @@ GLOBAL int nx_local,ny_local,nz_local;
 GLOBAL int clmupdate_swc;
 GLOBAL int clmupdate_T;
 GLOBAL int clmupdate_texture;
+GLOBAL int clmupdate_tws;
 GLOBAL int clmprint_swc;
 GLOBAL int clmprint_et;
 GLOBAL int clmstatevec_allcol;
@@ -108,6 +111,11 @@ GLOBAL int pf_aniso_use_parflow;
 GLOBAL int is_dampfac_state_time_dependent;
 GLOBAL int is_dampfac_param_time_dependent;
 GLOBAL int pf_dampswitch_sm;
+GLOBAL int TWS_smoother;
+GLOBAL int state_setup;
+GLOBAL int update_snow;
+GLOBAL int remove_mean;
+GLOBAL int exclude_greenland;
 GLOBAL int crns_flag;
 GLOBAL int da_print_obs_index;
 extern int model;
@@ -139,3 +147,4 @@ GLOBAL double dampfac_state_time_dependent;
 GLOBAL double dampfac_param_time_dependent;
 GLOBAL double da_crns_depth_tol;
 GLOBAL double clmcrns_bd;
+GLOBAL double max_inc;

@@ -51,6 +51,15 @@ Details: <https://pdaf.awi.de/trac/wiki/WhichFiltertouse>
 `subtype` (integer) Parameter subtype, different options for each
 filter. See [](cmd:command-line-examples).
 
+## use_omi ##
+
+`use_omi` (logical) Controls whether to use OMI interface.
+
+- `.true.`: OMI interface is used
+- `.false.`: OMI interface is not used
+
+See [](cmd:command-line-examples).
+
 ## obs_filename ##
 
 `obs_filename` (string) Prefix for observation files.
