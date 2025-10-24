@@ -48,6 +48,12 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! Later revisions - see svn log
 !
 ! !USES:
+   USE mpi, ONLY: MPI_INTEGER
+   USE mpi, ONLY: MPI_DOUBLE_PRECISION
+   USE mpi, ONLY: MPI_IN_PLACE
+   USE mpi, ONLY: MPI_SUM
+   USE mpi, ONLY: MPI_2INTEGER
+   USE mpi, ONLY: MPI_MAXLOC
    USE mod_assimilation, &
         ONLY: obs_index_p, obs_p
 #ifndef CLMSA
@@ -81,8 +87,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
    Use mod_read_obs, only: vec_useObs, vec_useObs_global
    use mod_parallel_pdaf, &
      only: mype_filter, comm_filter, &
-     mpi_integer, mpi_double_precision, mpi_in_place, mpi_sum, &
-     mype_world, mpi_2integer, mpi_maxloc
+     mype_world
    use clm_varpar   , only : nlevsoi
    use decompMod , only : get_proc_bounds
    use clm_varcon, only: spval
