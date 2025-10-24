@@ -180,5 +180,6 @@ SUBROUTINE init_dim_l_pdaf(step, domain_p, dim_l)
     end select
     
   end if
+#endif
 
 END SUBROUTINE init_dim_l_pdaf

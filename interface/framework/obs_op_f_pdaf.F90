@@ -58,6 +58,10 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   ! !USES:
   USE mpi, ONLY: MPI_DOUBLE_PRECISION
   USE mpi, ONLY: MPI_ALLGATHERV
+  USE mpi, ONLY: MPI_DOUBLE
+  USE mpi, ONLY: MPI_DOUBLE_PRECISION
+  USE mpi, ONLY: MPI_INT
+  USE mpi, ONLY: MPI_SUM
   USE mod_assimilation, &
        ONLY: obs_index_p, local_dims_obs, obs_id_p, &
        var_id_obs, dim_obs_p
@@ -67,8 +71,7 @@ SUBROUTINE obs_op_f_pdaf(step, dim_p, dim_obs_f, state_p, m_state_f)
   USE mod_assimilation, ONLY: tws_temp_mean_d
   USE mod_assimilation, ONLY: tws_temp_mean_d 
   USE mod_parallel_pdaf, &
-       ONLY: mype_filter, npes_filter, comm_filter, MPI_DOUBLE, &
-       MPI_DOUBLE_PRECISION, MPI_INT, MPI_SUM
+       ONLY: mype_filter, npes_filter, comm_filter
   USE mod_parallel_pdaf, ONLY: mype_world
   USE mod_parallel_pdaf, ONLY: abort_parallel
   !USE mod_read_obs, & 
