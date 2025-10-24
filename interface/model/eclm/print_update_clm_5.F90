@@ -222,7 +222,7 @@ end subroutine print_update_clm
 
 subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
-  use iso_c_binding
+  ! use iso_c_binding
   use shr_kind_mod , only : r8 => shr_kind_r8
   use domainMod    , only : ldomain
   use clm_varpar   , only : nlevsoi
@@ -231,11 +231,22 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   use spmdmod      , only : masterproc, npes, mpicom, iam
   use clm_time_manager        , only : get_nstep
   use clm_instMod, only : soilhydrology_inst, waterstate_inst, atm2lnd_inst
-  use netcdf
-  use cime_comp_mod
+  use netcdf, only : nf90_create
+  use netcdf, only : NF90_CLOBBER
+  use netcdf, only : nf90_def_dim
+  use netcdf, only : nf90_def_var
+  use netcdf, only : NF90_FLOAT
+  use netcdf, only : nf90_enddef
+  use netcdf, only : nf90_open
+  use netcdf, only : NF90_WRITE
+  use netcdf, only : nf90_inq_varid
+  use netcdf, only : nf90_put_var
+  use netcdf, only : nf90_close
+  ! use cime_comp_mod
   use ColumnType         , only : col
   use shr_infnan_mod , only : nan => shr_infnan_nan, assignment(=)
-  use mpi
+  use mpi, only: mpi_gatherv
+  use mpi, only: mpi_real8
 
   implicit none
 

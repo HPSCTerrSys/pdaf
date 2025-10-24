@@ -78,7 +78,14 @@ contains
   !> This subroutine reads the observation file and return the data
 
   subroutine read_obs_nc_type(current_observation_filename, current_observation_type, dim_obs_g, obs_g, lon_obs_g, lat_obs_g, layer_obs_g, dr_obs_g, obserr_g, obscov_g)
-    use netcdf
+    use netcdf, only: nf90_max_name
+    use netcdf, only: nf90_open
+    use netcdf, only: nf90_nowrite
+    use netcdf, only: nf90_inq_dimid
+    use netcdf, only: nf90_inquire_dimension
+    use netcdf, only: nf90_inq_varid
+    use netcdf, only: nf90_noerr
+    use netcdf, only: nf90_get_var
     use mod_assimilation, only: screen
     implicit none
 
@@ -914,7 +921,15 @@ contains
 
 
     subroutine check_n_observationfile_next_type(fn, obs_type_str)
-        use netcdf
+        use netcdf, only: nf90_max_name
+        use netcdf, only: nf90_open
+        use netcdf, only: nf90_nowrite
+        use netcdf, only: nf90_inq_dimid
+        use netcdf, only: nf90_inquire_dimension
+        use netcdf, only: nf90_inq_varid
+        use netcdf, only: nf90_noerr
+        use netcdf, only: nf90_get_var
+        use netcdf, only: nf90_close
         use mod_assimilation, only: screen
         implicit none
 
