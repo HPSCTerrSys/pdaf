@@ -57,10 +57,11 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
   USE mpi, ONLY: MPI_ALLREDUCE
   USE mpi, ONLY: MPI_SUM
   USE mpi, ONLY: MPI_IN_PLACE
+  USE mpi, ONLY: MPI_2INTEGER
+  USE mpi, ONLY: MPI_MAXLOC
   USE mod_parallel_pdaf, &
        ONLY: mype_filter, comm_filter, npes_filter, abort_parallel, &
        mype_world
-  USE mod_parallel_pdaf, ONLY: mpi_2integer, mpi_maxloc
   USE mod_assimilation, &
        ONLY: obs_p, obs_index_p, dim_obs, obs_filename, &
        obs, &
@@ -69,8 +70,7 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
        pressure_obserr_p, clm_obserr_p, &
        obs_pdaf2nc, &
        local_dims_obs, &
-       local_disp_obs
-       ! dim_obs_p, &
+       local_disp_obs, &
        obs_id_p, &
        obscov, obscov_inv, filtertype, &
        tws_temp_mean_d, &

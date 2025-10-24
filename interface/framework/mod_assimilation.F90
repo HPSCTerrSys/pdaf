@@ -93,6 +93,7 @@ MODULE mod_assimilation
   INTEGER, ALLOCATABLE :: var_id_obs(:)   ! for remote sensing data the variable identifier to group
                                           ! variables distributed over a grid surface area
   !kuw
+  INTEGER, ALLOCATABLE :: obs_id_p(:) ! ID of observation point in PE-local domain
   INTEGER, ALLOCATABLE :: obs_nc2pdaf(:)   ! index for mapping mstate to local domain
   !kuw end
 

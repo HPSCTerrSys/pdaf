@@ -61,10 +61,11 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
   USE mpi, ONLY: MPI_ALLREDUCE
   USE mpi, ONLY: MPI_SUM
   USE mpi, ONLY: MPI_IN_PLACE
+  USE mpi, ONLY: MPI_2INTEGER
+  USE mpi, ONLY: MPI_MAXLOC
   USE mod_parallel_pdaf, &
        ONLY: mype_filter, comm_filter, npes_filter, abort_parallel, &
        mype_world
-  USE mod_parallel_pdaf, ONLY: mpi_2integer, mpi_maxloc
   USE mod_assimilation, &
        ONLY: obs_p, obs_index_p, dim_obs, obs_filename, &
        obs, &
