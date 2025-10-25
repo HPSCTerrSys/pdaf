@@ -131,6 +131,96 @@ module enkf_clm_mod
 
     ! Soil Moisture DA: State vector index arrays
     if(clmupdate_swc==1) then
+      call define_clm_statevec_swc
+    endif
+
+    if(clmupdate_swc==2) then
+      error stop "Not implemented: clmupdate_swc.eq.2"
+    endif
+
+    if(clmupdate_texture==1) then
+        clm_statevecsize = clm_statevecsize + 2*((endg-begg+1)*nlevsoi)
+    endif
+
+    if(clmupdate_texture==2) then
+        clm_statevecsize = clm_statevecsize + 3*((endg-begg+1)*nlevsoi)
+    endif
+
+    !hcp LST DA
+    if(clmupdate_T==1) then
+      error stop "Not implemented: clmupdate_T.eq.1"
+    endif
+    !end hcp
+
+#ifdef PDAF_DEBUG
+    ! Debug output of clm_statevecsize
+    WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
+#endif
+
+    !write(*,*) 'clm_statevecsize is ',clm_statevecsize
+    IF (allocated(clm_statevec)) deallocate(clm_statevec)
+    if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0)) then
+      !hcp added condition
+      allocate(clm_statevec(clm_statevecsize))
+    end if
+
+    ! Allocate statevector-duplicate for saving original column mean
+    ! values used in computing increments during updating the state
+    ! vector in column-mean-mode.
+    IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
+    if (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) then
+      allocate(clm_statevec_orig(clm_statevecsize))
+    end if
+
+    !write(*,*) 'clm_paramsize is ',clm_paramsize
+    if (allocated(clm_paramarr)) deallocate(clm_paramarr)         !hcp
+    if ((clmupdate_T/=0)) then  !hcp
+      error stop "Not implemented clmupdate_T.NE.0"
+    end if
+
+  end subroutine define_clm_statevec
+
+
+
+
+
+  subroutine define_clm_statevec_swc()
+    use decompMod , only : get_proc_bounds
+    use clm_varpar   , only : nlevsoi
+    use clm_varcon , only : ispval
+    use ColumnType , only : col
+
+    implicit none
+
+    integer,intent(in) :: mype
+
+    integer :: i
+    integer :: c
+    integer :: g
+    integer :: cc
+
+    integer :: begp, endp   ! per-proc beginning and ending pft indices
+    integer :: begc, endc   ! per-proc beginning and ending column indices
+    integer :: begl, endl   ! per-proc beginning and ending landunit indices
+    integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+
+
+    call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+#ifdef PDAF_DEBUG
+    WRITE(*,"(a,i5,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a)") &
+      "TSMP-PDAF mype(w)=", mype, " define_clm_statevec, CLM5-bounds (g,l,c,p)----",&
+      begg,",",endg,",",begl,",",endl,",",begc,",",endc,",",begp,",",endp," -------"
+#endif
+
+    clm_begg     = begg
+    clm_endg     = endg
+    clm_begc     = begc
+    clm_endc     = endc
+    clm_begp     = begp
+    clm_endp     = endp
+
+    ! Soil Moisture DA: State vector index arrays
 
       ! 1) COL/GRC: CLM->PDAF
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
@@ -283,54 +373,8 @@ module enkf_clm_mod
 #endif
       end do
 
-    endif
-
-    if(clmupdate_swc==2) then
-      error stop "Not implemented: clmupdate_swc.eq.2"
-    endif
-
-    if(clmupdate_texture==1) then
-        clm_statevecsize = clm_statevecsize + 2*((endg-begg+1)*nlevsoi)
-    endif
-
-    if(clmupdate_texture==2) then
-        clm_statevecsize = clm_statevecsize + 3*((endg-begg+1)*nlevsoi)
-    endif
-
-    !hcp LST DA
-    if(clmupdate_T==1) then
-      error stop "Not implemented: clmupdate_T.eq.1"
-    endif
-    !end hcp
-
-#ifdef PDAF_DEBUG
-    ! Debug output of clm_statevecsize
-    WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
-#endif
-
-    !write(*,*) 'clm_statevecsize is ',clm_statevecsize
-    IF (allocated(clm_statevec)) deallocate(clm_statevec)
-    if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0)) then
-      !hcp added condition
-      allocate(clm_statevec(clm_statevecsize))
-    end if
-
-    ! Allocate statevector-duplicate for saving original column mean
-    ! values used in computing increments during updating the state
-    ! vector in column-mean-mode.
-    IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
-    if (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) then
-      allocate(clm_statevec_orig(clm_statevecsize))
-    end if
-
-    !write(*,*) 'clm_paramsize is ',clm_paramsize
-    if (allocated(clm_paramarr)) deallocate(clm_paramarr)         !hcp
-    if ((clmupdate_T/=0)) then  !hcp
-      error stop "Not implemented clmupdate_T.NE.0"
-    end if
-
-  end subroutine define_clm_statevec
-
+  end subroutine define_clm_statevec_swc
+  
   subroutine cleanup_clm_statevec()
 
     implicit none
@@ -340,6 +384,7 @@ module enkf_clm_mod
     IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
     IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
     IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
+    IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
 
   end subroutine cleanup_clm_statevec
 
@@ -384,12 +429,72 @@ module enkf_clm_mod
     END IF
 #endif
 
+    if(clmupdate_swc==1) then
+      call set_clm_statevec_swc
+    end if
+
     ! calculate shift when CRP data are assimilated
     if(clmupdate_swc==2) then
       error stop "Not implemented clmupdate_swc.eq.2"
     endif
 
-    if(clmupdate_swc/=0) then
+    !hcp  LAI
+    if(clmupdate_T==1) then
+      error stop "Not implemented: clmupdate_T.eq.1"
+    endif
+    !end hcp  LAI
+
+    ! write average swc to state vector (CRP assimilation)
+    if(clmupdate_swc==2) then
+      error stop "Not implemented: clmupdate_swc.eq.2"
+    endif
+
+    ! write texture values to state vector (if desired)
+    if(clmupdate_texture/=0) then
+      cc = 1
+      do i=1,nlevsoi
+        do j=clm_begg,clm_endg
+          clm_statevec(cc+1*clm_varsize+offset) = psand(j,i)
+          clm_statevec(cc+2*clm_varsize+offset) = pclay(j,i)
+          if(clmupdate_texture==2) then
+            !incl. organic matter values
+            clm_statevec(cc+3*clm_varsize+offset) = porgm(j,i)
+          end if
+          cc = cc + 1
+        end do
+      end do
+    endif
+
+#ifdef PDAF_DEBUG
+    IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble < 0) THEN
+      ! TSMP-PDAF: For debug runs, output the state vector in files
+      WRITE(fn, "(a,i5.5,a,i5.5,a)") "clmstate_", mype, ".integrate.", tstartcycle + 1, ".txt"
+      OPEN(unit=71, file=fn, action="write")
+      DO i = 1, clm_statevecsize
+        WRITE (71,"(es22.15)") clm_statevec(i)
+      END DO
+      CLOSE(71)
+    END IF
+#endif
+
+  end subroutine set_clm_statevec
+
+
+
+  subroutine set_clm_statevec_swc()
+    use clm_instMod, only : soilstate_inst, waterstate_inst
+    use clm_varpar   , only : nlevsoi
+    use ColumnType , only : col
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    implicit none
+    real(r8), pointer :: swc(:,:)
+    integer :: j,g,cc,c
+    integer :: n_c
+
+    cc = 0
+
+    swc   => waterstate_inst%h2osoi_vol_col
+
       ! write swc values to state vector
       if (clmstatevec_colmean==1) then
 
@@ -436,49 +541,9 @@ module enkf_clm_mod
           clm_statevec(cc) = swc(state_pdaf2clm_c_p(cc), state_pdaf2clm_j_p(cc))
         end do
       end if
-    endif
 
-    !hcp  LAI
-    if(clmupdate_T==1) then
-      error stop "Not implemented: clmupdate_T.eq.1"
-    endif
-    !end hcp  LAI
-
-    ! write average swc to state vector (CRP assimilation)
-    if(clmupdate_swc==2) then
-      error stop "Not implemented: clmupdate_swc.eq.2"
-    endif
-
-    ! write texture values to state vector (if desired)
-    if(clmupdate_texture/=0) then
-      cc = 1
-      do i=1,nlevsoi
-        do j=clm_begg,clm_endg
-          clm_statevec(cc+1*clm_varsize+offset) = psand(j,i)
-          clm_statevec(cc+2*clm_varsize+offset) = pclay(j,i)
-          if(clmupdate_texture==2) then
-            !incl. organic matter values
-            clm_statevec(cc+3*clm_varsize+offset) = porgm(j,i)
-          end if
-          cc = cc + 1
-        end do
-      end do
-    endif
-
-#ifdef PDAF_DEBUG
-    IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble < 0) THEN
-      ! TSMP-PDAF: For debug runs, output the state vector in files
-      WRITE(fn, "(a,i5.5,a,i5.5,a)") "clmstate_", mype, ".integrate.", tstartcycle + 1, ".txt"
-      OPEN(unit=71, file=fn, action="write")
-      DO i = 1, clm_statevecsize
-        WRITE (71,"(es22.15)") clm_statevec(i)
-      END DO
-      CLOSE(71)
-    END IF
-#endif
-
-  end subroutine set_clm_statevec
-
+  end subroutine set_clm_statevec_swc
+  
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
     use clm_varpar   , only : nlevsoi
     use clm_time_manager  , only : update_DA_nstep
@@ -579,6 +644,92 @@ module enkf_clm_mod
 
     ! write updated swc back to CLM
     if(clmupdate_swc/=0) then
+      call update_clm_swc(tstartcycle, mype)
+    endif
+
+    !hcp: TG, TV
+    if(clmupdate_T==1) then
+      error stop "Not implemented: clmupdate_T.eq.1"
+    endif
+    ! end hcp TG, TV
+
+    !! update liquid water content
+    !do j=clm_begg,clm_endg
+    !  do i=1,nlevsoi
+    !    h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o
+    !  end do
+    !end do
+
+    ! write updated texture back to CLM
+    if(clmupdate_texture/=0) then
+      cc = 1
+      do i=1,nlevsoi
+        do j=clm_begg,clm_endg
+          psand(j,i) = clm_statevec(cc+1*clm_varsize+offset)
+          pclay(j,i) = clm_statevec(cc+2*clm_varsize+offset)
+          if(clmupdate_texture==2) then
+            ! incl. organic matter
+            porgm(j,i) = clm_statevec(cc+3*clm_varsize+offset)
+          end if
+          cc = cc + 1
+        end do
+      end do
+      call clm_correct_texture
+      call clm_texture_to_parameters
+    endif
+
+  end subroutine update_clm
+
+
+  subroutine update_clm_swc(tstartcycle, mype)
+    use clm_varpar   , only : nlevsoi
+    use shr_kind_mod , only : r8 => shr_kind_r8
+    use ColumnType , only : col
+    use clm_instMod, only : soilstate_inst, waterstate_inst
+    use clm_varcon      , only : denh2o, denice, watmin
+    use clm_varcon      , only : ispval
+    use clm_varcon      , only : spval
+
+    implicit none
+
+    integer,intent(in) :: tstartcycle
+    integer,intent(in) :: mype
+
+    real(r8), pointer :: swc(:,:)
+    real(r8), pointer :: watsat(:,:)
+
+    real(r8), pointer :: dz(:,:)          ! layer thickness depth (m)
+    real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
+    real(r8), pointer :: h2osoi_ice(:,:)
+    real(r8), pointer :: snow_depth(:)
+    real(r8), pointer :: liq_inc(:,:), ice_inc(:,:), snow_inc(:)
+    real(r8)  :: rliq,rice
+    real(r8)  :: watmin_check      ! minimum soil moisture for checking clm_statevec (mm)
+    real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
+    real(r8)  :: swc_update        ! updated SWC in loop
+
+    integer :: i,j,cc
+    character (len = 31) :: fn2    !TSMP-PDAF: function name for state vector outpu
+    character (len = 32) :: fn3    !TSMP-PDAF: function name for state vector outpu
+    character (len = 32) :: fn4    !TSMP-PDAF: function name for state vector outpu
+
+    logical :: swc_zero_before_update
+
+    cc = 0
+    swc_zero_before_update = .false.
+
+    swc   => waterstate_inst%h2osoi_vol_col
+    watsat => soilstate_inst%watsat_col
+    dz            => col%dz
+    h2osoi_liq    => waterstate_inst%h2osoi_liq_col
+    h2osoi_ice    => waterstate_inst%h2osoi_ice_col
+
+    snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
+
+    liq_inc => waterstate_inst%h2osoi_liq_col_inc
+    ice_inc => waterstate_inst%h2osoi_ice_col_inc
+    snow_inc => waterstate_inst%h2osno_col_inc
+
 
         ! Set minimum soil moisture for checking the state vector and
         ! for setting minimum swc for CLM
@@ -712,40 +863,9 @@ module enkf_clm_mod
         END IF
 #endif
 
-    endif
+  end subroutine update_clm_swc
 
-    !hcp: TG, TV
-    if(clmupdate_T==1) then
-      error stop "Not implemented: clmupdate_T.eq.1"
-    endif
-    ! end hcp TG, TV
 
-    !! update liquid water content
-    !do j=clm_begg,clm_endg
-    !  do i=1,nlevsoi
-    !    h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o
-    !  end do
-    !end do
-
-    ! write updated texture back to CLM
-    if(clmupdate_texture/=0) then
-      cc = 1
-      do i=1,nlevsoi
-        do j=clm_begg,clm_endg
-          psand(j,i) = clm_statevec(cc+1*clm_varsize+offset)
-          pclay(j,i) = clm_statevec(cc+2*clm_varsize+offset)
-          if(clmupdate_texture==2) then
-            ! incl. organic matter
-            porgm(j,i) = clm_statevec(cc+3*clm_varsize+offset)
-          end if
-          cc = cc + 1
-        end do
-      end do
-      call clm_correct_texture
-      call clm_texture_to_parameters
-    endif
-
-  end subroutine update_clm
 
   subroutine clm_correct_texture()
 
