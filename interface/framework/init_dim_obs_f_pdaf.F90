@@ -495,7 +495,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
-  NOGRACE: if(clmupdate_tws/=1) then
+  NOGRACE1: if(clmupdate_tws/=1) then
   ! Switch for how to check index of CLM observations
   ! True: Use snapping distance between long/lat on CLM grid
   ! False: Use index arrays from `domain_def_clm`
@@ -543,13 +543,13 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
         end do
     end do
   end if
-  end if NOGRACE
+  end if NOGRACE1
 #endif
 #endif
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
-  NOGRACE: if(clmupdate_tws/=1) then
+  NOGRACE2: if(clmupdate_tws/=1) then
 
   if (screen > 2) then
       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: dim_obs_p=", dim_obs_p
@@ -574,7 +574,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
     call abort_parallel()
   end if
 
-end if NOGRACE
+  end if NOGRACE2
 #endif
 #endif
 
@@ -610,7 +610,7 @@ end if NOGRACE
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
-  NOGRACE: if(clmupdate_tws/=1) then
+  NOGRACE3: if(clmupdate_tws/=1) then
 
   !  Gather PE-local observation dimensions and displacements in arrays
   ! ----------------------------------------------------------------
@@ -637,7 +637,7 @@ end if NOGRACE
       print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: local_disp_obs=", local_disp_obs
   end if
 
-end if NOGRACE
+end if NOGRACE3
 #endif
 #endif
 
@@ -674,7 +674,7 @@ end if NOGRACE
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
-  NOGRACE: if(clmupdate_tws/=1) then
+  NOGRACE4: if(clmupdate_tws/=1) then
   ! Write index mapping array NetCDF->PDAF
   ! --------------------------------------
   ! Set index mapping `obs_pdaf2nc` between observation order in
@@ -758,7 +758,7 @@ end if NOGRACE
   end if
 
 
-  end if NOGRACE
+  end if NOGRACE4
 #endif
 #endif
 
@@ -832,7 +832,7 @@ end if NOGRACE
 
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
-  NOGRACE: if(clmupdate_tws/=1) then
+  NOGRACE5: if(clmupdate_tws/=1) then
 
   ! Write process-local observation arrays
   ! --------------------------------------
@@ -1071,7 +1071,7 @@ end if NOGRACE
   END IF
 #endif
 
-end if NOGRACE
+  end if NOGRACE5
 #endif
 #endif
 
@@ -1290,7 +1290,7 @@ end if NOGRACE
 #ifndef PARFLOW_STAND_ALONE
 #ifndef OBS_ONLY_PARFLOW
 #ifdef CLMFIVE
-  GRACE: if(clmupdate_tws==1) then
+  GRACE1: if(clmupdate_tws==1) then
 
   is_use_dr = .false.
 
@@ -1448,7 +1448,7 @@ end if NOGRACE
       IF (ALLOCATED(work)) DEALLOCATE(work)
 
    end if
-  end if GRACE
+  end if GRACE1
 #endif
 #endif
 #endif
@@ -1461,7 +1461,7 @@ end if NOGRACE
 #ifndef OBS_ONLY_PARFLOW
 #ifdef CLMFIVE
    ! Read temporal mean TWS from model for observation operator, only for GRACE data assimilation
-   GRACE: if (clmupdate_tws==1) then
+   GRACE2: if (clmupdate_tws==1) then
       ! do it only in the first call of this routine
 
       if (.not. allocated(tws_temp_mean_d)) then
@@ -1497,7 +1497,7 @@ end if NOGRACE
          deallocate(lon_temp_mean)
          deallocate(lat_temp_mean)
       end if
-   end if GRACE
+   end if GRACE2
 #endif
 #endif
 #endif
