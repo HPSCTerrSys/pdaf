@@ -103,30 +103,31 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 
   if(multierr==1) then
 
-    if (clmupdate_tws/=1) then
+    NOGRACE: if (clmupdate_tws/=1) then
 
-      ! Check that point observations are used
-      if (.not. point_obs == 1) then
-        print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(3) `point_obs.eq.1` needed for using obs_pdaf2nc."
-        call abort_parallel()
-      end if
-
-      do i=1,dim_obs
-#if defined CLMSA
-        C_p(i,i) = C_p(i,i) + clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
-#else
-        C_p(i,i) = C_p(i,i) + pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
-#endif
-      enddo
-
-    else
-
-      clm_obserr_model = pack(clm_obserr,vec_useObs_global)
-      do i = 1,dim_obs
-        C_p(i,i) = C_p(i,i) + clm_obserr_model(i) ! we put already variances in GRACE observation files, so no square need
-      end do
-
+    ! Check that point observations are used
+    if (.not. point_obs == 1) then
+      print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR(3) `point_obs.eq.1` needed for using obs_pdaf2nc."
+      call abort_parallel()
     end if
+
+    do i=1,dim_obs
+#if defined CLMSA
+      C_p(i,i) = C_p(i,i) + clm_obserr(obs_pdaf2nc(i))*clm_obserr(obs_pdaf2nc(i))
+#else
+      C_p(i,i) = C_p(i,i) + pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
+#endif
+    enddo
+
+    else NOGRACE
+
+    clm_obserr_model = pack(clm_obserr,vec_useObs_global)
+    do i = 1,dim_obs
+      C_p(i,i) = C_p(i,i) + clm_obserr_model(i) ! we put already variances in GRACE observation files, so no square need
+    end do
+
+    end if NOGRACE
+
   endif
 
   if(multierr==2) then

@@ -90,11 +90,12 @@ SUBROUTINE g2l_obs_pdaf(domain_p, step, dim_obs_f, dim_obs_l, mstate_f, &
   ! Index array OBS_NC2PDAF set in subroutine INIT_DIM_OBS_F_PDAF
   ! Index array OBS_INDEX_L (returns nc-ordered index) set in subroutine INIT_DIM_OBS_L_PDAF
   do i=1,dim_obs_l
-   if (clmupdate_tws==1) then
+   GRACE: if (clmupdate_tws==1) then
     mstate_l(i) = mstate_f(obs_index_l(i))
-   else
+   else GRACE
+    !mstate_l(i) = mstate_f(obs_index_l(i))
     mstate_l(i) = mstate_f(obs_nc2pdaf(obs_index_l(i)))
-   end if
+   end if GRACE
   end do
 
 END SUBROUTINE g2l_obs_pdaf
