@@ -94,11 +94,11 @@ SUBROUTINE l2g_state_pdaf(step, domain_p, dim_l, state_l, dim_p, state_p)
   end if
   !call l2g_state(domain_p, c_loc(state_p), dim_l, c_loc(state_l))
 #else
-  if (clmupdate_tws==1) then
+  NOGRACE: if (clmupdate_tws/=1) then
   call l2g_state_clm(domain_p, dim_l, state_l, dim_p, state_p)
-  end if
+  end if NOGRACE
 
-  if (clmupdate_tws==1) then
+  GRACE: if (clmupdate_tws==1) then
     if (clm_varsize_tws(5)/=0) then
       sub=3
     else
@@ -227,7 +227,7 @@ SUBROUTINE l2g_state_pdaf(step, domain_p, dim_l, state_l, dim_p, state_p)
 
     end select
 
-  end if
+  end if GRACE
 #endif
 
 END SUBROUTINE l2g_state_pdaf
