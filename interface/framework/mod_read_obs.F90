@@ -966,6 +966,7 @@ contains
     end subroutine check_n_observationfile_next_type
 
 
+#ifdef CLMFIVE
     subroutine update_obs_type(obs_type_str)
         use enkf_clm_mod, only: clmupdate_tws, clmupdate_swc, clmupdate_T, clmupdate_texture
         use mod_parallel_pdaf, only: abort_parallel
@@ -991,7 +992,6 @@ contains
             call abort_parallel()
         end select
     end subroutine update_obs_type
-
 
 
 
@@ -1182,6 +1182,7 @@ contains
         end if
 
     end subroutine domain_def_clm
+#endif
 
 
 end module mod_read_obs

@@ -59,8 +59,10 @@ SUBROUTINE init_pdaf_parse()
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
 
+#ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM
+#endif
 
   IMPLICIT NONE
 
@@ -91,13 +93,14 @@ SUBROUTINE init_pdaf_parse()
   handle = 'rms_obs'                 ! Assumed uniform RMS error of the observations
   CALL parse(handle, rms_obs)
 
+#ifdef CLMFIVE
   rms_obs_GRACE = rms_obs  ! backward compatibility
   handle = 'rms_obs_GRACE'          ! RMS error for GRACE observations
   CALL parse(handle, rms_obs_GRACE)
   rms_obs_SM = rms_obs              ! backward compatibility
   handle = 'rms_obs_SM'             ! RMS error for SM observations
   CALL parse(handle, rms_obs_SM)
-
+#endif
 
   handle = 'dim_obs'                 ! Number of observations
   CALL parse(handle, dim_obs)

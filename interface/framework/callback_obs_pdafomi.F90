@@ -29,6 +29,7 @@
 !! This routine calls the observation-specific
 !! routines init_dim_obs_TYPE.
 !!
+#ifdef CLMFIVE
 SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
 
     use enkf_clm_mod, only: clmupdate_swc, clmupdate_tws
@@ -223,3 +224,4 @@ SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
     DEALLOCATE(coords_p)
 
   END SUBROUTINE localize_covar_pdafomi
+#endif

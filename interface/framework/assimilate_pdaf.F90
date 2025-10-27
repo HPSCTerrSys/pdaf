@@ -46,9 +46,11 @@ SUBROUTINE assimilate_pdaf()
   USE mod_assimilation, &      ! Variables for assimilation
        ONLY: filtertype
   USE mod_assimilation, ONLY: use_omi
+#ifdef CLMFIVE
   USE PDAF_interfaces_module, &   ! Check consistency of PDAF calls
       ONLY: PDAFomi_assimilate_local, PDAFomi_assimilate_global, &
       PDAFomi_assimilate_lenkf, PDAF_get_localfilter
+#endif
 
   IMPLICIT NONE
 
@@ -126,6 +128,7 @@ SUBROUTINE assimilate_pdaf()
 ! *********************************
 
   OMI: IF (use_omi) THEN
+#ifdef CLMFIVE
     CALL PDAF_get_localfilter(localfilter)
 
     IF (localfilter == 1) THEN
@@ -152,7 +155,7 @@ SUBROUTINE assimilate_pdaf()
       ENDIF
 
     ENDIF
-
+#endif
   ELSE OMI
 
   ! IF (filtertype == 1) THEN

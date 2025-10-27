@@ -50,6 +50,7 @@
 !! * 2019-06 - Lars Nerger - Initial code
 !! * Later revisions - see repository log
 !!
+#ifdef CLMFIVE
 MODULE obs_SM_pdafomi
 
     USE mod_parallel_pdaf, &
@@ -1068,8 +1069,4 @@ MODULE obs_SM_pdafomi
 
 
   END MODULE obs_SM_pdafomi
-
-
-
-
-
+#endif

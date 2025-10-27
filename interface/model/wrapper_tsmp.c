@@ -204,9 +204,11 @@ void update_tsmp(){
     /*  print_update_clm(&tcycle, &total_steps); */
     /* } */
     /* TODO: enkfpf.par input switch "CLM:print_inc" */
+#ifdef CLMFIVE
     if ((clmupdate_tws != 0) || (clmupdate_swc != 0)){
       print_inc_clm();
     }
+#endif
   }
 #endif
 
