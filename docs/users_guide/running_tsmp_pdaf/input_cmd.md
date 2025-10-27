@@ -58,7 +58,7 @@ filter. See [](cmd:command-line-examples).
 - `.true.`: OMI interface is used
 - `.false.`: OMI interface is not used
 
-See [](cmd:command-line-examples).
+See [](omi:tsmp-pdaf-with-pdaf-omi).
 
 ## obs_filename ##
 
