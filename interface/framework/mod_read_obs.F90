@@ -998,6 +998,13 @@ contains
     subroutine domain_def_clm(lon_clmobs, lat_clmobs, dim_obs, &
         longxy, latixy, longxy_obs, latixy_obs)
 
+        use mpi, only: MPI_INTEGER
+        use mpi, only: MPI_DOUBLE_PRECISION
+        use mpi, only: MPI_IN_PLACE
+        use mpi, only: MPI_SUM
+        use mpi, only: MPI_2INTEGER
+        use mpi, only: MPI_MINLOC
+
         use spmdMod,   only : npes, iam
         use domainMod, only : ldomain, lon1d, lat1d
         use decompMod, only : get_proc_total, get_proc_bounds, ldecomp
@@ -1008,8 +1015,7 @@ contains
         !   ONLY: mpi_2integer, mpi_minloc
         USE mod_parallel_pdaf, &
             ONLY: comm_filter, npes_filter, abort_parallel, &
-            mpi_integer, mpi_double_precision, mpi_in_place, mpi_sum, &
-            mype_world, mpi_2integer, mpi_minloc, mype_filter
+            mype_world, mype_filter
         real, intent(in) :: lon_clmobs(:)
         real, intent(in) :: lat_clmobs(:)
         integer, intent(in) :: dim_obs
