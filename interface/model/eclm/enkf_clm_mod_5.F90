@@ -59,7 +59,6 @@ module enkf_clm_mod
   ! Yorck
   integer(c_int),bind(C,name="clmupdate_tws") :: clmupdate_tws
   integer(c_int),bind(C,name="exclude_greenland") :: exclude_greenland
-  real(r8),bind(C,name="da_interval") :: da_interval
   integer, dimension(1:5) :: clm_varsize_tws
   real(r8),bind(C,name="max_inc") :: max_inc
   integer(c_int),bind(C,name="TWS_smoother") :: TWS_smoother
