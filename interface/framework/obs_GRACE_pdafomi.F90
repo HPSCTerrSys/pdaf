@@ -157,6 +157,11 @@ MODULE obs_GRACE_pdafomi
   !!
     SUBROUTINE init_dim_obs_GRACE(step, dim_obs)
 
+      USE mpi, ONLY: MPI_INTEGER
+      USE mpi, ONLY: MPI_SUM
+      USE mpi, ONLY: MPI_2INTEGER
+      USE mpi, ONLY: MPI_MAXLOC
+
       USE PDAFomi, &
            ONLY: PDAFomi_gather_obs
       USE mod_assimilation, &
@@ -167,7 +172,7 @@ MODULE obs_GRACE_pdafomi
       use enkf_clm_mod, only: num_layer, hactiveg_levels
 
       use mod_parallel_pdaf, &
-        only: mpi_integer, mpi_sum, mpi_2integer, mpi_maxloc, comm_filter
+        only: comm_filter
 
       use shr_kind_mod, only: r8 => shr_kind_r8
 
@@ -493,11 +498,14 @@ MODULE obs_GRACE_pdafomi
   !!
     SUBROUTINE obs_op_GRACE(dim_p, dim_obs, state_p, ostate)
 
+        use mpi, only: MPI_DOUBLE_PRECISION
+        use mpi, only: MPI_SUM
+
         use enkf_clm_mod, &
                 only: clm_varsize_tws, state_setup, num_layer, hactiveg_levels
 
         use mod_parallel_pdaf, &
-                only: comm_filter, mpi_double_precision, mpi_sum
+                only: comm_filter
 
         use clm_varpar   , only : nlevsoi
 
@@ -775,7 +783,9 @@ MODULE obs_GRACE_pdafomi
 
     subroutine read_temp_mean_model(temp_mean_filename)
 
+        use netcdf, only: nf90_max_name
         use netcdf, only: nf90_open
+        use netcdf, only: nf90_nowrite
         use netcdf, only: nf90_inq_dimid
         use netcdf, only: nf90_inquire_dimension
         use netcdf, only: nf90_inq_varid

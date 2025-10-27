@@ -149,9 +149,13 @@ MODULE obs_SM_pdafomi
   !!
     SUBROUTINE init_dim_obs_SM(step, dim_obs)
 
+      USE mpi, ONLY: MPI_INTEGER
+      USE mpi, ONLY: MPI_DOUBLE_PRECISION
+      USE mpi, ONLY: MPI_IN_PLACE
+      USE mpi, ONLY: MPI_SUM
+
       USE mod_parallel_pdaf, &
           ONLY: mype_filter, comm_filter, npes_filter, abort_parallel, &
-          mpi_integer, mpi_double_precision, mpi_in_place, mpi_sum, &
           mype_world
 
       USE mod_assimilation, &
@@ -186,6 +190,7 @@ MODULE obs_SM_pdafomi
       use GridcellType, only: grc
 
       use clm_varcon, only: spval
+      use clm_varcon, only: ispval
 
       USE mod_parallel_pdaf, &
        ONLY: mype_world
