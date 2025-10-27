@@ -160,7 +160,7 @@ module enkf_clm_mod
 
     ! soil water content observations - case 1
     if(clmupdate_swc==1) then
-      call define_clm_statevec_swc
+      call define_clm_statevec_swc(mype)
     end if
 
     ! soil water content observations - case 2
@@ -185,7 +185,7 @@ module enkf_clm_mod
 
     ! TWS observations
     if (clmupdate_tws==1) then
-      call define_clm_statevec_tws
+      call define_clm_statevec_tws(mype)
     end if
 
     !
@@ -229,7 +229,7 @@ module enkf_clm_mod
 
 
 
-  subroutine define_clm_statevec_swc()
+  subroutine define_clm_statevec_swc(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
     use clm_varcon , only : ispval
@@ -421,7 +421,7 @@ module enkf_clm_mod
   end subroutine define_clm_statevec_swc
 
 
-  subroutine define_clm_statevec_tws()
+  subroutine define_clm_statevec_tws(mype)
     use shr_kind_mod, only: r8 => shr_kind_r8
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
@@ -430,6 +430,8 @@ module enkf_clm_mod
     use GridcellType, only: grc
 
     implicit none
+
+    integer,intent(in) :: mype
 
     integer :: i
     integer :: j
@@ -1092,6 +1094,7 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_ice(:,:)
 
     integer :: i
+    character (len = 31) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
 
