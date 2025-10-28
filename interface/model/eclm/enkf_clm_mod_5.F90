@@ -365,7 +365,7 @@ module enkf_clm_mod
       end do
 
   end subroutine define_clm_statevec_swc
-  
+
   subroutine cleanup_clm_statevec()
 
     implicit none
@@ -534,7 +534,7 @@ module enkf_clm_mod
       end if
 
   end subroutine set_clm_statevec_swc
-  
+
 
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
     use clm_time_manager  , only : update_DA_nstep
