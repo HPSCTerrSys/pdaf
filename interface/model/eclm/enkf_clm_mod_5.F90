@@ -643,7 +643,6 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
     real(r8), pointer :: snow_depth(:)
-    real(r8), pointer :: liq_inc(:,:), ice_inc(:,:), snow_inc(:)
     real(r8)  :: rliq,rice
     real(r8)  :: watmin_check      ! minimum soil moisture for checking clm_statevec (mm)
     real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
@@ -666,11 +665,6 @@ module enkf_clm_mod
     h2osoi_ice    => waterstate_inst%h2osoi_ice_col
 
     snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
-
-    liq_inc => waterstate_inst%h2osoi_liq_col_inc
-    ice_inc => waterstate_inst%h2osoi_ice_col_inc
-    snow_inc => waterstate_inst%h2osno_col_inc
-
 
         ! Set minimum soil moisture for checking the state vector and
         ! for setting minimum swc for CLM
