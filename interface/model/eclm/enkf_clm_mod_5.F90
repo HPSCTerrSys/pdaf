@@ -89,11 +89,8 @@ module enkf_clm_mod
 
 #if defined CLMSA
   subroutine define_clm_statevec(mype)
-    use shr_kind_mod, only: r8 => shr_kind_r8
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
-    use clm_varcon , only : ispval
-    use ColumnType , only : col
 
     implicit none
 
@@ -157,12 +154,12 @@ module enkf_clm_mod
     WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
 #endif
 
-    !write(*,*) 'clm_statevecsize is ',clm_statevecsize
     IF (allocated(clm_statevec)) deallocate(clm_statevec)
     if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0)) then
       !hcp added condition
       allocate(clm_statevec(clm_statevecsize))
     end if
+
 
     ! Allocate statevector-duplicate for saving original column mean
     ! values used in computing increments during updating the state
@@ -184,7 +181,7 @@ module enkf_clm_mod
 
 
 
-  subroutine define_clm_statevec_swc()
+  subroutine define_clm_statevec_swc(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
     use clm_varcon , only : ispval
@@ -544,48 +541,27 @@ module enkf_clm_mod
 
   end subroutine set_clm_statevec_swc
   
+
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
-    use clm_varpar   , only : nlevsoi
     use clm_time_manager  , only : update_DA_nstep
     use shr_kind_mod , only : r8 => shr_kind_r8
-    use ColumnType , only : col
-    use clm_instMod, only : soilstate_inst, waterstate_inst
-    use clm_varcon      , only : denh2o, denice, watmin
-    use clm_varcon      , only : ispval
-    use clm_varcon      , only : spval
+    use clm_instMod, only : waterstate_inst
 
     implicit none
 
     integer,intent(in) :: tstartcycle
     integer,intent(in) :: mype
 
-    real(r8), pointer :: swc(:,:)
-    real(r8), pointer :: watsat(:,:)
-    real(r8), pointer :: psand(:,:)
-    real(r8), pointer :: pclay(:,:)
-    real(r8), pointer :: porgm(:,:)
-
-    real(r8), pointer :: dz(:,:)          ! layer thickness depth (m)
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
-    real(r8), pointer :: snow_depth(:)
-    real(r8)  :: rliq,rice
-    real(r8)  :: watmin_check      ! minimum soil moisture for checking clm_statevec (mm)
-    real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
-    real(r8)  :: swc_update        ! updated SWC in loop
 
-    integer :: i,j,jj,g,cc,offset
-    character (len = 31) :: fn    !TSMP-PDAF: function name for state vector outpu
-    character (len = 31) :: fn2    !TSMP-PDAF: function name for state vector outpu
-    character (len = 32) :: fn3    !TSMP-PDAF: function name for state vector outpu
-    character (len = 32) :: fn4    !TSMP-PDAF: function name for state vector outpu
+    integer :: i
+    character (len = 31) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
 
     logical :: swc_zero_before_update
 
-    cc = 0
-    offset = 0
     swc_zero_before_update = .false.
 
 #ifdef PDAF_DEBUG
@@ -600,15 +576,6 @@ module enkf_clm_mod
     END IF
 #endif
 
-    swc   => waterstate_inst%h2osoi_vol_col
-    watsat => soilstate_inst%watsat_col
-    psand => soilstate_inst%cellsand_col
-    pclay => soilstate_inst%cellclay_col
-    porgm => soilstate_inst%cellorg_col
-
-    snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
-
-    dz            => col%dz
     h2osoi_liq    => waterstate_inst%h2osoi_liq_col
     h2osoi_ice    => waterstate_inst%h2osoi_ice_col
 
@@ -653,29 +620,9 @@ module enkf_clm_mod
     endif
     ! end hcp TG, TV
 
-    !! update liquid water content
-    !do j=clm_begg,clm_endg
-    !  do i=1,nlevsoi
-    !    h2osoi_liq(j,i) = swc(j,i) * dz(j,i)*denh2o
-    !  end do
-    !end do
-
     ! write updated texture back to CLM
     if(clmupdate_texture/=0) then
-      cc = 1
-      do i=1,nlevsoi
-        do j=clm_begg,clm_endg
-          psand(j,i) = clm_statevec(cc+1*clm_varsize+offset)
-          pclay(j,i) = clm_statevec(cc+2*clm_varsize+offset)
-          if(clmupdate_texture==2) then
-            ! incl. organic matter
-            porgm(j,i) = clm_statevec(cc+3*clm_varsize+offset)
-          end if
-          cc = cc + 1
-        end do
-      end do
-      call clm_correct_texture
-      call clm_texture_to_parameters
+      call update_clm_texture(tstartcycle, mype)
     endif
 
   end subroutine update_clm
@@ -864,6 +811,47 @@ module enkf_clm_mod
 #endif
 
   end subroutine update_clm_swc
+
+
+  subroutine update_clm_texture(tstartcycle, mype)
+    use clm_varpar   , only : nlevsoi
+    use shr_kind_mod , only : r8 => shr_kind_r8
+    use clm_instMod, only : soilstate_inst
+
+    implicit none
+
+    integer,intent(in) :: tstartcycle
+    integer,intent(in) :: mype
+
+    integer :: i,j,cc,offset
+
+    real(r8), pointer :: psand(:,:)
+    real(r8), pointer :: pclay(:,:)
+    real(r8), pointer :: porgm(:,:)
+
+    cc = 0
+    offset = 0
+
+    psand   => soilstate_inst%cellsand_col
+    pclay   => soilstate_inst%cellclay_col
+    porgm   => soilstate_inst%cellorg_col
+
+      cc = 1
+      do i=1,nlevsoi
+        do j=clm_begg,clm_endg
+          psand(j,i) = clm_statevec(cc+1*clm_varsize+offset)
+          pclay(j,i) = clm_statevec(cc+2*clm_varsize+offset)
+          if(clmupdate_texture==2) then
+            ! incl. organic matter
+            porgm(j,i) = clm_statevec(cc+3*clm_varsize+offset)
+          end if
+          cc = cc + 1
+        end do
+      end do
+      call clm_correct_texture
+      call clm_texture_to_parameters
+
+  end subroutine update_clm_texture
 
 
 
