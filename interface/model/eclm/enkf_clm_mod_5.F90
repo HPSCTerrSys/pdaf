@@ -138,6 +138,12 @@ module enkf_clm_mod
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
 
+#ifdef PDAF_DEBUG
+    WRITE(*,"(a,i5,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a)") &
+      "TSMP-PDAF mype(w)=", mype, " define_clm_statevec, CLM5-bounds (g,l,c,p)----",&
+      begg,",",endg,",",begl,",",endl,",",begc,",",endc,",",begp,",",endp," -------"
+#endif
+
     clm_begg     = begg
     clm_endg     = endg
     clm_begc     = begc
@@ -198,6 +204,7 @@ module enkf_clm_mod
     WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
 #endif
 
+    IF (allocated(clm_statevec)) deallocate(clm_statevec)
     if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0) .or. (clmupdate_tws/=0)) then
       !hcp added condition
       allocate(clm_statevec(clm_statevecsize))
@@ -1154,7 +1161,7 @@ module enkf_clm_mod
 
     ! write updated swc back to CLM
     if(obs_type_update_swc/=0) then
-      call update_swc(tstartcycle, mype)
+      call update_clm_swc(tstartcycle, mype)
     endif
 
     !hcp: TG, TV
@@ -1165,7 +1172,7 @@ module enkf_clm_mod
 
     ! write updated texture back to CLM
     if(obs_type_update_texture/=0) then
-      call update_texture(tstartcycle, mype)
+      call update_clm_texture(tstartcycle, mype)
     endif
 
     if (obs_type_update_tws==1) then
@@ -1177,7 +1184,7 @@ module enkf_clm_mod
   end subroutine update_clm
 
 
-  subroutine update_swc(tstartcycle, mype)
+  subroutine update_clm_swc(tstartcycle, mype)
     use clm_varpar   , only : nlevsoi
     use shr_kind_mod , only : r8 => shr_kind_r8
     use ColumnType , only : col
@@ -1383,11 +1390,10 @@ module enkf_clm_mod
       end do
     end do
 
-  end subroutine update_swc
+  end subroutine update_clm_swc
 
 
-
-  subroutine update_texture(tstartcycle, mype)
+  subroutine update_clm_texture(tstartcycle, mype)
     use clm_varpar   , only : nlevsoi
     use shr_kind_mod , only : r8 => shr_kind_r8
     use clm_instMod, only : soilstate_inst
@@ -1425,7 +1431,7 @@ module enkf_clm_mod
       call clm_correct_texture
       call clm_texture_to_parameters
 
-  end subroutine update_texture
+  end subroutine update_clm_texture
 
 
 
@@ -2223,7 +2229,6 @@ module enkf_clm_mod
     use decompMod, only : get_proc_bounds
     use clm_varcon      , only : ispval
     use ColumnType , only : col
-    use GridcellType , only : grc
 
     implicit none
 
@@ -2235,12 +2240,6 @@ module enkf_clm_mod
     integer :: g
     integer :: c
     integer :: cc
-
-    real(r8), pointer :: lon(:)
-    real(r8), pointer :: lat(:)
-
-    lon   => grc%londeg
-    lat   => grc%latdeg
 
     ! TODO: remove unnecessary calls of get_proc_bounds (use clm_begg,
     ! clm_endg, etc)
