@@ -369,7 +369,9 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   end do
   do jn = 1, nlevsoi
     if (masterproc) then
-      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend, MPI_REAL8, &
+                        clmstate_tmp_global, numrecvv, displsv, &
+                        MPI_REAL8, 0, mpicom, ier)
     else
       call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
     end if
@@ -412,7 +414,9 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   end do
   do jn = 1, nlevsoi
     if (masterproc) then
-      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend, MPI_REAL8, &
+                        clmstate_tmp_global, numrecvv, displsv, &
+                        MPI_REAL8, 0, mpicom, ier)
     else
       call mpi_gatherv (clmstate_tmp_local(beg,jn), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
     end if
@@ -453,7 +457,9 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
 
   if (masterproc) then
-    call mpi_gatherv (clmstate_tmp_local(beg,1), numsend , MPI_REAL8, clmstate_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+    call mpi_gatherv (clmstate_tmp_local(beg,1), numsend, MPI_REAL8, &
+                      clmstate_tmp_global, numrecvv, displsv, &
+                      MPI_REAL8, 0, mpicom, ier)
   else
     call mpi_gatherv (clmstate_tmp_local(beg,1), numsend , MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
   end if

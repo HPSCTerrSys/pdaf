@@ -67,7 +67,8 @@ MODULE obs_SM_pdafomi
     LOGICAL :: assim_SM        !< Whether to assimilate this data type
     REAL    :: rms_obs_SM      !< Observation error standard deviation (for constant errors)
 
-    INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:) ! longitude and latitude of grid cells and observation cells
+    ! longitude and latitude of grid cells and observation cells
+    INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:)
 
     ! One can declare further variables, e.g. for file names which can
     ! be use-included in init_pdaf() and initialized there.
@@ -300,7 +301,9 @@ MODULE obs_SM_pdafomi
 
 
       if (mype_filter == 0) then
-        call read_obs_nc_type(current_observation_filename, obs_type_name, dim_obs, obs_g, lon_obs, lat_obs, layer_obs, dr_obs, obserr, obscov)
+        call read_obs_nc_type(current_observation_filename, obs_type_name, &
+                              dim_obs, obs_g, lon_obs, lat_obs, layer_obs, &
+                              dr_obs, obserr, obscov)
       end if
 
       call mpi_bcast(dim_obs, 1, MPI_INTEGER, 0, comm_filter, ierror)
@@ -309,7 +312,9 @@ MODULE obs_SM_pdafomi
 
       if (dim_obs == 0) then
         if (mype_filter==0 .and. screen > 2) then
-          write(*,*)'TSMP-PDAF mype(w) =', mype_world, ': No observations of type SM found in file ', trim(current_observation_filename)
+          write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
+                    ': No observations of type SM found in file ', &
+                    trim(current_observation_filename)
         end if
         dim_obs_p = 0
         ALLOCATE(obs_p(1))
@@ -419,7 +424,9 @@ MODULE obs_SM_pdafomi
 
               ! Assigning observations to grid cells according to
               ! snapping distance or index arrays
-              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(cnt)) .and. (latixy_obs(i) == latixy(cnt)))) then
+              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+                 ((.not. is_use_dr).and.(longxy_obs(i) == longxy(cnt)) .and. &
+                  (latixy_obs(i) == latixy(cnt)))) then
 
                   dim_obs_p = dim_obs_p + 1
                   ! Use index array for setting the correct state vector index in `obs_id_p`
@@ -564,7 +571,9 @@ MODULE obs_SM_pdafomi
                   deltay = abs(lat(g)-lat_obs(i))
                 end if
 
-                if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+                if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+                   ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. &
+                    (latixy_obs(i) == latixy(g-begg+1)))) then
 #ifdef CLMFIVE
                   if(state_clm2pdaf_p(c,1)==ispval) then
                     ! `ispval`: column not in state vector, most likely
@@ -655,8 +664,11 @@ MODULE obs_SM_pdafomi
                 deltay = abs(lat(g)-lat_obs(i))
               end if
 
-              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or.((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
-                if (thisobs%disttype/=3) then ! if haversine formula in distance calculation, the coordinates have to be converted to radians
+              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+                 ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. &
+                  (latixy_obs(i) == latixy(g-begg+1)))) then
+                ! if haversine formula in distance calculation, the coordinates have to be converted to radians
+                if (thisobs%disttype/=3) then
                   ocoord_p(1,cnt) = lon_obs(i)
                   ocoord_p(2,cnt) = lat_obs(i)
                 else
@@ -673,7 +685,8 @@ MODULE obs_SM_pdafomi
 
                     ! Error if observation deeper than clmstatevec_max_layer
                     if(layer_obs(i) > min(clmstatevec_max_layer, col%nbedrock(c))) then
-                      print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR observation layer deeper than clmstatevec_max_layer or bedrock."
+                      print *, "TSMP-PDAF mype(w)=", mype_world, &
+                               ": ERROR observation layer deeper than clmstatevec_max_layer or bedrock."
                       print *, "i=", i
                       print *, "c=", c
                       print *, "layer_obs(i)=", layer_obs(i)
@@ -730,25 +743,37 @@ MODULE obs_SM_pdafomi
               if((longxy_obs_floor(i) == longxy(g-begg+1)) .and. (latixy_obs_floor(i) == latixy(g-begg+1))) then
 
                   obs_interp_indices_p(cnt, 1) = g-begg+1 + ((endg-begg+1) * (layer_obs(i)-1))
-                  obs_interp_weights_p(cnt, 1) = sqrt(abs(lon(g)-lon_obs(i)) * abs(lon(g)-lon_obs(i)) + abs(lat(g)-lat_obs(i)) * abs(lat(g)-lat_obs(i)))
+                  obs_interp_weights_p(cnt, 1) = sqrt(abs(lon(g)-lon_obs(i)) * &
+                                                      abs(lon(g)-lon_obs(i)) + &
+                                                      abs(lat(g)-lat_obs(i)) * &
+                                                      abs(lat(g)-lat_obs(i)))
                   cnt_interp = cnt_interp + 1
               end if
               ! Second: latitude larger than observation location, longitude smaller than observation location
               if((longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs_floor(i) == latixy(g-begg+1))) then
                   obs_interp_indices_p(cnt, 2) = g-begg+1 + ((endg-begg+1) * (layer_obs(i)-1))
-                  obs_interp_weights_p(cnt, 2) =sqrt(abs(lon(g)-lon_obs(i)) * abs(lon(g)-lon_obs(i)) + abs(lat(g)-lat_obs(i)) * abs(lat(g)-lat_obs(i)))
+                  obs_interp_weights_p(cnt, 2) = sqrt(abs(lon(g)-lon_obs(i)) * &
+                                                      abs(lon(g)-lon_obs(i)) + &
+                                                      abs(lat(g)-lat_obs(i)) * &
+                                                      abs(lat(g)-lat_obs(i)))
                   cnt_interp = cnt_interp + 1
               end if
               ! Third: latitude smaller than observation location, longitude larger than observation location
               if((longxy_obs_floor(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1))) then
                   obs_interp_indices_p(cnt, 3) = g-begg+1 + ((endg-begg+1) * (layer_obs(i)-1))
-                  obs_interp_weights_p(cnt, 3) = sqrt(abs(lon(g)-lon_obs(i)) * abs(lon(g)-lon_obs(i)) + abs(lat(g)-lat_obs(i)) * abs(lat(g)-lat_obs(i)))
+                  obs_interp_weights_p(cnt, 3) = sqrt(abs(lon(g)-lon_obs(i)) * &
+                                                      abs(lon(g)-lon_obs(i)) + &
+                                                      abs(lat(g)-lat_obs(i)) * &
+                                                      abs(lat(g)-lat_obs(i)))
                   cnt_interp = cnt_interp + 1
               end if
               ! Fourth: latitude and longitude larger than observation location
               if((longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1))) then
                   obs_interp_indices_p(cnt, 4) = g-begg+1 + ((endg-begg+1) * (layer_obs(i)-1))
-                  obs_interp_weights_p(cnt, 4) = sqrt(abs(lon(g)-lon_obs(i)) * abs(lon(g)-lon_obs(i)) + abs(lat(g)-lat_obs(i)) * abs(lat(g)-lat_obs(i)))
+                  obs_interp_weights_p(cnt, 4) = sqrt(abs(lon(g)-lon_obs(i)) * &
+                                                      abs(lon(g)-lon_obs(i)) + &
+                                                      abs(lat(g)-lat_obs(i)) * &
+                                                      abs(lat(g)-lat_obs(i)))
                   cnt_interp = cnt_interp + 1
               end if
               ! Check if all four corners are found
@@ -975,7 +1000,8 @@ MODULE obs_SM_pdafomi
 
     end if
 
-    ! for disttype=3, the cradius and sradius have to passed in meters, so I multiply by 1000 to be able to put it in km in the input file
+    ! for disttype=3, the cradius and sradius have to passed in meters,
+    ! so I multiply by 1000 to be able to put it in km in the input file
 
     if (thisobs%disttype==3) then
       CALL PDAFomi_init_dim_obs_l(thisobs_l, thisobs, coords_l, &

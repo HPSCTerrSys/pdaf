@@ -67,15 +67,18 @@ MODULE obs_GRACE_pdafomi
     LOGICAL :: assim_GRACE        !< Whether to assimilate this data type
     REAL    :: rms_obs_GRACE      !< Observation error standard deviation (for constant errors)
     logical, allocatable :: vec_useObs(:)
-    integer, allocatable :: vec_numPoints_global(:) ! vector of number of points for each GRACE observation, same dimension as observation vector
-    logical, allocatable :: vec_useObs_global(:) ! vector that tells if an observation of used (1) or not (0), same dimension as observation vector, global
+    ! vector of number of points for each GRACE observation, same dimension as observation vector
+    integer, allocatable :: vec_numPoints_global(:)
+    ! vector that tells if an observation of used (1) or not (0), same dimension as observation vector, global
+    logical, allocatable :: vec_useObs_global(:)
 
     real, allocatable :: tws_temp_mean(:,:) ! temporal mean for TWS
     real, allocatable :: tws_temp_mean_d(:) ! temporal mean for TWS, vectorized with the same bounds as local process
     real, allocatable :: lon_temp_mean(:,:) ! corresponding longitude
     real, allocatable :: lat_temp_mean(:,:) ! corresponding latitude
 
-    INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:) ! longitude and latitude of grid cells and observation cells
+    ! longitude and latitude of grid cells and observation cells
+    INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:)
 
     ! One can declare further variables, e.g. for file names which can
     ! be use-included in init_pdaf() and initialized there.
@@ -256,9 +259,12 @@ MODULE obs_GRACE_pdafomi
   ! *** Read PE-local observations ***
   ! **********************************
 
-      ! read observations from nc file --> call function in mod_read_obs. Idea: when you have multiple observation types in one file,
-      ! also pass the observation type, here 'GRACE' to the function. You have to give each observation in the file an information which type
-      ! it is. This way, the output in this function is only the GRACE observation (or soil moisture,...; dependent on what you want to implement)
+      ! read observations from nc file --> call function in mod_read_obs.
+      ! Idea: when you have multiple observation types in one file, also pass the
+      ! observation type, here 'GRACE' to the function. You have to give each
+      ! observation in the file an information which type it is. This way, the
+      ! output in this function is only the GRACE observation (or soil moisture,
+      ! ...; dependent on what you want to implement)
 
 
       obs_type_name = 'GRACE'
@@ -269,14 +275,18 @@ MODULE obs_GRACE_pdafomi
         write(*,*)'load observations from type GRACE'
       end if
       write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
-      call read_obs_nc_type(current_observation_filename, obs_type_name, dim_obs, obs_g, lon_obs, lat_obs, layer_obs, dr_obs, obserr, obscov)
+      call read_obs_nc_type(current_observation_filename, obs_type_name, &
+                            dim_obs, obs_g, lon_obs, lat_obs, layer_obs, &
+                            dr_obs, obserr, obscov)
       if (mype_filter==0 .and. screen > 2) then
         write(*,*)'Done: load observations from type GRACE'
       end if
 
       if (dim_obs == 0) then
         if (mype_filter==0 .and. screen > 2) then
-          write(*,*)'TSMP-PDAF mype(w) =', mype_world, ': No observations of type GRACE found in file ', trim(current_observation_filename)
+          write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
+                    ': No observations of type GRACE found in file ', &
+                    trim(current_observation_filename)
         end if
         dim_obs_p = 0
         ALLOCATE(obs_p(1))
@@ -313,9 +323,12 @@ MODULE obs_GRACE_pdafomi
     ALLOCATE(out_mpi(2,dim_obs))
 
 
-    ! additions for GRACE assimilation, it can be the case that not enough CLM gridpoints lie in the neighborhood of a GRACE observation
-    ! if this is the case, the GRACE observations cannot be reproduced in a satisfactory manner and is not used in the assimilation
-    ! count grdicells that are in a certain radius. This effect is especially present when the applied GRACE resolution is high or for
+    ! additions for GRACE assimilation, it can be the case that not enough
+    ! CLM gridpoints lie in the neighborhood of a GRACE observation
+    ! if this is the case, the GRACE observations cannot be reproduced in a
+    ! satisfactory manner and is not used in the assimilation
+    ! count grdicells that are in a certain radius. This effect is especially
+    ! present when the applied GRACE resolution is high or for
     ! observation lying directly at the coast
 
     lon   => grc%londeg
@@ -443,7 +456,8 @@ MODULE obs_GRACE_pdafomi
   ! *** Finishing up ***
   ! ********************
 
-        ! load temporal mean of TWS and vectorize for process from begg to endg --> only has to be done once as the process does not change bounds
+        ! load temporal mean of TWS and vectorize for process from begg to endg
+        ! --> only has to be done once as the process does not change bounds
 
         if (.not. allocated(tws_temp_mean_d)) then
             call read_temp_mean_model(temp_mean_filename)
@@ -582,9 +596,12 @@ MODULE obs_GRACE_pdafomi
                             ! liq + ice
                             tws_from_statevector(g) = tws_from_statevector(g) + state_p(count)
                             ! snow
-                            tws_from_statevector(g) = tws_from_statevector(g) + state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2))
+                            tws_from_statevector(g) = tws_from_statevector(g) + &
+                                state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2))
                             !surface water
-                            tws_from_statevector(g) = tws_from_statevector(g) + state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2)+ clm_varsize_tws(3))
+                            tws_from_statevector(g) = tws_from_statevector(g) + &
+                                state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2)+ &
+                                clm_varsize_tws(3))
                         else
                             ! liq + ice
                             tws_from_statevector(g) = tws_from_statevector(g) + state_p(count+sum(num_layer(1:j-1)))
@@ -595,7 +612,9 @@ MODULE obs_GRACE_pdafomi
                 ! do count = 1, num_hactiveg_patch
                 !     g = hactiveg_patch(count)
                 !     ! canopy water
-                !     tws_from_statevector(g) = tws_from_statevector(g) + state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2)+ clm_varsize_tws(3)+ clm_varsize_tws(4))
+                !     tws_from_statevector(g) = tws_from_statevector(g) + &
+                !         state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2)+ &
+                !         clm_varsize_tws(3)+ clm_varsize_tws(4))
                 ! end do
 
 
@@ -612,7 +631,9 @@ MODULE obs_GRACE_pdafomi
                     g = hactiveg_levels(count,1)
                     tws_from_statevector(g) = state_p(count)
                     ! snow added for first layer
-                    tws_from_statevector(g) = tws_from_statevector(g) + state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2) + clm_varsize_tws(3))
+                    tws_from_statevector(g) = tws_from_statevector(g) + &
+                        state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2) + &
+                        clm_varsize_tws(3))
                 end do
 
                 do count = 1,num_layer(4)
@@ -649,7 +670,9 @@ MODULE obs_GRACE_pdafomi
             end do
 
             ! now get the sum of m_state_sum (sum over all TWSA values for the gridcells for one process) over all processes
-            call mpi_allreduce(m_state_sum, m_state_sum_global, size(vec_useObs_global), mpi_double_precision, mpi_sum, comm_filter, ierror)
+            call mpi_allreduce(m_state_sum, m_state_sum_global, &
+                               size(vec_useObs_global), mpi_double_precision, &
+                               mpi_sum, comm_filter, ierror)
             m_state_sum_global = m_state_sum_global/vec_numPoints_global
 
             ostate_p = pack(m_state_sum_global, vec_useObs)

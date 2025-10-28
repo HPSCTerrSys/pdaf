@@ -491,9 +491,13 @@ module enkf_clm_mod
 
       g = col%gridcell(c) ! gridcell of column
 
-      if ((exclude_greenland==0) .or. (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then ! greenland can be excluded from the statevector
+      ! greenland can be excluded from the statevector
+      if ((exclude_greenland==0) .or. &
+          (.not.(lon(g)<330 .and. lon(g)>180 .and. lat(g)>55))) then
 
-        if (col%hydrologically_active(c)) then ! if the column is hydrologically active, add it, if the corresponding gridcell is not found before, add also the gridcell
+        ! if the column is hydrologically active, add it, if the corresponding
+        ! gridcell is not found before, add also the gridcell
+        if (col%hydrologically_active(c)) then
 
           if (.not. found(g)) then ! if the gridcell is not found before
 
@@ -538,7 +542,8 @@ module enkf_clm_mod
 
     do j = 1,nlevsoi
 
-      found(clm_begg:clm_endg) = .false. ! has to be inside the for lopp, else, the hactiveg_levels is only filled for the first level
+      ! has to be inside the for lopp, else, the hactiveg_levels is only filled for the first level
+      found(clm_begg:clm_endg) = .false.
       fa = 0
       fg = 0
 
@@ -575,7 +580,8 @@ module enkf_clm_mod
 
     if (allocated(found)) deallocate(found)
 
-    ! now we have an array for the columns and gridcells of interest that we can use when we fill the statevector and distribute the update
+    ! now we have an array for the columns and gridcells of interest that we can
+    ! use when we fill the statevector and distribute the update
     ! now lets find out the dimension of the state vector
 
     clm_varsize_tws(:) = 0
@@ -2401,7 +2407,8 @@ module enkf_clm_mod
         do i = 1,nlevsoi
           do count = 1, num_layer(i)
             if (g==hactiveg_levels(count,i)) then
-              dim_l = dim_l+1 ! I could also check with col%nbedrock but then I would need the column index and not the gridcell index
+              ! I could also check with col%nbedrock but then I would need the column index and not the gridcell index
+              dim_l = dim_l+1
             end if
           end do
         end do
@@ -2527,7 +2534,8 @@ module enkf_clm_mod
         do j = 1, num_layer(1)
           if (g==hactiveg_levels(j,1)) then
             state_l(1) = state_p(j) ! surface SM
-            state_l(dim_l) = state_p(j + sum(clm_varsize_tws(1:3))) ! snow, same indexing as clm_varsize_tws(2:3) = 0 when only surface layers present
+            ! snow, same indexing as clm_varsize_tws(2:3) = 0 when only surface layers present
+            state_l(dim_l) = state_p(j + sum(clm_varsize_tws(1:3)))
           end if
         end do
 
@@ -2605,7 +2613,8 @@ module enkf_clm_mod
         g = hactiveg_levels(domain_p,1)
         do i = 1, dim_l-sub
           do j = 1, num_layer(i) ! i is the layer that we are in right now
-            if (g==hactiveg_levels(j,i)) then ! if the counter is the gridcell of the local domain, we know the position in the statevector
+            ! if the counter is the gridcell of the local domain, we know the position in the statevector
+            if (g==hactiveg_levels(j,i)) then
               if (i == 1) then ! if first layer
                 state_p(j)  = state_l(i)    ! first liquid water as it is first in the statevector
               else

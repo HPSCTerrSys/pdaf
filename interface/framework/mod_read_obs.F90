@@ -71,13 +71,17 @@ contains
 
   !> @author Yorck Ewerdwalbesloh
   !> @date 17.03.2025
-  !> @brief Read NetCDF observation file for different observation types to be able to use one full observation files with several types
+  !> @brief Read NetCDF observation file for different observation types
+  !! to be able to use one full observation files with several types
   !> @param[in] Name of observation file, Name of observation type
   !> @param[inout] Full observation dimension, full observation vector, uncertainty information, coordinates (lon and lat)
   !> @details
   !> This subroutine reads the observation file and return the data
 
-  subroutine read_obs_nc_type(current_observation_filename, current_observation_type, dim_obs_g, obs_g, lon_obs_g, lat_obs_g, layer_obs_g, dr_obs_g, obserr_g, obscov_g)
+  subroutine read_obs_nc_type(current_observation_filename, &
+                               current_observation_type, dim_obs_g, obs_g, &
+                               lon_obs_g, lat_obs_g, layer_obs_g, &
+                               dr_obs_g, obserr_g, obscov_g)
     use netcdf, only: nf90_max_name
     use netcdf, only: nf90_open
     use netcdf, only: nf90_nowrite
