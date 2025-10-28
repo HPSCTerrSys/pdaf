@@ -96,15 +96,6 @@ module enkf_clm_mod
 
     integer,intent(in) :: mype
 
-    integer :: i
-    integer :: j
-    integer :: jj
-    integer :: c
-    integer :: g
-    integer :: cg
-    integer :: cc
-    integer :: cccheck
-
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
     integer :: begl, endl   ! per-proc beginning and ending landunit indices
@@ -126,27 +117,30 @@ module enkf_clm_mod
     clm_begp     = begp
     clm_endp     = endp
 
-    ! Soil Moisture DA: State vector index arrays
+    ! soil water content observations - case 1
     if(clmupdate_swc==1) then
-      call define_clm_statevec_swc
-    endif
+      call define_clm_statevec_swc(mype)
+    end if
 
+    ! soil water content observations - case 2
     if(clmupdate_swc==2) then
       error stop "Not implemented: clmupdate_swc.eq.2"
-    endif
+    end if
 
+    ! texture observations - case 1
     if(clmupdate_texture==1) then
-        clm_statevecsize = clm_statevecsize + 2*((endg-begg+1)*nlevsoi)
-    endif
+      clm_statevecsize = clm_statevecsize + 2*((endg-begg+1)*nlevsoi)
+    end if
 
+    ! texture observations - case 2
     if(clmupdate_texture==2) then
-        clm_statevecsize = clm_statevecsize + 3*((endg-begg+1)*nlevsoi)
-    endif
+      clm_statevecsize = clm_statevecsize + 3*((endg-begg+1)*nlevsoi)
+    end if
 
     !hcp LST DA
     if(clmupdate_T==1) then
       error stop "Not implemented: clmupdate_T.eq.1"
-    endif
+    end if
     !end hcp
 
 #ifdef PDAF_DEBUG
@@ -787,7 +781,6 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
         IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
 
-          IF(clmupdate_swc/=0) THEN
             ! TSMP-PDAF: For debug runs, output the state vector in files
             WRITE(fn3, "(a,i5.5,a,i5.5,a)") "h2osoi_liq", mype, ".update.", tstartcycle, ".txt"
             OPEN(unit=71, file=fn3, action="write")
@@ -805,7 +798,6 @@ module enkf_clm_mod
             OPEN(unit=71, file=fn2, action="write")
             WRITE (71,"(es22.15)") swc(:,:)
             CLOSE(71)
-          END IF
 
         END IF
 #endif
