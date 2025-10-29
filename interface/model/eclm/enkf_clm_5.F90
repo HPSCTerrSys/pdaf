@@ -210,7 +210,7 @@ end subroutine clm_init
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
 #if defined CLMSA
-  use enkf_clm_mod, only : set_clm_statevec 
+  use enkf_clm_mod, only : set_clm_statevec
 #endif
   use enkf_clm_mod, only : set_clm_statevec
   use iso_C_binding, only : c_int
