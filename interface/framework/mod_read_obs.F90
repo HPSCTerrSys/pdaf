@@ -775,6 +775,7 @@ contains
     use shr_kind_mod, only: r8 => shr_kind_r8
     use netcdf, only: nf90_max_name, nf90_open, nf90_nowrite, &
       nf90_inq_varid, nf90_get_var, nf90_close, nf90_noerr
+    use mod_assimilation, only: use_omi
 
     implicit none
 
@@ -783,8 +784,18 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = *), parameter :: varname = "da_interval"
+    character (len = nf90_max_name), parameter :: varname
     real(r8) :: dtime ! land model time step (sec)
+
+#ifdef CLMSA
+    if (use_omi) then
+      varname = "da_interval_variable"
+    else
+      varname = "da_interval         "
+    end if
+#else
+    varname = "da_interval         "
+#endif
 
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname
