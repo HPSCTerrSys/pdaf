@@ -212,7 +212,6 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
 #if defined CLMSA
   use enkf_clm_mod, only : set_clm_statevec
 #endif
-  use enkf_clm_mod, only : set_clm_statevec
   use iso_C_binding, only : c_int
 
   implicit none
