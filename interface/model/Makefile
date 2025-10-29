@@ -24,6 +24,7 @@ OBJCLM = enkf_clm_mod.o\
 		 enkf_clm.o\
 ## clm 5 object
 OBJCLM5 = enkf_clm_mod_5.o\
+		enkf_clm_mod_5_swc.o\
 		mod_clm_statistics_5.o\
 		print_update_clm_5.o\
 		enkf_clm_5.o\
