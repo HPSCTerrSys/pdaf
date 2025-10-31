@@ -23,9 +23,14 @@
 !-------------------------------------------------------------------------------------------
 
 module mod_tsmp
-    use iso_c_binding
+    use iso_c_binding, only: c_int, c_ptr, c_double
+
+    implicit none
+
+    public
 
     integer(c_int) , bind(c) :: enkf_subvecsize, pf_statevecsize, nprocpf, nprocclm, nproccosmo
+    integer(c_int) , bind(c) :: flexible_da_interval
     integer(c_int) , bind(c) :: point_obs
     integer(c_int) , bind(c) :: is_dampfac_state_time_dependent
     integer(c_int) , bind(c) :: is_dampfac_param_time_dependent
@@ -49,6 +54,8 @@ module mod_tsmp
     integer(c_int), pointer  :: idx_map_subvec2state_fortran(:)
     type(c_ptr), bind(c)     :: soilay
     real(c_double), pointer  :: soilay_fortran(:)
+    real(c_double),bind(C) :: da_interval
+    real(c_double),bind(C) :: da_interval_final
     real(c_double),bind(C) :: dampfac_state_time_dependent
     real(c_double),bind(C) :: dampfac_param_time_dependent
 
@@ -61,46 +68,48 @@ module mod_tsmp
 
     interface
         subroutine initialize_tsmp() bind(c)
-            use iso_c_binding
+            ! use iso_c_binding
             implicit none
         end subroutine initialize_tsmp
     end interface
 
     interface
         subroutine finalize_tsmp() bind(c)
-            use iso_c_binding
+            ! use iso_c_binding
             implicit none
         end subroutine finalize_tsmp
     end interface
 
     interface
         subroutine integrate_tsmp() bind(c)
-            use iso_c_binding
+            ! use iso_c_binding
             implicit none
         end subroutine integrate_tsmp
     end interface
 
     interface
         subroutine update_tsmp() bind(c)
-            use iso_c_binding
+            ! use iso_c_binding
             implicit none
         end subroutine update_tsmp
     end interface
 
      interface
-        subroutine init_n_domains_size(n_domains_p) bind(c)
-            use iso_c_binding
+        subroutine init_n_domains_pfl(n_domains_p) bind(c)
+            use iso_c_binding, only: c_int
             import
-            INTEGER(c_int) :: n_domains_p ! PE-local number of analysis domains
-        end subroutine init_n_domains_size
+            implicit none
+            INTEGER(c_int), INTENT(out) :: n_domains_p ! PE-local number of analysis domains
+        end subroutine init_n_domains_pfl
     end interface
 
      interface
-        subroutine init_parf_l_size(dim_l) bind(c)
-            use iso_c_binding
+        subroutine init_dim_l_pfl(dim_l) bind(c)
+            use iso_c_binding, only: c_int
             import
-              INTEGER(c_int) :: dim_l ! Local state dimension
-        end subroutine init_parf_l_size
+            implicit none
+              INTEGER(c_int), INTENT(out) :: dim_l ! Local state dimension
+        end subroutine init_dim_l_pfl
     end interface
 
 !!$    interface
