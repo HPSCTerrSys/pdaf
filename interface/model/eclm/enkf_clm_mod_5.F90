@@ -635,6 +635,7 @@ module enkf_clm_mod
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
     use clm_time_manager  , only : update_DA_nstep
     use shr_kind_mod , only : r8 => shr_kind_r8
+    use ColumnType , only : col
     use clm_instMod, only : waterstate_inst
 
     implicit none
@@ -650,14 +651,28 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
 
+    real(r8)  :: incr_sno
+    real(r8)  :: incr_sd
+    real(r8)  :: incr_swe
+    real(r8)  :: h2osno_in(clm_begc:clm_endc)
+    real(r8)  :: snow_depth_in(clm_begc:clm_endc)
+    real(r8)  :: h2osno_out(clm_begc:clm_endc)
+    real(r8)  :: snow_depth_out(clm_begc:clm_endc)
+
     integer :: i
+    integer :: j
+    integer :: cc
+    integer :: offset
     character (len = 31) :: fn    !TSMP-PDAF: function name for state vector output
+    character (len = 32) :: fn4    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
 
     integer, pointer :: snlsno(:)
     logical :: swc_zero_before_update
 
+    cc = 0
+    offset = 0
     swc_zero_before_update = .false.
 
 #ifdef PDAF_DEBUG
