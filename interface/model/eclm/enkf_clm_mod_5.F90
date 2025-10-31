@@ -790,7 +790,8 @@ module enkf_clm_mod
             snow_depth(j) = snow_depth_out(j)
           else
             ! Catch negative or 0 values from DA
-            print *, "WARNING: Snow-depth is negative/zero at cc. cc, j, offset, snow_depth_out(j): ", cc, j, offset, snow_depth_out(j)
+            print *, "WARNING: Snow-depth is negative/zero at cc. cc, j, offset, snow_depth_out(j): ", &
+              cc, j, offset, snow_depth_out(j)
           end if
         else if(clmupdate_snow==2) then
           if (h2osno_out(j)>0.0) then
