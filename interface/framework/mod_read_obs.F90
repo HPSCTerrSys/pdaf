@@ -784,7 +784,7 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = nf90_max_name), parameter :: varname
+    character (len = nf90_max_name) :: varname
     real(r8) :: dtime ! land model time step (sec)
 
 #ifdef CLMSA
