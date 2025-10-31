@@ -987,7 +987,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                    if(clmstatevec_only_active==1) then
                      obs_index_p(cnt) = state_clm2pdaf_p(c,clmobs_layer(i))
                    else
-                     if(clmupdate_snow.ne.0) then
+                     if(clmupdate_snow/=0) then
                        ! Snow-DA: no layer in state vector variables
                        obs_index_p(cnt) = g-begg+1
                      else
