@@ -1079,7 +1079,7 @@ contains
 
         if (allocated(min_dist)) deallocate(min_dist)
         allocate(min_dist(dim_obs))
-        min_dist(:) = huge(1.0d0)
+        min_dist(:) = huge(min_dist)
 
         if (allocated(min_g)) deallocate(min_g)
         allocate(min_g(dim_obs))
