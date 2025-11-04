@@ -40,6 +40,7 @@ In alphabetic order (to be extended):
 * Stefan Poll
 * Mukund Pondkule
 * Prabhakar Shrestha
+* Anne Springer
 * Lukas Strebel
 
 ## About this documentation

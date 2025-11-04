@@ -50,6 +50,10 @@
 !! * 2019-06 - Lars Nerger - Initial code
 !! * Later revisions - see repository log
 !!
+
+! Author: Yorck Ewerdwalbesloh, adaptations of original implementations of TSMP2-PDAF interface for OMI framework
+
+
 #ifdef CLMFIVE
 MODULE obs_SM_pdafomi
 

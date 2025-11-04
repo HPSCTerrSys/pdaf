@@ -29,6 +29,9 @@
 !! This routine calls the observation-specific
 !! routines init_dim_obs_TYPE.
 !!
+
+! Author: Yorck Ewerdwalbesloh
+
 #ifdef CLMFIVE
 SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
 

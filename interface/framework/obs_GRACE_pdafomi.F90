@@ -159,6 +159,13 @@ MODULE obs_GRACE_pdafomi
   !!
   !! Further variables are set when the routine PDAFomi_gather_obs is called.
   !!
+
+
+    !> @author Anne Springer, Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Initialized the observation dimension and related arrays for GRACE observations
+        !> @param[in] step current time step
+        !> @param[in,out] dim_obs dimension of full observation vector
     SUBROUTINE init_dim_obs_GRACE(step, dim_obs)
 
       USE mpi, ONLY: MPI_INTEGER
@@ -511,6 +518,14 @@ MODULE obs_GRACE_pdafomi
   !!
   !! The routine is called by all filter processes.
   !!
+
+    !> @author Yorck Ewerdwalbesloh, Anne Springer
+    !> @date 29.10.2025
+    !> @brief Observation operator for GRACE observations
+        !> @param[in] dim_p PE-local state dimension
+        !> @param[in] dim_obs Dimension of full observation vector
+        !> @param[in] state_p PE-local model state
+        !> @param[in,out] ostate Full observed state
     SUBROUTINE obs_op_GRACE(dim_p, dim_obs, state_p, ostate)
 
         use mpi, only: MPI_DOUBLE_PRECISION
@@ -706,6 +721,14 @@ MODULE obs_GRACE_pdafomi
   !! different localization radius and localization functions
   !! for each observation type and  local analysis domain.
   !!
+
+    !> @author Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Initialize local observation dimension for GRACE observations
+        !> @param[in] domain_p Index of current local analysis domain
+        !> @param[in] step Current time step
+        !> @param[in] dim_obs Full dimension of observation vector
+        !> @param[in,out] dim_obs_l Local dimension of observation vector
     SUBROUTINE init_dim_obs_l_GRACE(domain_p, step, dim_obs, dim_obs_l)
 
       ! Include PDAFomi function
@@ -764,6 +787,15 @@ MODULE obs_GRACE_pdafomi
   !! different localization radius and localization functions
   !! for each observation type.
   !!
+
+    !> @author Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Covariance localization for GRACE observations, called only for the EnKF
+        !> @param[in] dim_p PE-local state dimension
+        !> @param[in] dim_obs Dimension of full observation vector
+        !> @param[in,out] HP_p PE-local part of matrix HP
+        !> @param[in,out] HPH Matrix HPH
+        !> @param[in,out] coords_p Coordinates of state vector elements
     SUBROUTINE localize_covar_GRACE(dim_p, dim_obs, HP_p, HPH, coords_p)
 
       ! Include PDAFomi function
@@ -804,7 +836,10 @@ MODULE obs_GRACE_pdafomi
     END SUBROUTINE localize_covar_GRACE
 
 
-
+    !> @author Anne Springer
+    !> @date 29.10.2025
+    !> @brief Read temporal mean of TWS from NetCDF file
+        !> @param[in] temp_mean_filename filename of NetCDF file containing temporal mean of TWS
     subroutine read_temp_mean_model(temp_mean_filename)
 
         use netcdf, only: nf90_max_name

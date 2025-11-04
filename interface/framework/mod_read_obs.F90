@@ -72,7 +72,7 @@ contains
   !> @author Yorck Ewerdwalbesloh
   !> @date 17.03.2025
   !> @brief Read NetCDF observation file for different observation types
-  !! to be able to use one full observation files with several types
+  !! to read only those observations that should be read in for the specified type
   !> @param[in] Name of observation file, Name of observation type
   !> @param[inout] Full observation dimension, full observation vector, uncertainty information, coordinates (lon and lat)
   !> @details
@@ -758,7 +758,7 @@ contains
 
   end subroutine check_n_observationfile
 
-  !> @author Yorck Ewerdwalbesloh, Johannes Keller
+  !> @author Anne Springer, Yorck Ewerdwalbesloh, Johannes Keller
   !> @date 11.09.2023
   !> @brief Return data assimilation interval from file
   !> @param[in] fn Filename of the observation file
@@ -784,7 +784,7 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = nf90_max_name), parameter :: varname
+    character (len = nf90_max_name) :: varname
     real(r8) :: dtime ! land model time step (sec)
 
 #ifdef CLMSA
@@ -830,60 +830,8 @@ contains
   end subroutine check
 
 
-  ! !> @author Yorck Ewerdwalbesloh
-  !     !> @date 11.09.2023
-  !     !> @brief Return data assimilation interval from file
-  !     !> @param[in] fn Filename of the observation file
-  !     !> @param[out] nn number of hours until next assimilation time step
-  !     !> @details
-  !     !>     Reads the content of the variable name `da_interval_variable` from NetCDF
-  !     !>     file `fn` using subroutines from the NetCDF module.
-  !     !>     The result is returned in `nn`.
-  !     !>
-  !     !>     The result is used to decide if the next observation file is
-  !     !>     used or not.
-  !   subroutine check_n_observationfile_da_interval(fn,nn)
-  !       use shr_kind_mod, only: r8 => shr_kind_r8
-  !       use netcdf, only: nf90_max_name, nf90_open, nf90_nowrite, &
-  !           nf90_inq_varid, nf90_get_var, nf90_close, nf90_noerr
-  !       use clm_varcon, only: ispval
-  !       use clm_time_manager, only : get_step_size
 
-  !       implicit none
-
-  !       character(len=*),intent(in) :: fn
-  !       real, intent(out)        :: nn
-
-
-  !       integer :: ncid, varid, status !,dimid
-  !       character (len = *), parameter :: varname = "da_interval_variable"
-  !       real(r8) :: dtime ! land model time step (sec)
-
-  !       !character (len = *), parameter :: dim_name = "dim_obs"
-  !       !character(len = nf90_max_name) :: recorddimname
-
-  !       dtime = get_step_size()
-
-  !       call check(nf90_open(fn, nf90_nowrite, ncid))
-  !       !call check(nf90_inq_dimid(ncid, dim_name, dimid))
-  !       !call check(nf90_inquire_dimension(ncid, dimid, recorddimname, nn))
-  !       status = nf90_inq_varid(ncid, varname, varid)
-  !       if (status == nf90_noerr) then
-  !           call check(nf90_inq_varid(ncid, varname, varid))
-  !           call check( nf90_get_var(ncid, varid, nn) )
-  !           call check(nf90_close(ncid))
-  !           ! at this point: half hourly time steps, this is adjusted here. In the GRACE files, da_interval is set up as hours
-  !           ! --> is adjusted using information from inside CLM
-  !           nn = nn*INT(3600/dtime)
-  !       else
-  !           nn = ispval
-  !       end if
-
-  !   end subroutine check_n_observationfile_da_interval
-
-
-
-    !> @author Yorck Ewerdwalbesloh
+    !> @author Anne Springer, adaptation for TSMP2 by Yorck Ewerdwalbesloh
     !> @date 04.12.2023
     !> @brief Return set zero interval for running mean of model variables from file
     !> @param[in] fn Filename of the observation file
@@ -934,7 +882,17 @@ contains
 
     end subroutine check_n_observationfile_set_zero
 
-
+    !> @author Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Return next observation type from next observation file
+    !> @param[in] fn Filename of the observation file
+    !> @param[out] obs_type_str next observation type
+    !> @details
+    !>     Reads the content of the variable name `type_clm` from NetCDF
+    !>     file `fn` using subroutines from the NetCDF module.
+    !>     The first entry of the vector is returned in `obs_type_str`.
+    !>
+    !>     The result is used to reset the observation type and to initialize the next assimilation cycle.
     subroutine check_n_observationfile_next_type(fn, obs_type_str)
         use netcdf, only: nf90_max_name
         use netcdf, only: nf90_open
@@ -982,6 +940,12 @@ contains
 
 
 #ifdef CLMFIVE
+    !> @author Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Update observation type for next assimilation cycle
+    !> @param[in] obs_type_st next observation type
+    !> @details
+    !>     Updates the observation type for the next assimilation cycle when using the OMI interface
     subroutine update_obs_type(obs_type_str)
         use enkf_clm_mod, only: clmupdate_tws, clmupdate_swc, clmupdate_T, clmupdate_texture
         use mod_parallel_pdaf, only: abort_parallel
@@ -1009,7 +973,18 @@ contains
     end subroutine update_obs_type
 
 
-
+    !> @author Yorck Ewerdwalbesloh
+    !> @date 29.10.2025
+    !> @brief Defines an index domain for GRACE assimilation
+    !> @param[in] lon_clmobs longitude of the observations
+    !> @param[in] lat_clmobs latitude of the observations
+    !> @param[in] dim_obs number of observations
+    !> @param[out] longxy local x-indices of the gridcells
+    !> @param[out] latixy local y-indices of the gridcells
+    !> @param[out] longxy_obs local x-indices of the observations
+    !> @param[out] latixy_obs local y-indices of the observations
+    !> @details
+    !>     Generates an index grid instead of the lon/lat grid
     subroutine domain_def_clm(lon_clmobs, lat_clmobs, dim_obs, &
         longxy, latixy, longxy_obs, latixy_obs)
 

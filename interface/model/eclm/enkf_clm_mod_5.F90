@@ -426,7 +426,10 @@ module enkf_clm_mod
 
   end subroutine define_clm_statevec_swc
 
-
+  !> @author Yorck Ewerdwalbesloh, Anne Springer
+  !> @date 29.10.2025
+  !> @brief define the state vector for TWS assimilation
+      !> @param[in] mype MPI rank
   subroutine define_clm_statevec_tws(mype)
     use shr_kind_mod, only: r8 => shr_kind_r8
     use decompMod , only : get_proc_bounds
@@ -822,7 +825,9 @@ module enkf_clm_mod
 
   end subroutine set_clm_statevec_swc
 
-
+  !> @author Yorck Ewerdwalbesloh, Anne Springer
+  !> @date 29.10.2025
+  !> @brief set the state vector for TWS assimilation
   subroutine set_clm_statevec_tws()
     use clm_instMod, only : soilstate_inst, waterstate_inst
     use clm_varpar   , only : nlevsoi
@@ -1434,7 +1439,9 @@ module enkf_clm_mod
   end subroutine update_clm_texture
 
 
-
+  !> @author Yorck Ewerdwalbesloh, Anne Springer
+  !> @date 29.10.2025
+  !> @brief update water storages from TWS assimilation
   subroutine clm_update_tws()
 
     use clm_varpar   , only : nlevsoi, nlevsno
@@ -2354,7 +2361,7 @@ module enkf_clm_mod
   end subroutine init_n_domains_clm
 
 
-  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @author  Wolfgang Kurtz, Johannes Keller, Yorck Ewerdwalbesloh
   !> @date    20.11.2017
   !> @brief   Set local state vector dimension DIM_L local PDAF filters
   !> @details
@@ -2443,7 +2450,7 @@ module enkf_clm_mod
 
   end subroutine init_dim_l_clm
 
-  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @author  Wolfgang Kurtz, Johannes Keller, Yorck Ewerdwalbesloh
   !> @date    20.11.2017
   !> @brief   Set local state vector STATE_L from global state vector STATE_P
   !> @details
@@ -2560,7 +2567,7 @@ module enkf_clm_mod
 
   end subroutine g2l_state_clm
 
-  !> @author  Wolfgang Kurtz, Johannes Keller
+  !> @author  Wolfgang Kurtz, Johannes Keller, Yorck Ewerdwalbesloh
   !> @date    20.11.2017
   !> @brief   Update global state vector STATE_P from local state vector STATE_L
   !> @details
