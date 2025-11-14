@@ -808,36 +808,19 @@ module enkf_clm_mod
   end subroutine set_clm_statevec_T
 
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
-    use clm_varpar   , only : nlevsoi
-    use clm_varpar   , only : nlevgrnd
     use clm_time_manager  , only : update_DA_nstep
     use shr_kind_mod , only : r8 => shr_kind_r8
-    use PatchType , only : patch
-    use ColumnType , only : col
-    use clm_instMod, only : soilstate_inst
     use clm_instMod, only : waterstate_inst
-    use clm_instMod, only : temperature_inst
-    use clm_varcon      , only : denh2o, denice, watmin
-    use clm_varcon      , only : ispval
-    use clm_varcon      , only : spval
 
     implicit none
 
     integer,intent(in) :: tstartcycle
     integer,intent(in) :: mype
 
-    real(r8), pointer :: t_grnd(:)
-    real(r8), pointer :: t_soisno(:,:)
-    real(r8), pointer :: t_veg(:)
-    real(r8), pointer :: t_skin(:)
-
-    real(r8), pointer :: dz(:,:)          ! layer thickness depth (m)
     real(r8), pointer :: h2osoi_liq(:,:)  ! liquid water (kg/m2)
     real(r8), pointer :: h2osoi_ice(:,:)
 
-    ! integer :: i,j,jj,g,c,p,cc,offset
     integer :: i
-    integer :: lev
     character (len = 31) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
@@ -860,13 +843,6 @@ module enkf_clm_mod
 
     h2osoi_liq    => waterstate_inst%h2osoi_liq_col
     h2osoi_ice    => waterstate_inst%h2osoi_ice_col
-
-    ! LST
-    t_grnd => temperature_inst%t_grnd_col
-    t_soisno => temperature_inst%t_soisno_col
-    t_veg  => temperature_inst%t_veg_patch
-    t_skin => temperature_inst%t_skin_patch
-    ! tlai   => canopystate_inst%tlai_patch
 
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
@@ -904,8 +880,8 @@ module enkf_clm_mod
     endif
 
     !hcp: TG, TV
-    if(clmupdate_T==1) then
-      error stop "Not implemented: clmupdate_T.eq.1"
+    if(clmupdate_T/=0) then
+      call update_clm_T(tstartcycle, mype)
     endif
     ! end hcp TG, TV
 
@@ -1093,9 +1069,34 @@ module enkf_clm_mod
 
   end subroutine update_clm_swc
 
-  subroutine update_clm_T
+  subroutine update_clm_T(tstartcycle,mype)
+
+    use PatchType , only : patch
+    use clm_varpar   , only : nlevgrnd
+    use clm_instMod, only : temperature_inst
 
     implicit none
+
+    integer,intent(in) :: tstartcycle
+    integer,intent(in) :: mype
+
+    integer :: i
+    integer :: j
+    integer :: c
+    integer :: p
+    integer :: lev
+
+    real(r8), pointer :: t_grnd(:)
+    real(r8), pointer :: t_soisno(:,:)
+    real(r8), pointer :: t_veg(:)
+    real(r8), pointer :: t_skin(:)
+
+    ! LST
+    t_grnd => temperature_inst%t_grnd_col
+    t_soisno => temperature_inst%t_soisno_col
+    t_veg  => temperature_inst%t_veg_patch
+    t_skin => temperature_inst%t_skin_patch
+    ! tlai   => canopystate_inst%tlai_patch
 
     !hcp: TG, TV
     if(clmupdate_T==1) then
