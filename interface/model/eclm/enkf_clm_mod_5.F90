@@ -573,13 +573,7 @@ module enkf_clm_mod
     real(r8), pointer :: psand(:,:)
     real(r8), pointer :: pclay(:,:)
     real(r8), pointer :: porgm(:,:)
-    real(r8), pointer :: t_grnd(:)
-    real(r8), pointer :: t_soisno(:,:)
-    real(r8), pointer :: t_veg(:)
-    real(r8), pointer :: t_skin(:)
-    real(r8), pointer :: tlai(:)
     integer :: i,j,jj,g,c,cc,offset
-    integer :: lev
     integer :: n_c
     character (len = 34) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 34) :: fn2    !TSMP-PDAF: function name for swc output
@@ -592,8 +586,6 @@ module enkf_clm_mod
     pclay => soilstate_inst%cellclay_col
     porgm => soilstate_inst%cellorg_col
 
-    t_soisno => temperature_inst%t_soisno_col
-
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble < 0) THEN
 
@@ -602,14 +594,6 @@ module enkf_clm_mod
         WRITE(fn2, "(a,i5.5,a,i5.5,a)") "swcstate_", mype, ".integrate.", tstartcycle + 1, ".txt"
         OPEN(unit=71, file=fn2, action="write")
         WRITE (71,"(es22.15)") swc(:,:)
-        CLOSE(71)
-      END IF
-
-      IF(clmupdate_T/=0) THEN
-        ! TSMP-PDAF: Debug output of CLM t_soisno, first layer
-        WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".integrate.", tstartcycle + 1, ".txt"
-        OPEN(unit=71, file=fn2, action="write")
-        WRITE (71,"(es22.15)") t_soisno(:,1)
         CLOSE(71)
       END IF
 
@@ -627,7 +611,7 @@ module enkf_clm_mod
 
     !hcp  LAI
     if(clmupdate_T/=0) then
-      call set_clm_statevec_T
+      call set_clm_statevec_T(tstartcycle,mype)
     endif
     !end hcp  LAI
 
@@ -731,7 +715,7 @@ module enkf_clm_mod
 
   end subroutine set_clm_statevec_swc
 
-  subroutine set_clm_statevec_T
+  subroutine set_clm_statevec_T(tstartcycle,mype)
     use clm_instMod, only : temperature_inst
     use clm_instMod, only : canopystate_inst
     use clm_varpar   , only : nlevgrnd
@@ -739,6 +723,10 @@ module enkf_clm_mod
     use shr_kind_mod, only: r8 => shr_kind_r8
 
     implicit none
+
+    integer,intent(in) :: tstartcycle
+    integer,intent(in) :: mype
+
     real(r8), pointer :: t_grnd(:)
     real(r8), pointer :: t_soisno(:,:)
     real(r8), pointer :: t_veg(:)
@@ -746,6 +734,7 @@ module enkf_clm_mod
     real(r8), pointer :: tlai(:)
     integer :: j,g,cc,c
     integer :: n_c
+    integer :: lev
 
     ! LST variables
     t_grnd => temperature_inst%t_grnd_col
@@ -754,6 +743,20 @@ module enkf_clm_mod
     t_soisno => temperature_inst%t_soisno_col
     tlai   => canopystate_inst%tlai_patch
 
+
+#ifdef PDAF_DEBUG
+    IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble < 0) THEN
+
+      IF(clmupdate_T/=0) THEN
+        ! TSMP-PDAF: Debug output of CLM t_soisno, first layer
+        WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".integrate.", tstartcycle + 1, ".txt"
+        OPEN(unit=71, file=fn2, action="write")
+        WRITE (71,"(es22.15)") t_soisno(:,1)
+        CLOSE(71)
+      END IF
+
+    END IF
+#endif
 
     !hcp  LAI
     if(clmupdate_T==1) then
