@@ -142,7 +142,7 @@ module enkf_clm_mod
     if(clmupdate_T/=0) then
       call define_clm_statevec_T(mype)
     end if
-
+    !end hcp
 
 #ifdef PDAF_DEBUG
     ! Debug output of clm_statevecsize
@@ -169,7 +169,6 @@ module enkf_clm_mod
     if ((clmupdate_T==1)) then  !hcp
       allocate(clm_paramarr(clm_paramsize))
     end if
-
 
   end subroutine define_clm_statevec
 
@@ -561,8 +560,7 @@ module enkf_clm_mod
   end subroutine cleanup_clm_statevec
 
   subroutine set_clm_statevec(tstartcycle, mype)
-    use clm_instMod, only : soilstate_inst
-    use clm_instMod, only : waterstate_inst
+    use clm_instMod, only : soilstate_inst, waterstate_inst
     use clm_varpar   , only : nlevsoi
     ! use clm_varcon, only: nameg, namec
     ! use GetGlobalValuesMod, only: GetGlobalWrite
