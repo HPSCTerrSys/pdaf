@@ -367,17 +367,20 @@ module enkf_clm_mod
 
   end subroutine define_clm_statevec_swc
 
-  subroutine define_clm_statevec_T
+  subroutine define_clm_statevec_T(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevgrnd
     use PatchType  , only : patch
 
     implicit none
 
+    integer,intent(in) :: mype
+
     integer :: j
     integer :: jj
     integer :: lev
     integer :: p
+    integer :: cc
 
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
