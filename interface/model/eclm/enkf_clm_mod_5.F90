@@ -739,6 +739,8 @@ module enkf_clm_mod
     integer :: n_c
     integer :: lev
 
+    character (len = 34) :: fn    !TSMP-PDAF: function name for swc output
+
     ! LST variables
     t_grnd => temperature_inst%t_grnd_col
     t_veg  => temperature_inst%t_veg_patch
@@ -752,8 +754,8 @@ module enkf_clm_mod
 
       IF(clmupdate_T/=0) THEN
         ! TSMP-PDAF: Debug output of CLM t_soisno, first layer
-        WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".integrate.", tstartcycle + 1, ".txt"
-        OPEN(unit=71, file=fn2, action="write")
+        WRITE(fn, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".integrate.", tstartcycle + 1, ".txt"
+        OPEN(unit=71, file=fn, action="write")
         WRITE (71,"(es22.15)") t_soisno(:,1)
         CLOSE(71)
       END IF
@@ -1094,6 +1096,8 @@ module enkf_clm_mod
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
 
+    character (len = 31) :: fn    !TSMP-PDAF: function name for swc output
+
     ! LST
     t_grnd => temperature_inst%t_grnd_col
     t_soisno => temperature_inst%t_soisno_col
@@ -1144,8 +1148,8 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
       IF(clmupdate_T/=0) THEN
         ! TSMP-PDAF: For debug runs, output the state vector in files
-        WRITE(fn2, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".update.", tstartcycle, ".txt"
-        OPEN(unit=71, file=fn2, action="write")
+        WRITE(fn, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".update.", tstartcycle, ".txt"
+        OPEN(unit=71, file=fn, action="write")
         WRITE (71,"(es22.15)") t_soisno(:,1)
         CLOSE(71)
       END IF
