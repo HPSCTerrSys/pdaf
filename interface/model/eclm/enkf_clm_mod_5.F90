@@ -170,10 +170,10 @@ module enkf_clm_mod
             ! So like this if lai is set it takes priority
         end if
 
-        if (clmupdate_lai_params==3) then
-            clm_varsize      =  (clm_endp-clm_begp+1)
-            clm_statevecsize =  3*clm_varsize
-        end if
+        ! if (clmupdate_lai_params==3) then
+        !     clm_varsize      =  (clm_endp-clm_begp+1)
+        !     clm_statevecsize =  3*clm_varsize
+        ! end if
 
     end if
 
@@ -544,15 +544,15 @@ module enkf_clm_mod
       end do
     endif
 
-    if (clmupdate_lai_params==3) then
-      cc = 1
-      do i=clm_begp,clm_endp
-        clm_statevec(cc+1*clm_varsize+offset) = pftcon%slatop(patch%itype(i))
-        clm_statevec(cc+2*clm_varsize+offset) = params_inst%kmax(patch%itype(i),1)
-        clm_statevec(cc+3*clm_varsize+offset) = params_inst%kmax(patch%itype(i),2)
-        cc = cc + 1
-      end do
-    endif
+    ! if (clmupdate_lai_params==3) then
+    !   cc = 1
+    !   do i=clm_begp,clm_endp
+    !     clm_statevec(cc+1*clm_varsize+offset) = pftcon%slatop(patch%itype(i))
+    !     clm_statevec(cc+2*clm_varsize+offset) = params_inst%kmax(patch%itype(i),1)
+    !     clm_statevec(cc+3*clm_varsize+offset) = params_inst%kmax(patch%itype(i),2)
+    !     cc = cc + 1
+    !   end do
+    ! endif
 
     !hcp  LAI
     if(clmupdate_T==1) then
@@ -849,22 +849,22 @@ module enkf_clm_mod
       end do
     endif
 
-    if (clmupdate_lai_params==3) then
-      cc = 1
-      do i=clm_begp,clm_endp
-        pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)
-        params_inst%kmax(patch%itype(i),1) = clm_statevec(cc+2*clm_varsize+offset)
-        params_inst%kmax(patch%itype(i),2) = clm_statevec(cc+3*clm_varsize+offset)
+    ! if (clmupdate_lai_params==3) then
+    !   cc = 1
+    !   do i=clm_begp,clm_endp
+    !     pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)
+    !     params_inst%kmax(patch%itype(i),1) = clm_statevec(cc+2*clm_varsize+offset)
+    !     params_inst%kmax(patch%itype(i),2) = clm_statevec(cc+3*clm_varsize+offset)
 
-        ! DEBUG ONLY
-        print *, "LST DEBUG PARAM slatop,i: ", pftcon%slatop(patch%itype(i)), ",", i
-        print *, "LST DEBUG PARAM kmax sun,i: ", params_inst%kmax(patch%itype(i),1), ",", i
-        print *, "LST DEBUG PARAM kmax shade,i: ", params_inst%kmax(patch%itype(i),2), ",", i
+    !     ! DEBUG ONLY
+    !     print *, "LST DEBUG PARAM slatop,i: ", pftcon%slatop(patch%itype(i)), ",", i
+    !     print *, "LST DEBUG PARAM kmax sun,i: ", params_inst%kmax(patch%itype(i),1), ",", i
+    !     print *, "LST DEBUG PARAM kmax shade,i: ", params_inst%kmax(patch%itype(i),2), ",", i
 
-        cc = cc + 1
-      end do
+    !     cc = cc + 1
+    !   end do
 
-    end if
+    ! end if
 
   end subroutine update_clm
 
