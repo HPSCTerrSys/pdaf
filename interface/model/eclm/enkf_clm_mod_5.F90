@@ -507,7 +507,7 @@ module enkf_clm_mod
            end if
            tlai(i) = max(0._r8, tlai(i)) ! don't allow negative LAI
            ! Add to grid cell average of patch with weighted tlai
-           clm_statevec(patch%gricdell(i)) = clm_statevec(patch%gridcell(i)) + patch%wtgcell(i)*tlai(i)
+           clm_statevec(patch%gridcell(i)) = clm_statevec(patch%gridcell(i)) + patch%wtgcell(i)*tlai(i)
        end do
 
        ! Require second loop to calculate fraction from collected grid cell average
