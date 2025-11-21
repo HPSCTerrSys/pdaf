@@ -51,10 +51,14 @@ module enkf_clm_mod
   ! LST in LST assimilation (clmupdate_T)
   real(r8),allocatable :: clm_paramarr(:)  !hcp CLM parameter vector (f.e. LAI)
   integer, allocatable :: state_clm2pdaf_p(:,:) !Index of column in hydraulic active state vector (nlevsoi,endc-begc+1)
+  real(r8),allocatable :: clm_patch2gc(:) ! index array to simplify patch to gridcell averaging
+  real(r8),allocatable :: clm_patchwt(:) ! weight array to simplify patch to gridcell averaging
   integer(c_int),bind(C,name="clmupdate_swc")     :: clmupdate_swc
   integer(c_int),bind(C,name="clmupdate_T")     :: clmupdate_T  ! by hcp
   integer(c_int),bind(C,name="clmupdate_texture") :: clmupdate_texture
   integer(c_int),bind(C,name="clmprint_swc")      :: clmprint_swc
+  integer(c_int),bind(C,name="clmupdate_lai")    :: clmupdate_lai
+  integer(c_int),bind(C,name="clmupdate_lai_params") :: clmupdate_lai_params
 #endif
   integer(c_int),bind(C,name="clmprint_et")       :: clmprint_et
   integer(c_int),bind(C,name="clmstatevec_allcol")       :: clmstatevec_allcol
@@ -149,14 +153,41 @@ module enkf_clm_mod
         ! Allocate array to store fraction of LAI the patch represents.
         if (allocated(old_frac)) deallocate(old_frac)
         allocate(old_frac(clm_endp-clm_begp+1))
+
+        ! #patches values per grid-cell ! clm_varsize not accurate due to variable #patches/grid cell
         ! set sizes
         clm_varsize = 1 ! each grid cell gets 1 value of LAI
+        !(clm_endp-clm_begp+1) ! Currently no combination of SWC and LAI DA
+
         clm_statevecsize = (clm_endg - clm_begg + 1) ! statevector is the size of the num of gridcells
+        !(clm_endp-clm_begp+1) ! So like this if lai is set it takes priority
+
         if (clmupdate_lai_params==1) then ! add parameters to the state vector.
-            clm_varsize = (clm_endg - clm_begg+1)
-            clm_statevecsize = (clm_endg - clm_begg+1)*1 ! 1 parameters
-        endif
+            ! clm_varsize = (clm_endg - clm_begg+1) ! Currently no combination of SWC and LAI DA
+            ! clm_statevecsize = (clm_endg - clm_begg+1)*1 ! 1 parameters
+            clm_varsize      =  (clm_endp-clm_begp+1)+1 ! Currently no combination of SWC and LAI DA
+            clm_statevecsize =  (clm_endp-clm_begp+1)+1 ! 1 parameters
+            ! So like this if lai is set it takes priority
+        end if
+
+        if (clmupdate_lai_params==3) then
+            clm_varsize      =  (clm_endp-clm_begp+1)
+            clm_statevecsize =  3*clm_varsize
+        end if
+
     end if
+
+    ! for obs_op version allocate additional helper index array
+    if(clmupdate_lai==2) then
+      clm_varsize      =  (clm_endp-clm_begp+1) ! equals number of patches
+      clm_statevecsize =  3*clm_varsize ! 3 var/params per patch
+
+      if (allocated(clm_patch2gc)) deallocate(clm_patch2gc)
+      allocate(clm_patch2gc(clm_varsize))
+      if (allocated(clm_patchwt)) deallocate(clm_patchwt)
+      allocate(clm_patchwt(clm_varsize))
+
+    endif
 
     !hcp LST DA
     if(clmupdate_T==1) then
@@ -410,6 +441,8 @@ module enkf_clm_mod
     use PatchType  , only : patch
     use pftconMod  , only : pftcon
     use shr_kind_mod, only: r8 => shr_kind_r8
+    use PhotosynthesisMod, only : params_inst
+
     implicit none
     integer,intent(in) :: tstartcycle
     integer,intent(in) :: mype
@@ -458,23 +491,27 @@ module enkf_clm_mod
 
 
     ! LAI assimilation
+    ! Case 1: LAI all patches
     ! Case 1: Transformations in Set and Update functions
     if(clmupdate_lai==1) then
-       clm_statevec(:) = 0._r8 ! reset statevector to 0 because we add to it for the average
+      clm_statevec(:) = 0._r8 ! reset statevector to 0 because we add to it for the average
        do i=clm_begp,clm_endp ! iterate through patches
-           ! set the leaf area index based on leafC and SLA
+           ! update the leaf area index based on leafC and SLA
            ! Eq 3 from Thornton and Zimmerman, 2007, J Clim, 20, 3902-3923.
+           ! (slatop(ivt(p))*(exp(leafc(p)*dsladlai(ivt(p))) - 1._r8))/dsladlai(ivt(p))
            if (pftcon%dsladlai(patch%itype(i)) > 0._r8) then
-               tlai(i) = (pftcon%slatop(patch%itype(i))*(exp(leafc(i)*pftcon%dsladlai(patch%itype(i))) - 1._r8)) &
-                 /pftcon%dsladlai(patch%itype(i))
+             tlai(i) = (pftcon%slatop(patch%itype(i))*(exp(leafc(i)*pftcon%dsladlai(patch%itype(i))) - 1._r8)) &
+               /pftcon%dsladlai(patch%itype(i))
            else
-               tlai(i) = pftcon%slatop(patch%iytpe(i)) * leafc(i)
-           endif
+             tlai(i) = pftcon%slatop(patch%itype(i)) * leafc(i)
+           end if
            tlai(i) = max(0._r8, tlai(i)) ! don't allow negative LAI
            ! Add to grid cell average of patch with weighted tlai
-           clm_statevec(patch%gridell(i)) = clm_statevec(patch%gridcell(i)) + patch%wtgcell(i)*tlai(i)
+           clm_statevec(patch%gricdell(i)) = clm_statevec(patch%gridcell(i)) + patch%wtgcell(i)*tlai(i)
        end do
+
        ! Require second loop to calculate fraction from collected grid cell average
+       ! second loop once grid cell average is known calculate fraction
        do i=clm_begp,clm_endp
            if (clm_statevec(patch%gridcell(i)) > 0._r8) then ! divide by zero protection
                 old_frac(i) = patch%wtgcell(i)*tlai(i) / clm_statevec(patch%gridcell(i))
@@ -484,11 +521,36 @@ module enkf_clm_mod
        end do
     endif
 
+    ! Case 2: statevec with leafc, slatop, dsladlai for transform in obs_op
+    if (clmupdate_lai==2) then
+      cc = 1
+      do i=clm_begp,clm_endp
+        clm_statevec(cc) = leafc(i)
+        clm_statevec(cc + 1*clm_varsize) = pftcon%slatop(patch%itype(i))
+        clm_statevec(cc + 2*clm_varsize) = pftcon%dsladlai(patch%itype(i))
+        clm_patch2gc(cc) = patch%gridcell(i)
+        clm_patchwt(cc) = patch%wtgcell(i)
+        cc = cc + 1
+      enddo
+      write(*,*) 'DEBUG LAI : statevec ', clm_statevec(:)
+      write(*,*) 'DEBUG LAI : patches ', clm_patch2gc(:), clm_patchwt(:)
+    endif
+
     if (clmupdate_lai_params==1) then
       cc = 1
       do i=clm_begp,clm_endp
           clm_statevec(cc+1*clm_varsize+offset) = pftcon%slatop(patch%itype(i))
           cc = cc + 1
+      end do
+    endif
+
+    if (clmupdate_lai_params==3) then
+      cc = 1
+      do i=clm_begp,clm_endp
+        clm_statevec(cc+1*clm_varsize+offset) = pftcon%slatop(patch%itype(i))
+        clm_statevec(cc+2*clm_varsize+offset) = params_inst%kmax(patch%itype(i),1)
+        clm_statevec(cc+3*clm_varsize+offset) = params_inst%kmax(patch%itype(i),2)
+        cc = cc + 1
       end do
     endif
 
@@ -606,6 +668,7 @@ module enkf_clm_mod
     use clm_instMod, only : bgc_vegetation_inst
     use pftconMod       , only : pftcon
     use PatchType       , only : patch
+    use PhotosynthesisMod, only : params_inst
 
     implicit none
 
@@ -617,17 +680,24 @@ module enkf_clm_mod
     real(r8), pointer :: leafc(:)         ! leaf carbon of patch
     real(r8), pointer :: leafn(:)         ! leaf nitrogen of patch
 
+!    real(r8) :: tlai(clm_begp:clm_endp)
+    real(r8) :: incr_lai
+
     integer :: i
+    integer :: cc
+    integer :: offset
     character (len = 31) :: fn    !TSMP-PDAF: function name for state vector output
+    character (len = 31) :: fn2    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn5    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn6    !TSMP-PDAF: function name for state vector outpu
+    character (len = 32) :: fn7    !TSMP-PDAF: function name for state vector outpu
 
     logical :: swc_zero_before_update
 
     swc_zero_before_update = .false.
 
-    leafc => bgc_vegetation_inst%cnveg_carbonstate_inst%leafc_patch
-    leafn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%leafn_patch
+    cc = 1
+    offset = 0
 
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
@@ -643,6 +713,11 @@ module enkf_clm_mod
 
     h2osoi_liq    => waterstate_inst%h2osoi_liq_col
     h2osoi_ice    => waterstate_inst%h2osoi_ice_col
+
+    leafc => bgc_vegetation_inst%cnveg_carbonstate_inst%leafc_patch
+    leafn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%leafn_patch
+
+
 
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
@@ -693,19 +768,32 @@ module enkf_clm_mod
     ! LAI assimilation:
     ! Case 1:
     if(clmupdate_lai==1) then
+      ! all patches
       do i=clm_begp,clm_endp
-      ! At this time tlai(patches) contains the pre-DA patch level LAI
-      ! clm_statevec(gridcells) contains the post-DA grid level LAI
-      ! old_frac(patches) contains the fraction of the pre-DA patch lai / grid cell average lai
-      ! To update tlai(patches) = new gridcell average * old_frac(patches) / patchweight.
-      ! Then use that tlai to determine leafc(patches)
+        ! DEBUG ONLY
+        print *, "LST DEBUG leafc,tlai(p) BEFORE:",i,";",leafc(i),";",tlai(i)
+
+        ! At this time tlai(patches) contains the pre-DA patch level LAI
+        ! clm_statevec(gridcells) contains the post-DA grid level LAI
+        ! old_frac(patches) contains the fraction of the pre-DA patch lai / grid cell average lai
+        ! To update tlai(patches) = new gridcell average * old_frac(patches) / patchweight.
+        ! Then use that tlai to determine leafc(patches)
+
+        !DEBUG
+        print *, "LST DEBUG old_frac BEFORE", i, ";", old_frac(i)
+
         if (patch%wtgcell(i) > 0._r8) then ! divide by zero protection
-            tlai(i) = clm_statevec(patch%gridcell(i)) * old_frac(i)/patch%wtgcell(i)
+          tlai(i) = clm_statevec(patch%gridcell(i)) * old_frac(i)/patch%wtgcell(i)
         else
             tlai(i) = 0._r8
         endif
+        ! DEBUG
+        print *, "LST DEBUG calc tlai BEFORE", i, ";", &
+          (pftcon%slatop(patch%itype(i))*exp(leafc(i)*pftcon%dsladlai(patch%itype(i)) - 1._r8)) &
+          /pftcon%dsladlai(patch%itype(i))
         ! update leafc based on Eq 3 from Thornton and Zimmerman, 2007, J Clim, 20, 3902-3923
         ! reformulate the equation to solve for leafc
+        ! => leafc(p) = log(((tlai(p) * dsladlai(ivt(p)))/slatop(ivt(p))) + 1._r8) / dsladlai(ivt(p))
         if (tlai(i) > 0._r8) then ! invalid log protection
           if (pftcon%dsladlai(patch%itype(i)) > 0._r8) then
             leafc(i) = log(((tlai(i) * pftcon%dsladlai(patch%itype(i))) / pftcon%slatop(patch%itype(i))) + 1.0_r8) &
@@ -718,15 +806,64 @@ module enkf_clm_mod
         endif
         leafc(i) = max(0._r8, leafc(i)) ! Don't allow negative leaf carbon
         leafn(i) = leafc(i) / pftcon%leafcn(patch%itype(i))
+
+        ! DEBUG ONLY
+        print *, "LST DEBUG leafc,tlai(wt) AFTER: ",i,";",leafc(i),";",tlai(i)
       end do
 
-      if (clmupdate_lai_params==1) then
-        cc = 1
-        do i=clm_begp,clm_endp
-            pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)
-            cc = cc + 1
-        end do
-      endif
+#ifdef PDAF_DEBUG
+        IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
+          ! TSMP-PDAF: For debug runs, output the state vector in files
+          WRITE(fn7, "(a,i5.5,a,i5.5,a)") "leafc_", mype, ".update.", tstartcycle, ".txt"
+          OPEN(unit=71, file=fn2, action="write")
+          WRITE (71,"(es22.15)") leafc(:)
+          CLOSE(71)
+        END IF
+#endif
+    endif
+
+    ! Case 2: statevec contains leafc, slatop, dsladlai
+    ! update of diagnostic tlai left to be done by clm5 itself.
+    if(clmupdate_lai==2) then
+      cc = 1
+      do i=clm_begp,clm_endp
+        leafc(i) = clm_statevec(cc)
+        leafc(i) = max(0._r8, leafc(i))
+        leafn(i) = leafc(i) / pftcon%leafcn(patch%itype(i))
+        if(clmupdate_lai_params==2) then
+          pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize)
+          pftcon%dsladlai(patch%itype(i)) = clm_statevec(cc+2*clm_varsize)
+        endif
+
+        cc = cc + 1
+      enddo
+    endif
+
+    if (clmupdate_lai_params==1) then
+      cc = 1
+      do i=clm_begp,clm_endp
+        pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)
+        ! DEBUG ONLY
+        print *, "LST DEBUG PARAM,i: ", pftcon%slatop(patch%itype(i)), ",", i
+        cc = cc + 1
+      end do
+    endif
+
+    if (clmupdate_lai_params==3) then
+      cc = 1
+      do i=clm_begp,clm_endp
+        pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)
+        params_inst%kmax(patch%itype(i),1) = clm_statevec(cc+2*clm_varsize+offset)
+        params_inst%kmax(patch%itype(i),2) = clm_statevec(cc+3*clm_varsize+offset)
+
+        ! DEBUG ONLY
+        print *, "LST DEBUG PARAM slatop,i: ", pftcon%slatop(patch%itype(i)), ",", i
+        print *, "LST DEBUG PARAM kmax sun,i: ", params_inst%kmax(patch%itype(i),1), ",", i
+        print *, "LST DEBUG PARAM kmax shade,i: ", params_inst%kmax(patch%itype(i),2), ",", i
+
+        cc = cc + 1
+      end do
+
     end if
 
   end subroutine update_clm
