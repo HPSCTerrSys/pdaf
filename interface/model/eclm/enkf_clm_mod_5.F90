@@ -465,7 +465,8 @@ module enkf_clm_mod
            ! set the leaf area index based on leafC and SLA
            ! Eq 3 from Thornton and Zimmerman, 2007, J Clim, 20, 3902-3923.
            if (pftcon%dsladlai(patch%itype(i)) > 0._r8) then
-               tlai(i) = (pftcon%slatop(patch%itype(i))*(exp(leafc(i)*pftcon%dsladlai(patch%itype(i))) - 1._r8))/pftcon%dsladlai(patch%itype(i))
+               tlai(i) = (pftcon%slatop(patch%itype(i))*(exp(leafc(i)*pftcon%dsladlai(patch%itype(i))) - 1._r8)) &
+                 /pftcon%dsladlai(patch%itype(i))
            else
                tlai(i) = pftcon%slatop(patch%iytpe(i)) * leafc(i)
            endif
@@ -707,7 +708,8 @@ module enkf_clm_mod
         ! reformulate the equation to solve for leafc
         if (tlai(i) > 0._r8) then ! invalid log protection
           if (pftcon%dsladlai(patch%itype(i)) > 0._r8) then
-            leafc(i) = log(((tlai(i) * pftcon%dsladlai(patch%itype(i))) / pftcon%slatop(patch%itype(i))) + 1.0_r8) / pftcon%dsladlai(patch%itype(i))
+            leafc(i) = log(((tlai(i) * pftcon%dsladlai(patch%itype(i))) / pftcon%slatop(patch%itype(i))) + 1.0_r8) &
+              / pftcon%dsladlai(patch%itype(i))
           else
               leafc(i) = tlai(i) * pftcon%slatop(patch%itype(i))
           endif
