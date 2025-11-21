@@ -71,7 +71,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #if defined CLMSA
    USE enkf_clm_mod, &
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
-   USE enkf_clm_mode, &
+   USE enkf_clm_mod, &
         ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt
 #ifdef CLMFIVE
    USE clm_instMod, &
