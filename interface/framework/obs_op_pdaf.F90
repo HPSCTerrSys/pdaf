@@ -71,6 +71,8 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #if defined CLMSA
    USE enkf_clm_mod, &
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
+   USE enkf_clm_mode, &
+        ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt
 #ifdef CLMFIVE
    USE clm_instMod, &
      ONLY : soilstate_inst
@@ -127,6 +129,36 @@ REAL :: sum_r1, sum_r2, sum_r3, totw
 
 ! If no special observation operator is compiled, use point observations
 lpointobs = .true.
+
+! LAI assimilation assuming statevec contains leafc, slatop, dsladlai for each patch
+! two component op to get to LAI obs
+! 1 calculate tlai from statevec per patch
+! state_p contains leafc of varsize then slatop of varsize and then dsadlai of varsize
+! 2 average patches according to weight per gridcell
+if (clmupdate_lai==2) then
+  lpointobs = .false. ! disable general obs_op
+  ! Note: This fails if there ever is an observation pointing to a gridcell with 0 patches
+  ! this should not happen, but would cause div by zero.
+
+  do i = 1, dim_obs_p ! loop over all observations
+    avesm = 0.0 ! use avesm as grid cell average collecter
+    do j = 1, clm_endp-clm_begp ! loop over all patches
+      write(*,*) 'DEBUG LAI : obs_index_p(i), clm_patch2gc(j)', obs_index_p(i), clm_patch2gc(j)
+      if (obs_index_p(i)==clm_patch2gc(j)) then
+        write(*,*) 'DEBUG LAI : state dsladlai', state_p(j+2*clm_varsize)
+        if (state_p(j+2*clm_varsize)>0.0) then
+          avesm = avesm + clm_patchwt(j) * ((state_p(j+1*clm_varsize)*(exp(state_p(j)*state_p(j+2*clm_varsize)) - 1.0))/state_p(j+2*clm_varsize)) ! formula for tlai from leafc
+        else
+          avesm = avesm +  clm_patchwt(j) *(state_p(j+1*clm_varsize)*state_p(j)) ! 2nd formula
+        endif ! dsladlai decider
+      endif ! this patch is in gridcell of observation
+      write(*,*) 'DEBUG LAI : average ', avesm
+    enddo ! all patches for obs checked
+    m_state_p(i) = avesm ! == lai of gridcell where the observation is
+  enddo ! all observations
+endif ! clmupdate_lai == 2 : m_state_p now contains lai for each gridcell with an observation.
+
+
 
 #if defined CLMSA
 if (clmupdate_T==1) then
