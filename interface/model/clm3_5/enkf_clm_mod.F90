@@ -25,6 +25,7 @@
 module enkf_clm_mod
 
   use iso_c_binding
+  use IEEE_ARITHMETIC, only: ieee_is_nan
 
 ! !USES:
   use shr_kind_mod    , only : r8 => shr_kind_r8, SHR_KIND_CL
@@ -445,7 +446,7 @@ module enkf_clm_mod
                 swc(j,i)   = clm_statevec(cc+offset)
               endif
 
-              if (isnan(swc(j,i))) then
+              if (ieee_is_nan(swc(j,i))) then
                       swc(j,i) = watmin_set
                       print *, "WARNING: swc at j,i is nan: ", j, i
               endif
