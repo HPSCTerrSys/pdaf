@@ -1211,7 +1211,7 @@ module enkf_clm_mod
         do lev=1,nlevgrnd
           t_soisno(c,lev)  = clm_statevec(state_clm2pdaf_p(p,1+lev))
         end do
-        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,2+levgrnd))
+        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,2+nlevgrnd))
       end do
     endif
 
