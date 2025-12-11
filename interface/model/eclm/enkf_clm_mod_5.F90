@@ -47,7 +47,9 @@ module enkf_clm_mod
   integer,allocatable :: state_pdaf2clm_c_p(:)
   integer,allocatable :: state_pdaf2clm_p_p(:)
   integer,allocatable :: state_pdaf2clm_j_p(:)
+  integer,allocatable :: state_pdaf2clm_v_p(:)
   integer,allocatable :: state_loc2clm_c_p(:)
+  integer,allocatable :: state_loc2clm_p_p(:)
   ! clm_paramarr: Contains LAI used in obs_op_pdaf for computing model
   ! LST in LST assimilation (clmupdate_T)
   real(r8),allocatable :: clm_paramarr(:)  !hcp CLM parameter vector (f.e. LAI)
@@ -478,11 +480,32 @@ module enkf_clm_mod
 
     if(clmupdate_T==3) then
 
+      ! Allocate with full dimension for all variables/layers
+      !
+      ! Here, the second index of STATE_CLM2PDAF_P is NOT simply the
+      ! layer index of CLM, but rather a variable index of the state
+      ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1))
+      allocate(state_clm2pdaf_p(begp:endp,1:(2+nlevgrnd)))
+      !                                      ^
+      !                                      dimension layout:
+      !                                      1: TSKIN
+      !                                      2:(1+nlevgrnd): TSOIL layers
+      !                                      (2+nlevgrnd): TVEG
 
       do p=clm_begp,clm_endp
+        cc = (p - clm_begp + 1)
+
+        ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = (p - clm_begp + 1)
+
+        ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
+        do lev=1,nlevgrnd
+          state_clm2pdaf_p(p, 1+lev) = cc + lev*clm_varsize
+        end do
+
+        ! TVEG (variable index 2+nlevgrnd)
+        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*clm_varsize
       end do
 
       clm_varsize      =  endp-begp+1
@@ -495,6 +518,8 @@ module enkf_clm_mod
       allocate(state_pdaf2clm_c_p(clm_statevecsize))
       IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
       allocate(state_pdaf2clm_j_p(clm_statevecsize))
+      IF (allocated(state_pdaf2clm_v_p)) deallocate(state_pdaf2clm_v_p)
+      allocate(state_pdaf2clm_v_p(clm_statevecsize))
 
       cc = 0
 
@@ -503,15 +528,18 @@ module enkf_clm_mod
         state_pdaf2clm_p_p(cc) = p !TSKIN
         state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
         state_pdaf2clm_j_p(cc) = 1
+        state_pdaf2clm_v_p(cc) = 1
         do lev=1,nlevgrnd
           ! ivar = 2-26: TSOIL
           state_pdaf2clm_p_p(cc + lev*clm_varsize) = p
           state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p)
           state_pdaf2clm_j_p(cc + lev*clm_varsize) = lev
+          state_pdaf2clm_v_p(cc + lev*clm_varsize) = 1+lev
         end do
         state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
         state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
         state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 1
+        state_pdaf2clm_v_p(cc+(1+nlevgrnd)*clm_varsize) = 2+nlevgrnd
       end do
 
     endif
@@ -1181,9 +1209,9 @@ module enkf_clm_mod
         c = patch%column(p)
         t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
         do lev=1,nlevgrnd
-          t_soisno(c,lev)  = clm_statevec(state_clm2pdaf_p(p,1) + (lev)*clm_varsize)
+          t_soisno(c,lev)  = clm_statevec(state_clm2pdaf_p(p,1+lev))
         end do
-        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,1) + (1+nlevgrnd)*clm_varsize)
+        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,2+levgrnd))
       end do
     endif
 
@@ -1664,6 +1692,7 @@ module enkf_clm_mod
     use decompMod, only : get_proc_bounds
     use clm_varcon      , only : ispval
     use ColumnType , only : col
+    use PatchType , only : patch
 
     implicit none
 
@@ -1671,6 +1700,7 @@ module enkf_clm_mod
     integer :: domain_p
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
+    integer :: begp, endp   ! per-proc beginning and ending pft indices
 
     integer :: g
     integer :: c
@@ -1690,6 +1720,11 @@ module enkf_clm_mod
         ! -> DIM_L: number of layers in gridcell
         n_domains_p = endg - begg + 1
       end if
+    else if (clmupdate_T/=0) then
+      ! For LSTDA: patches are domains
+      ! Each patch is a local domain
+      ! -> DIM_L: number of layers in patch
+      n_domains_p = endp - begp + 1
     else
       ! Process-local number of gridcells Default, possibly not tested
       ! for other updates except SWC
@@ -1704,6 +1739,7 @@ module enkf_clm_mod
     ! local domain domain_p (from the column, the gridcell can be
     ! derived)
 
+    if(clmupdate_swc==1) then
     ! Allocate state_loc2clm_c_p with preliminary n_domains_p
     IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
     allocate(state_loc2clm_c_p(n_domains_p))
@@ -1720,7 +1756,7 @@ module enkf_clm_mod
       if(clmstatevec_allcol == 1) then
         ! COLUMNS
 
-        ! Each hydrologically active layer is a local domain
+        ! Each hydrologically active column is a local domain
         ! -> DIM_L: number of layers in hydrologically active column
         do c=clm_begc,clm_endc
           ! Skip state vector loop and directly check if column is
@@ -1769,14 +1805,45 @@ module enkf_clm_mod
       else
         ! GRIDCELLS
         do domain_p=1,n_domains_p
-          state_loc2clm_c_p(domain_p) = clm_begg + domain_p - 1
+          state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(domain_p)
         end do
       end if
 
     end if
+    end if
 
     ! Possibly: Warning when final n_domains_p actually excludes
     ! hydrologically inactive gridcells
+
+    if(clmupdate_T/=0) then
+      ! For LSTDA: Patches are domains
+
+      ! Allocate state_loc2clm_c_p with preliminary n_domains_p
+      IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
+      allocate(state_loc2clm_c_p(n_domains_p))
+      do domain_p=1,n_domains_p
+        state_loc2clm_c_p(domain_p) = ispval
+      end do
+
+      ! Columns corresponding to patches
+      do domain_p=1,n_domains_p
+        state_loc2clm_c_p(domain_p) = patch%column(clm_begp + domain_p - 1)
+      end do
+
+      ! Allocate state_loc2clm_p_p
+      IF (allocated(state_loc2clm_p_p)) deallocate(state_loc2clm_p_p)
+      allocate(state_loc2clm_p_p(n_domains_p))
+      do domain_p=1,n_domains_p
+        state_loc2clm_p_p(domain_p) = ispval
+      end do
+
+      ! Patches
+      do domain_p=1,n_domains_p
+        state_loc2clm_p_p(domain_p) = clm_begp + domain_p - 1
+      end do
+
+    end if
+
 
   end subroutine init_n_domains_clm
 
@@ -1788,6 +1855,7 @@ module enkf_clm_mod
   !>    This routine sets DIM_L, the local state vector dimension.
   subroutine init_dim_l_clm(domain_p, dim_l)
     use clm_varpar   , only : nlevsoi
+    use clm_varpar   , only : nlevgrnd
     use ColumnType , only : col
 
     implicit none
@@ -1822,6 +1890,31 @@ module enkf_clm_mod
       dim_l = 3*nlevsoi + nshift
     endif
 
+    if(clmupdate_T==1) then
+      ! TG + TV: 2 temperatures per patch
+      dim_l = 2
+    endif
+
+    if(clmupdate_T==2) then
+      ! TSKIN + TG + TV: 3 temperatures per patch
+      dim_l = 3
+    endif
+
+    if(clmupdate_T==3) then
+      ! TSKIN + TSOIL(nlevgrnd layers) + TV
+      dim_l = 1 + nlevgrnd + 1
+    endif
+
+    if(clmupdate_T==4) then
+      ! TSOIL (first layer only)
+      dim_l = 1
+    endif
+
+    if(clmupdate_T==5) then
+      ! TSKIN + TV (first layer only)
+      dim_l = 2
+    endif
+
   end subroutine init_dim_l_clm
 
   !> @author  Wolfgang Kurtz, Johannes Keller
@@ -1853,11 +1946,21 @@ module enkf_clm_mod
     ! ENDDO
 
     ! Column index inside gridcell index domain_p
+    if(clmupdate_swc==1) then
     DO i = 1, dim_l
       ! Column index from DOMAIN_P via STATE_LOC2CLM_C_P
       ! Layer index: i
       state_l(i) = state_p(state_clm2pdaf_p(state_loc2clm_c_p(domain_p),i))
     END DO
+    end if
+
+    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
+    DO i = 1, dim_l
+      ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
+      ! Variable index: i
+      state_l(i) = state_p(state_clm2pdaf_p(state_loc2clm_p_p(domain_p),i))
+    END DO
+    end if
 
   end subroutine g2l_state_clm
 
@@ -1891,11 +1994,21 @@ module enkf_clm_mod
     ! ENDDO
 
     ! Column index inside gridcell index domain_p
+    if(clmupdate_swc==1) then
     DO i = 1, dim_l
       ! Column index from DOMAIN_P via STATE_LOC2CLM_C_P
       ! Layer index i
       state_p(state_clm2pdaf_p(state_loc2clm_c_p(domain_p),i)) = state_l(i)
     END DO
+    end if
+
+    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
+    DO i = 1, dim_l
+      ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
+      ! Variable index: i
+      state_p(state_clm2pdaf_p(state_loc2clm_p_p(domain_p),i)) = state_l(i)
+    END DO
+    end if
 
   end subroutine l2g_state_clm
 #endif
