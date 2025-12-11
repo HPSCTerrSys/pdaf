@@ -24,6 +24,7 @@ read_enkfpar.c: Function for reading controle file of TSMP-PDAF
 
 #include "enkf.h"
 #include "iniparser.h"
+#include <math.h>
 
 void read_enkfpar(char *parname)
 {
@@ -117,8 +118,8 @@ void read_enkfpar(char *parname)
   da_crns_depth_tol     = iniparser_getdouble(pardict,"DA:da_crns_depth_tol",0.01);
   clmcrns_bd            = iniparser_getdouble(pardict, "DA:crns_bd", -1.0);
   da_print_obs_index    = iniparser_getint(pardict,"DA:print_obs_index",0);
-  total_steps = (int) (t_sim/da_interval);
-  tstartcycle = (int) (t_start/da_interval);
+  total_steps = (int) round(t_sim/da_interval);
+  tstartcycle = (int) round(t_start/da_interval);
 
   /* print inputs / debug output for data assimilation settings */
   if (mype_world == 0) {
