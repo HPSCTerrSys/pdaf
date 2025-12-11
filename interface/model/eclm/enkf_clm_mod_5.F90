@@ -1708,7 +1708,7 @@ module enkf_clm_mod
 
     ! TODO: remove unnecessary calls of get_proc_bounds (use clm_begg,
     ! clm_endg, etc)
-    call get_proc_bounds(begg=begg, endg=endg, begc=begc, endc=endc)
+    call get_proc_bounds(begg=begg, endg=endg, begc=begc, endc=endc, begp=begp, endp=endp)
 
     if(clmupdate_swc==1) then
       if(clmstatevec_allcol==1) then
@@ -1827,7 +1827,7 @@ module enkf_clm_mod
 
       ! Columns corresponding to patches
       do domain_p=1,n_domains_p
-        state_loc2clm_c_p(domain_p) = patch%column(clm_begp + domain_p - 1)
+        state_loc2clm_c_p(domain_p) = patch%column(begp + domain_p - 1)
       end do
 
       ! Allocate state_loc2clm_p_p
@@ -1839,7 +1839,7 @@ module enkf_clm_mod
 
       ! Patches
       do domain_p=1,n_domains_p
-        state_loc2clm_p_p(domain_p) = clm_begp + domain_p - 1
+        state_loc2clm_p_p(domain_p) = begp + domain_p - 1
       end do
 
     end if
