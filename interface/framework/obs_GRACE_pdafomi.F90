@@ -172,18 +172,24 @@ MODULE obs_GRACE_pdafomi
       USE mpi, ONLY: MPI_SUM
       USE mpi, ONLY: MPI_2INTEGER
       USE mpi, ONLY: MPI_MAXLOC
+      USE mpi, ONLY: MPI_IN_PLACE
+
+      USE mod_parallel_pdaf, &
+          ONLY: mype_filter, comm_filter, npes_filter, abort_parallel, &
+          mype_world
 
       USE PDAFomi, &
            ONLY: PDAFomi_gather_obs
       USE mod_assimilation, &
-           ONLY: filtertype, cradius_GRACE, obs_filename, temp_mean_filename, screen
+           ONLY: filtertype, cradius_GRACE, obs_filename, temp_mean_filename, screen, obscov, obscov_inv
+
+        use mod_assimilation, only: obs_nc2pdaf, obs_pdaf2nc, &
+            local_dims_obs, &
+            local_disp_obs
 
         use mod_read_obs, only: read_obs_nc_type, domain_def_clm, multierr
 
       use enkf_clm_mod, only: num_layer, hactiveg_levels
-
-      use mod_parallel_pdaf, &
-        only: comm_filter
 
       use shr_kind_mod, only: r8 => shr_kind_r8
 
@@ -211,6 +217,7 @@ MODULE obs_GRACE_pdafomi
       REAL, ALLOCATABLE :: obs_g(:)        ! Global observation vector
       REAL, ALLOCATABLE :: ivar_obs_p(:)   ! PE-local inverse observation error variance
       REAL, ALLOCATABLE :: ocoord_p(:,:)   ! PE-local observation coordinates
+      REAL, ALLOCATABLE :: clm_obscov(:,:) ! full observation error covariance matrix before removing observations that cannot be seen by enough gridcells
       CHARACTER(len=2) :: stepstr          ! String for time step
       character (len = 110) :: current_observation_filename
 
@@ -225,7 +232,6 @@ MODULE obs_GRACE_pdafomi
       INTEGER, ALLOCATABLE :: layer_obs(:)
       REAL, ALLOCATABLE :: dr_obs(:)
       REAL, ALLOCATABLE :: obserr(:)
-      REAL, ALLOCATABLE :: obscov(:,:)
 
       integer :: begp, endp   ! per-proc beginning and ending pft indices
       integer :: begc, endc   ! per-proc beginning and ending column indices
@@ -241,6 +247,13 @@ MODULE obs_GRACE_pdafomi
 
       real :: deltax, deltay
 
+      INTEGER, ALLOCATABLE :: ipiv(:)
+      real(r8), ALLOCATABLE :: work(:)
+
+      real(r8) :: work_query
+      integer :: lwork
+
+      integer :: countR, countC, info
 
 
   ! *********************************************
@@ -284,7 +297,7 @@ MODULE obs_GRACE_pdafomi
       write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
       call read_obs_nc_type(current_observation_filename, obs_type_name, &
                             dim_obs, obs_g, lon_obs, lat_obs, layer_obs, &
-                            dr_obs, obserr, obscov)
+                            dr_obs, obserr, clm_obscov)
       if (mype_filter==0 .and. screen > 2) then
         write(*,*)'Done: load observations from type GRACE'
       end if
@@ -428,6 +441,57 @@ MODULE obs_GRACE_pdafomi
     end do
 
 
+    ! now obtain information about which observation is on which PE --> necessary for full VCV matrix later on
+    ! Allocate array of PE-local observation dimensions
+    IF (ALLOCATED(local_dims_obs)) DEALLOCATE(local_dims_obs)
+    ALLOCATE(local_dims_obs(npes_filter))
+
+    ! Gather array of PE-local observation dimensions
+    call mpi_allgather(dim_obs_p, 1, MPI_INTEGER, local_dims_obs, 1, MPI_INTEGER, &
+        comm_filter, ierror)
+
+    ! Allocate observation displacement array local_disp_obs
+    IF (ALLOCATED(local_disp_obs)) DEALLOCATE(local_disp_obs)
+    ALLOCATE(local_disp_obs(npes_filter))
+
+    ! Set observation displacement array local_disp_obs
+    local_disp_obs(1) = 0
+    do i = 2, npes_filter
+      local_disp_obs(i) = local_disp_obs(i-1) + local_dims_obs(i-1)
+    end do
+
+    if (mype_filter==0 .and. screen > 2) then
+        print *, "TSMP-PDAF mype(w)=", mype_world, ": init_dim_obs_pdaf: local_disp_obs=", local_disp_obs
+    end if
+
+    if (allocated(obs_nc2pdaf)) deallocate(obs_nc2pdaf)
+    allocate(obs_nc2pdaf(count(vec_useObs_global)))
+    obs_nc2pdaf = 0
+
+    if (allocated(obs_pdaf2nc)) deallocate(obs_pdaf2nc)
+    allocate(obs_pdaf2nc(count(vec_useObs_global)))
+    obs_pdaf2nc = 0
+
+
+    cnt = 0
+    j = 0
+    do i = 1, dim_obs
+        if (vec_useObs_global(i)) then
+            j = j + 1
+        end if
+        if (vec_useObs(i)) then
+            cnt = cnt + 1
+            obs_nc2pdaf(j) = local_disp_obs(mype_filter+1) + cnt
+            obs_pdaf2nc(local_disp_obs(mype_filter+1) + cnt) = j
+        end if
+    end do
+
+    ! collect values from all PEs, by adding all PE-local arrays (works
+    ! since only the subsection belonging to a specific PE is non-zero)
+    call mpi_allreduce(MPI_IN_PLACE,obs_pdaf2nc,count(vec_useObs_global),MPI_INTEGER,MPI_SUM,comm_filter,ierror)
+    call mpi_allreduce(MPI_IN_PLACE,obs_nc2pdaf,count(vec_useObs_global),MPI_INTEGER,MPI_SUM,comm_filter,ierror)
+
+
 
     IF (ALLOCATED(obs_p)) DEALLOCATE(obs_p)
     ALLOCATE(obs_p(dim_obs_p))
@@ -438,8 +502,50 @@ MODULE obs_GRACE_pdafomi
     IF (ALLOCATED(ocoord_p)) DEALLOCATE(ocoord_p)
     ALLOCATE(ocoord_p(2, dim_obs_p))
 
+    if (multierr==0) then
+        cnt_p = 1
+        do i = 1, dim_obs
+            if (vec_useObs(i)) then
+                ivar_obs_p(cnt_p) = 1.0/(rms_obs_GRACE*rms_obs_GRACE)
+                cnt_p = cnt_p + 1
+            end if
+        end do
+    end if
 
     if (multierr==1) ivar_obs_p = pack(1/obserr, vec_useObs)
+
+    if (multierr==2) then
+
+        if (allocated(obscov)) deallocate(obscov)
+        allocate(obscov(count(vec_useObs_global), count(vec_useObs_global)))
+        countR = 1
+        countC = 1
+        do i = 1, dim_obs
+            if (vec_useObs_global(i)) then
+                do j = 1, dim_obs
+                    if (vec_useObs_global(j)) then
+                        obscov(countR, countC) = clm_obscov(i,j)
+                        countC = countC + 1
+                    end if
+                end do
+                countC = 1
+                countR = countR + 1
+            end if
+        end do
+
+        cnt_p = 1
+        countC = 1
+        do i = 1, dim_obs
+            if (vec_useObs(i)) then
+                ivar_obs_p(cnt_p) = 1.0/obscov(countC,countC)
+                cnt_p = cnt_p + 1
+            end if
+            if (vec_useObs_global(i)) then
+                countC = countC + 1
+            end if
+        end do
+
+    end if
 
     cnt_p = 1
     do i = 1, dim_obs
@@ -452,6 +558,38 @@ MODULE obs_GRACE_pdafomi
     end do
 
     dim_obs = count(vec_useObs_global)
+
+    if (multierr.eq.2) then ! compute inverse of covariance matrix for prodRinvA, has to be before PDAFomi_gather_obs because the routine changes dim_obs
+
+        if (allocated(obscov_inv)) deallocate(obscov_inv)
+        allocate(obscov_inv(dim_obs, dim_obs))
+
+        obscov_inv = obscov
+
+        if (allocated(ipiv)) deallocate(ipiv)
+        ALLOCATE(ipiv(dim_obs))
+
+        call dgetrf(dim_obs, dim_obs, obscov_inv, dim_obs, ipiv, info)
+        if (info /= 0) then
+            print *, "Error in dgetrf, info =", info
+            stop
+        end if
+
+        lwork = -1
+        call dgetri(dim_obs, obscov_inv, dim_obs, ipiv, work_query, lwork, info)
+        lwork = int(work_query)
+        if (allocated(work)) deallocate(work)
+        allocate(work(lwork))
+        call dgetri(dim_obs, obscov_inv, dim_obs, ipiv, work, lwork, info)
+        if (info /= 0) then
+            print *, "Error in dgetri, info =", info
+            stop
+        end if
+
+    end if
+
+
+
   ! ****************************************
   ! *** Gather global observation arrays ***
   ! ****************************************
@@ -834,6 +972,317 @@ MODULE obs_GRACE_pdafomi
            coords_p, HP_p, HPH)
 
     END SUBROUTINE localize_covar_GRACE
+
+
+    subroutine add_obs_err_GRACE(step, dim_obs, C)
+
+        use mod_assimilation, only: obscov, obs_pdaf2nc
+        use mod_read_obs, only: multierr
+        USE mod_parallel_pdaf, &
+          ONLY: npes_filter
+
+        use PDAFomi, only: obsdims
+
+        implicit none
+        INTEGER, INTENT(in) :: step       ! Current time step
+        INTEGER, INTENT(in) :: dim_obs  ! Dimension of observation vector
+        REAL, INTENT(inout) :: C(dim_obs,dim_obs) ! Matrix to that
+                                        ! observation covariance R is added
+        integer :: i, pe, cnt, j
+        INTEGER, ALLOCATABLE :: id_start(:) ! Start index of obs. type in global averall obs. vector
+        INTEGER, ALLOCATABLE :: id_end(:)   ! End index of obs. type in global averall obs. vector
+
+        ALLOCATE(id_start(npes_filter), id_end(npes_filter))
+
+        pe = 1
+        id_start(1) = 1
+        IF (thisobs%obsid>1) id_start(1) = id_start(1) + sum(obsdims(1, 1:thisobs%obsid-1))
+        id_end(1)   = id_start(1) + obsdims(1,thisobs%obsid) - 1
+        DO pe = 2, npes_filter
+          id_start(pe) = id_start(pe-1) + SUM(obsdims(pe-1,thisobs%obsid:))
+          IF (thisobs%obsid>1) id_start(pe) = id_start(pe) + sum(obsdims(pe,1:thisobs%obsid-1))
+          id_end(pe) = id_start(pe) + obsdims(pe,thisobs%obsid) - 1
+        END DO
+
+        select case (multierr)
+        case(0,1)
+            cnt = 1 
+            DO pe = 1, npes_filter
+                DO i = id_start(pe), id_end(pe)
+                    C(i,i) = C(i,i) + 1.0/thisobs%ivar_obs_f(cnt)
+                    cnt = cnt + 1
+                end do
+            end do
+        case(2)
+
+            do i=1, thisobs%dim_obs_f
+                do j=1, thisobs%dim_obs_f
+                    C(i,j) = C(i,j) + obscov(obs_pdaf2nc(i),obs_pdaf2nc(j))
+                end do
+            end do
+        end select
+            
+
+        DEALLOCATE(id_start, id_end)
+
+    end subroutine add_obs_err_GRACE
+
+
+    subroutine init_obscovar_GRACE(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+
+        use mod_read_obs, only: multierr
+
+        USE mod_parallel_pdaf, &
+          ONLY: npes_filter
+
+        use PDAFomi, only: obsdims, map_obs_id
+
+        use mod_assimilation, only: obs_pdaf2nc, obscov
+
+        implicit none
+        INTEGER, INTENT(in) :: step                ! Current time step
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
+        INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
+        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
+        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+        LOGICAL, INTENT(inout) :: isdiag             ! Whether the observation error covar. matrix is diagonal
+
+        integer :: i, pe, cnt, j
+        INTEGER, ALLOCATABLE :: id_start(:) ! Start index of obs. type in global averall obs. vector
+        INTEGER, ALLOCATABLE :: id_end(:)   ! End index of obs. type in global averall obs. vector
+
+        ALLOCATE(id_start(npes_filter), id_end(npes_filter))
+
+        ! Initialize indices
+        pe = 1
+        id_start(1) = 1
+        IF (thisobs%obsid>1) id_start(1) = id_start(1) + sum(obsdims(1, 1:thisobs%obsid-1))
+        id_end(1)   = id_start(1) + obsdims(1,thisobs%obsid) - 1
+        DO pe = 2, npes_filter
+            id_start(pe) = id_start(pe-1) + SUM(obsdims(pe-1,thisobs%obsid:))
+            IF (thisobs%obsid>1) id_start(pe) = id_start(pe) + sum(obsdims(pe,1:thisobs%obsid-1))
+            id_end(pe) = id_start(pe) + obsdims(pe,thisobs%obsid) - 1
+        END DO
+
+        ! Initialize mapping vector (to be used in PDAF_enkf_obs_ensemble)
+        cnt = 1
+        IF (thisobs%obsid-1 > 0) cnt = cnt+ SUM(obsdims(:,1:thisobs%obsid-1))
+        DO pe = 1, npes_filter
+            DO i = id_start(pe), id_end(pe)
+              map_obs_id(i) = cnt
+              cnt = cnt + 1
+            END DO
+        END DO
+
+        select case(multierr)
+        case(0,1)
+
+            cnt = 1 
+            DO pe = 1, npes_filter
+                DO i = id_start(pe), id_end(pe)
+                covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt)
+                cnt = cnt + 1
+                ENDDO
+            ENDDO
+
+            ! The matrix is diagonal
+            ! This setting avoids the computation of the SVD of COVAR
+            ! in PDAF_enkf_obs_ensemble
+            isdiag = .TRUE.
+        case(2)
+
+            do i=1, thisobs%dim_obs_f
+                do j=1, thisobs%dim_obs_f
+                    covar(i, i) = obscov(obs_pdaf2nc(i),obs_pdaf2nc(j))
+                end do
+            end do
+
+            isdiag = .FALSE.
+
+        end select
+        
+
+        DEALLOCATE(id_start, id_end)
+        
+
+    end subroutine init_obscovar_GRACE
+
+
+    subroutine prodRinvA_GRACE(step, dim_obs_p, rank, obs_p, A_p, C_p)
+
+        use mod_read_obs, only: multierr
+        use mod_assimilation, only: obscov_inv, obs_pdaf2nc
+        use shr_kind_mod, only: r8 => shr_kind_r8
+
+        INTEGER, INTENT(in) :: step                ! Current time step
+        INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of obs. vector
+        INTEGER, INTENT(in) :: rank                ! Rank of initial covariance matrix
+        REAL, INTENT(in)    :: obs_p(dim_obs_p)    ! PE-local vector of observations
+        REAL, INTENT(in)    :: A_p(dim_obs_p,rank) ! Input matrix from analysis routine
+        REAL, INTENT(inout)   :: C_p(dim_obs_p,rank) ! Output matrix
+
+        INTEGER :: i, j       ! index of observation component
+        INTEGER :: off        ! row offset in A_l and C_l
+
+        real(r8) :: obscov_inv_l(thisobs%dim_obs_f,thisobs%dim_obs_f) ! errors of observations in the model domain
+
+        off = thisobs%off_obs_f ! account for offset if multiple observation types are assimilated at once
+    
+        select case (multierr)
+        case(0,1)
+        do j=1, rank
+            do i=1, thisobs%dim_obs_f
+            C_p(i+off, j) = thisobs%ivar_obs_f(i) * A_p(i+off, j)
+            END DO
+        end do
+
+        case(2)
+            do i =1, thisobs%dim_obs_f
+                do j = 1, thisobs%dim_obs_f
+                    obscov_inv_l(i,j) = obscov_inv(obs_pdaf2nc(i),obs_pdaf2nc(j))
+                end do
+            end do
+            C_p(off+1:off+thisobs%dim_obs_f,:) = matmul(obscov_inv_l,A_p(off+1:off+thisobs%dim_obs_f,:))
+        end select
+
+
+    end subroutine prodRinvA_GRACE
+
+
+    subroutine prodRinvA_l_GRACE(domain_p, step, dim_obs, rank, obs_l, A_l, C_l)
+
+        use shr_kind_mod, only: r8 => shr_kind_r8
+        use mod_assimilation, only: obscov, obs_pdaf2nc, cradius_GRACE, locweight
+        use mod_read_obs, only: multierr
+        use PDAFomi, only: PDAFomi_observation_localization_weights
+
+        implicit none
+
+        INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
+        INTEGER, INTENT(in) :: step                 ! Current time step
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l  
+        INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
+        REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
+        REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine
+        REAL, INTENT(out)   :: C_l(dim_obs, rank) ! Output matrix
+
+        INTEGER :: verbose       ! Verbosity flag
+        INTEGER :: verbose_w     ! Verbosity flag for weight computation
+        INTEGER, SAVE :: domain_save = -1  ! Save previous domain index
+        INTEGER :: wtype         ! Type of weight function
+        INTEGER :: rtype         ! Type of weight regulation
+        REAL, ALLOCATABLE :: weight(:)     ! Localization weights
+        REAL, ALLOCATABLE :: A_obs(:,:)    ! Array for a single row of A_l
+        REAL    :: var_obs                 ! Variance of observation error
+
+        INTEGER :: i, j
+
+        INTEGER :: off                     ! row offset in A_l and C_l
+        INTEGER :: idummy                  ! Dummy to access nobs_all
+
+        real(r8) :: ivariance_obs
+
+        REAL(r8) :: obscov_l(thisobs_l%dim_obs_l,thisobs_l%dim_obs_l) ! local observation covariance matrix
+        REAL(r8) :: obscov_inv_l(thisobs_l%dim_obs_l,thisobs_l%dim_obs_l) ! inverse of local observation covariance matrix
+
+        INTEGER, ALLOCATABLE :: ipiv(:)
+        real(r8), ALLOCATABLE :: work(:)
+        INTEGER :: info, lwork
+        real(r8) :: work_query
+
+        real(r8) :: maxdiff
+
+
+        off = thisobs_l%off_obs_l
+        idummy = dim_obs
+
+        IF ((domain_p <= domain_save .OR. domain_save < 0) .AND. mype_filter==0) THEN
+            verbose = 1
+        ELSE
+            verbose = 0
+        END IF
+        domain_save = domain_p
+    
+        ! Screen output
+        IF (verbose == 1) THEN
+            WRITE (*, '(8x, a, f12.3)') &
+                '--- Use global rms for observations of ', rms_obs_GRACE
+            WRITE (*, '(8x, a, 1x)') &
+                '--- Domain localization'
+            WRITE (*, '(12x, a, 1x, f12.2)') &
+                '--- Local influence radius', cradius_GRACE
+    
+            IF (locweight > 0) THEN
+                WRITE (*, '(12x, a)') &
+                        '--- Use distance-dependent weight for observation errors'
+        
+                IF (locweight == 3) THEN
+                    write (*, '(12x, a)') &
+                        '--- Use regulated weight with mean error variance'
+                ELSE IF (locweight == 4) THEN
+                    write (*, '(12x, a)') &
+                        '--- Use regulated weight with single-point error variance'
+                END IF
+            END IF
+        ENDIF
+
+        ALLOCATE(weight(thisobs_l%dim_obs_l))
+        call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
+                                         weight, verbose)
+        
+        select case(multierr)
+        case(0,1)
+            do j=1,rank
+                do i=1,thisobs_l%dim_obs_l
+                    C_l(i+off,j) = thisobs_l%ivar_obs_l(i) * weight(i) * A_l(i+off, j)
+                end do
+            end do
+
+        case(2)
+
+            obscov_l = 0.0_r8
+
+            do i=1, thisobs_l%dim_obs_l ! fill local observation covariance matrix, invert it and apply it to A_l
+                do j=1, thisobs_l%dim_obs_l
+                    obscov_l(i,j) = obscov(obs_pdaf2nc(thisobs_l%id_obs_l(i)),obs_pdaf2nc(thisobs_l%id_obs_l(j)))
+                end do
+            end do
+
+            obscov_inv_l = obscov_l
+
+            if (allocated(ipiv)) deallocate(ipiv)
+            ALLOCATE(ipiv(thisobs_l%dim_obs_l))
+
+            call dgetrf(thisobs_l%dim_obs_l, thisobs_l%dim_obs_l, obscov_inv_l, thisobs_l%dim_obs_l, ipiv, info)
+            if (info /= 0) then
+                print *, "Error in dgetrf, info =", info
+                stop
+            end if
+
+            lwork = -1
+            call dgetri(thisobs_l%dim_obs_l, obscov_inv_l, thisobs_l%dim_obs_l, ipiv, work_query, lwork, info)
+            lwork = int(work_query)
+            if (allocated(work)) deallocate(work)
+            allocate(work(lwork))
+            call dgetri(thisobs_l%dim_obs_l, obscov_inv_l, thisobs_l%dim_obs_l, ipiv, work, lwork, info)
+            if (info /= 0) then
+                print *, "Error in dgetri, info =", info
+                stop
+            end if
+
+            do j = 1,rank
+                do i = 1,thisobs_l%dim_obs_l
+                    A_l(i+off,j) = weight(i)*A_l(i+off,j)
+                end do
+            end do
+
+            C_l(off+1:off+thisobs_l%dim_obs_l,:) = matmul(obscov_inv_l,A_l(off+1:off+thisobs_l%dim_obs_l,:))
+
+        end select
+
+        deallocate(weight)
+
+    end subroutine prodRinvA_l_GRACE
 
 
     !> @author Anne Springer
