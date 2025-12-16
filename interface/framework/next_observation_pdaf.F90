@@ -71,6 +71,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   use clm_time_manager, &
        only: get_nstep
   use clm_varcon, only: set_averaging_to_zero, ispval
+  use enkf_clm_mod, only: clmupdate_tws
 #endif
   IMPLICIT NONE
 
@@ -90,6 +91,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   integer :: nstep
   character (len = 110) :: fn
   character(len=32) :: obs_type_str
+  logical :: file_exists
   !kuw end
 
   REAL :: da_interval_new
@@ -98,7 +100,6 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   time = 0.0    ! Not used in fully-parallel implementation variant
   doexit = 0
 
-  NOOMI:if (.not. use_omi)  then
   !kuw: implementation for at least 1 existing observation per observation file
   !!print *, "stepnow", stepnow
   !write(*,*)'stepnow (in next_observation_pdaf):',stepnow
@@ -195,8 +196,6 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
 
 
-  end if NOOMI
-
 !  IF (stepnow + nsteps <= total_steps) THEN
 !   if (2<1) then
 !    ! *** During the assimilation process ***
@@ -227,63 +226,44 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 #ifdef CLMSA
 #ifdef CLMFIVE
   OMI:if (use_omi)  then
-  nstep = get_nstep()
-  nsteps = delt_obs
+    if (clmupdate_tws.ne.0) then ! only update set_zero when GRACE is assimilated at the current time step
+      nstep = get_nstep()
+      if (stepnow.ne.toffset) then
+        write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
+        call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
+        if (set_averaging_to_zero.ne.ispval) then
+          set_averaging_to_zero = set_averaging_to_zero+nstep
+        end if
 
-  if (mype_world==0 .and. screen > 2) then
-      write(*,*) 'TSMP-PDAF (in next_observation_pdaf.F90) total_steps: ',total_steps
-  end if
-
-  ! Read steps until next observation from current observation file
-  if (stepnow==toffset) then
-    set_averaging_to_zero = 0
-    if (mype_world==0 .and. screen > 2) then
-      write(*,*)'next_observation_pdaf: da_interval from enkfpf.par'
+        if (mype_world==0 .and. screen > 2) then
+          write(*,*) 'set_averaging_to_zero (in next_observation_pdaf):',set_averaging_to_zero
+        end if
+      end if
     end if
-  else
-    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
-    call check_n_observationfile_da_interval(fn,da_interval_variable)
-    if (da_interval_variable/=ispval) then
-      da_interval = da_interval_variable
-    end if
-    call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
-  end if
 
-  if (mype_world==0 .and. screen > 2) then
-    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
-    write(*,*)'next_observation_pdaf: fn = ', fn
-    write(*,*)'da_interval (in next_observation_pdaf):',da_interval
-  end if
-
-  if (set_averaging_to_zero/=ispval) then
-    set_averaging_to_zero = set_averaging_to_zero+nstep
-  end if
-
-  if (mype_world==0 .and. screen > 2) then
-    write(*,*) 'set_averaging_to_zero (in next_observation_pdaf):',set_averaging_to_zero
-  end if
-
-  if (stepnow==toffset) then
-    if (mype_world==0 .and. screen > 2) then
-      write(*,*)'next_observation_pdaf: observation type from enkfpf.par'
-    end if
-  else
-  ! update observation type with next file
+    ! update observation type with next file
     write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow + delt_obs
     if (mype_world==0 .and. screen > 2) then
       write(*,*)'next_observation_pdaf: fn = ', fn
       write(*,*)'Call check_n_observationfile_next_type'
     end if
-    call check_n_observationfile_next_type(fn, obs_type_str)
-    if (trim(obs_type_str) /= '') then
-      call update_obs_type(obs_type_str)
+
+    inquire(file=fn, exist=file_exists)
+    if (.not. file_exists) then
+        if (mype_world == 0 .and. screen > 2) then
+            write(*,*) 'next_observation_pdaf: skipping setting next observation type as no next file available'
+        end if
+    else
+        call check_n_observationfile_next_type(fn, obs_type_str)
+        if (trim(obs_type_str) /= '') then
+          call update_obs_type(obs_type_str)
+        end if
+    
+        if (mype_world==0 .and. screen > 2) then
+          write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
+        end if
     end if
 
-    if (mype_world==0 .and. screen > 2) then
-      write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
-    end if
-
-  end if
   end if OMI
 #endif
 #endif

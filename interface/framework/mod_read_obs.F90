@@ -787,15 +787,8 @@ contains
     character (len = nf90_max_name) :: varname
     real(r8) :: dtime ! land model time step (sec)
 
-#ifdef CLMSA
-    if (use_omi) then
-      varname = "da_interval_variable"
-    else
-      varname = "da_interval         "
-    end if
-#else
     varname = "da_interval         "
-#endif
+
 
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname
@@ -830,7 +823,7 @@ contains
   end subroutine check
 
 
-
+#ifdef CLMFIVE
     !> @author Anne Springer, adaptation for TSMP2 by Yorck Ewerdwalbesloh
     !> @date 04.12.2023
     !> @brief Return set zero interval for running mean of model variables from file
@@ -881,6 +874,7 @@ contains
         end if
 
     end subroutine check_n_observationfile_set_zero
+#endif
 
     !> @author Yorck Ewerdwalbesloh
     !> @date 29.10.2025
