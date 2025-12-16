@@ -17,6 +17,8 @@ OBJ =  dictionary.o\
 	   read_enkfpar.o\
 	   wrapper_tsmp.o\
 
+OBJ += ${PDAF_SRC}/src/PDAF_reset_dim_p.o
+
 ## clm object files
 OBJCLM = enkf_clm_mod.o\
 		 mod_clm_statistics.o\
@@ -72,7 +74,7 @@ $(info $$OBJ is [${OBJ}])
 all: libmodel.a
 
 libmodel.a: $(OBJ)
-	ar rcs $@ *.o 
+	ar rcs $@ $(OBJ) 
 	ranlib $@
 	mv $@ $(TSMPPDAFLIBDIR)
 	@echo "library compilation suceeded"
@@ -93,4 +95,4 @@ wrapper_tsmp.o:
 	$(PREP_C) $(FC) $(OPT) $(FCPP_FLAGS) $(FFLAGS) $(FINCS) -c $< -o $@
 
 clean:
-	rm -f *.o *.mod $(PROG) libmodel.a 
+	rm -f *.o *.mod $(PROG) libmodel.a

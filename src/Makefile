@@ -5,7 +5,7 @@
 # To choose the architecture set $PDAF_ARCH           #
 #######################################################
 
-.SUFFIXES: .F90 .f .o 
+.SUFFIXES: .F90 .f .o
 
 ######################################################
 
@@ -96,7 +96,8 @@ OBJ_PDAF_GEN = 	PDAF_analysis_utils.o \
 		PDAF_reset_forget.o \
 		PDAF_get_ensstats.o \
 		PDAF_set_debug_flag.o \
-		PDAF_set_offline_mode.o
+		PDAF_set_offline_mode.o \
+		PDAF_reset_dim_p.o
 
 # Specific PDAF-routines for SEIK
 OBJ_SEIK =	PDAF_seik_init.o \
@@ -380,7 +381,7 @@ OBJ_PDAF =   $(OBJ_PDAFOMI) $(OBJ_PDAF_GEN) $(OBJ_SEIK) $(OBJ_LSEIK) $(OBJ_SEEK)
 		$(OBJ_ESTKF) $(OBJ_LESTKF) $(OBJ_LENKF) $(OBJ_NETF) $(OBJ_LNETF) \
 		$(OBJ_LKNETF) $(OBJ_PF) $(OBJ_OBSGEN) $(OBJ_3DVAR_INI)
 
-OBJ_PDAF_VAR = $(OBJ_PDAF) $(OBJ_3DVAR) 
+OBJ_PDAF_VAR = $(OBJ_PDAF) $(OBJ_3DVAR)
 
 # External optimizer libraries
 OBJ_OPTIM = ../external/CG+_mpi/cgfam.o ../external/CG+_mpi/cgsearch.o \

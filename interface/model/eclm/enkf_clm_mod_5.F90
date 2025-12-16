@@ -64,6 +64,7 @@ module enkf_clm_mod
   real(r8),bind(C,name="max_inc") :: max_inc
   integer(c_int),bind(C,name="TWS_smoother") :: TWS_smoother
   integer(c_int),bind(C,name="state_setup") :: state_setup
+  integer(c_int),bind(C,name="set_zero_start") :: set_zero_start
   integer, allocatable :: num_layer(:)
   integer, allocatable :: num_layer_columns(:)
   integer :: num_hactiveg, num_hactivec
@@ -71,6 +72,8 @@ module enkf_clm_mod
   integer, allocatable :: hactiveg_levels(:,:)     ! hydrolocial active filter for all levels (gridcell)
   integer, allocatable :: hactivec_levels(:,:)     ! hydrolocial active filter for all levels (column)
   integer, allocatable :: gridcell_state(:)
+
+  logical :: first_cycle = .TRUE.
 
 
   ! OMI --> I want to update the observation type after each observation comes in.
@@ -126,6 +129,7 @@ module enkf_clm_mod
   subroutine define_clm_statevec(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
+    use clm_varcon, only: set_averaging_to_zero
 
     implicit none
 
@@ -200,6 +204,23 @@ module enkf_clm_mod
       ! Include your own state vector definitions here for different variables (ET, LAI, etc.)
 
     !
+
+    ! reset PDAF dimensions for multivariate assimilation, only not for first call as PDAF did not initalize yet
+    if (.not. first_cycle) then
+        call PDAF_reset_dim_p(clm_statevecsize,ierror)
+    end if
+
+    if (first_cycle) then
+      ! possibility to assimilate GRACE not in the first month --> enkfpf.par file has information set_zero_start where the running average should be resetted
+      ! This is usually one month prior to the first GRACE observation. If it is not included in the file, it is resetted when the first GRACE observation
+      ! is assimilated. Afterwards, the normal set_zero information inside the observation file is used (see next_observation_pdaf for details).
+      if (set_zero_start.ne.0) then
+        set_averaging_to_zero = set_zero_start
+      end if
+    end if
+
+    first_cycle = .FALSE.
+
 
 #ifdef PDAF_DEBUG
     ! Debug output of clm_statevecsize

@@ -116,6 +116,7 @@ GLOBAL int state_setup;
 GLOBAL int update_snow;
 GLOBAL int remove_mean;
 GLOBAL int exclude_greenland;
+GLOBAL int set_zero_start;
 GLOBAL int crns_flag;
 GLOBAL int da_print_obs_index;
 extern int model;
