@@ -357,8 +357,10 @@ containing the pre-DA state ensemble is `integrate`.
 `PF:t_printensemble`: (integer) The timestep for the state ensemble
 output switched on under `PF:printensemble`.
 
-Default setting is `-1`, which means: Print debug output at every DA
+Another setting is `-1`, which means: Print debug output at every DA
 time step.
+
+Default setting is `-2`, which means: No additional debug output.
 
 ### PF:printstat ###
 
@@ -568,8 +570,10 @@ Layers](https://escomp.github.io/ctsm-docs/versions/master/html/tech_note/Ecosys
 `CLM:t_printensemble`: (integer) The timestep for the state ensemble
 output switched on with the debug flag `PDAF_DEBUG`.
 
-Default setting is `-1`, which means: Print debug output at every DA
+Another setting is `-1`, which means: Print debug output at every DA
 time step.
+
+Default setting is `-2`, which means: No additional debug output.
 
 ### CLM:watmin_switch ###
 
@@ -877,7 +881,7 @@ Default: 0, output turned off.
  |           | `aniso_use_parflow`     | 0             |
  |           |                         |               |
  |           | `printensemble`         | 1             |
- |           | `t_printensemble`       | -1            |
+ |           | `t_printensemble`       | -2            |
  |           | `printstat`             | 1             |
  |           | `paramprintensemble`    | 1             |
  |           | `paramprintstat`        | 1             |
@@ -894,7 +898,7 @@ Default: 0, output turned off.
  |           | `statevec_colmean`      | 0             |
  |           | `statevec_only_active`  | 0             |
  |           | `statevec_max_layer`    | 25            |
- |           | `t_printensemble`       | -1            |
+ |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
  | `[COSMO]` |                         |               |
  |           | `nprocs`                | 0             |
