@@ -53,7 +53,7 @@ void read_enkfpar(char *parname)
   pf_aniso_perm_z       = iniparser_getdouble(pardict,"PF:aniso_perm_z",1);
   pf_aniso_use_parflow  = iniparser_getint(pardict,"PF:aniso_use_parflow",0);
   pf_printensemble      = iniparser_getint(pardict,"PF:printensemble",1);
-  pf_t_printensemble    = iniparser_getint(pardict,"PF:t_printensemble",-1);
+  pf_t_printensemble    = iniparser_getint(pardict,"PF:t_printensemble",-2);
   pf_printstat          = iniparser_getint(pardict,"PF:printstat",1);
   pf_paramprintensemble = iniparser_getint(pardict,"PF:paramprintensemble",1);
   pf_paramprintstat     = iniparser_getint(pardict,"PF:paramprintstat",1);
@@ -85,7 +85,7 @@ void read_enkfpar(char *parname)
   clmstatevec_colmean   = iniparser_getint(pardict,"CLM:statevec_colmean",0);
   clmstatevec_only_active = iniparser_getint(pardict,"CLM:statevec_only_active",0);
   clmstatevec_max_layer = iniparser_getint(pardict,"CLM:statevec_max_layer",25);
-  clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-1);
+  clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-2);
   clmwatmin_switch      = iniparser_getint(pardict,"CLM:watmin_switch",0);
   clmswc_mask_snow      = iniparser_getint(pardict,"CLM:swc_mask_snow",0);
 
