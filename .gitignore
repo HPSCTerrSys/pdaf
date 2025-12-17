@@ -4,3 +4,9 @@ include
 external/**/*.mod
 external/**/*.o
 Srcfiles
+interface/framework/*.mod
+interface/framework/*.o
+interface/model/*.mod
+interface/model/*.o
+src/*.mod
+src/*.o
