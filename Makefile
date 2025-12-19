@@ -138,7 +138,8 @@ SRC_PDAF_GEN = 	PDAF_analysis_utils.F90 \
 		PDAFlocalomi_put_state_nondiagR.F90 \
 		PDAFlocalomi_put_state_nondiagR_si.F90 \
 		PDAFlocalomi_put_state_si.F90 \
-		PDAF_correlation_function.F90
+		PDAF_correlation_function.F90 \
+		PDAF_reset_dim_p.F90
 
 # Specific PDAF-routines for SEIK
 SRC_SEIK =	PDAF_seik_init.F90 \
