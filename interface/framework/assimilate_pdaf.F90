@@ -49,7 +49,9 @@ SUBROUTINE assimilate_pdaf()
 #ifdef CLMFIVE
   USE PDAF_interfaces_module, &   ! Check consistency of PDAF calls
       ONLY: PDAFomi_assimilate_local, PDAFomi_assimilate_global, &
-      PDAFomi_assimilate_lenkf, PDAF_get_localfilter
+      PDAFomi_assimilate_lenkf, PDAF_get_localfilter, &
+      PDAFomi_assimilate_enkf_nondiagR, &
+      PDAFomi_assimilate_global_nondiagR, PDAFomi_assimilate_local_nondiagR
 #endif
 
   IMPLICIT NONE
@@ -112,7 +114,11 @@ SUBROUTINE assimilate_pdaf()
   EXTERNAL :: init_dim_obs_pdafomi, & ! Get dimension of full obs. vector for PE-local domain
     obs_op_pdafomi, &              ! Obs. operator for full obs. vector for PE-local domain
     init_dim_obs_l_pdafomi, &      ! Get dimension of obs. vector for local analysis domain
-    localize_covar_pdafomi         ! Apply localization to covariance matrix in LEnKF
+    localize_covar_pdafomi, &      ! Apply localization to covariance matrix in LEnKF
+    add_obs_err_pdafomi, &         ! Add obs. error covariance R to HPH in EnKF
+    init_obscovar_pdafomi, &       ! Initialize obs error covar R in EnKF
+    prodRinvA_pdafomi, &           ! Provide product R^-1 A for some matrix A
+    prodRinvA_l_pdafomi            ! Provide product R^-1 A for some local matrix A
 
 
 
@@ -133,10 +139,11 @@ SUBROUTINE assimilate_pdaf()
 
     IF (localfilter == 1) THEN
 
-      CALL PDAFomi_assimilate_local(collect_state_pdaf, distribute_state_pdaf, &
-        init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, init_n_domains_pdaf, &
-        init_dim_l_pdaf, init_dim_obs_l_pdafomi, g2l_state_pdaf, l2g_state_pdaf, &
-        next_observation_pdaf, status_pdaf)
+      CALL PDAFomi_assimilate_local_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+       init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, init_n_domains_pdaf, &
+       init_dim_l_pdaf, init_dim_obs_l_pdafomi, prodRinvA_l_pdafomi, g2l_state_pdaf, &
+       l2g_state_pdaf, next_observation_pdaf, status_pdaf)
+
 
     ELSE
 
@@ -146,11 +153,16 @@ SUBROUTINE assimilate_pdaf()
           init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, &
           localize_covar_pdafomi, next_observation_pdaf, status_pdaf)
 
+      ELSEIF (filtertype == 2) then ! non diagonal R for EnKF has its own callback routine
+        CALL PDAFomi_assimilate_enkf_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+          init_dim_obs_pdafomi, obs_op_pdafomi, add_obs_err_pdafomi, init_obscovar_pdafomi, &
+          prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
+
       ELSE
 
-        CALL PDAFomi_assimilate_global(collect_state_pdaf, distribute_state_pdaf, &
-          init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, &
-          next_observation_pdaf, status_pdaf)
+        CALL PDAFomi_assimilate_global_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+          init_dim_obs_pdafomi, obs_op_pdafomi, prodRinvA_pdafomi, &
+          prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
 
       ENDIF
 

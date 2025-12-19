@@ -1098,5 +1098,220 @@ MODULE obs_SM_pdafomi
     END SUBROUTINE localize_covar_SM
 
 
+    subroutine add_obs_err_SM(step, dim_obs, C)
+
+        USE mod_parallel_pdaf, &
+          ONLY: npes_filter
+
+        use PDAFomi, only: obsdims
+
+        implicit none
+        INTEGER, INTENT(in) :: step       ! Current time step
+        INTEGER, INTENT(in) :: dim_obs  ! Dimension of observation vector
+        REAL, INTENT(inout) :: C(dim_obs,dim_obs) ! Matrix to that
+                                        ! observation covariance R is added
+        integer :: i, pe, cnt
+        INTEGER, ALLOCATABLE :: id_start(:) ! Start index of obs. type in global averall obs. vector
+        INTEGER, ALLOCATABLE :: id_end(:)   ! End index of obs. type in global averall obs. vector
+
+        ALLOCATE(id_start(npes_filter), id_end(npes_filter))
+
+        ! Initialize indices --> we only have information about local obs. dims per PE, so we get the global indices, more generalizable than using 
+        ! the arrays initiliazed in init_dim_obs_SM as we can also consider different observation types in one observation file. Arrays from init_dim_obs_pdaf
+        ! (e.g. obs_nc2pdaf) may not be necessary anymore, @ Johannes, please have a check here., see also in PDAFomi_obs_f.F90, there the same code is used
+        ! addition: I also use now the obs_pdaf2nc for reordering the observation covariance matrix to the PDAF internal order
+        ! So for an obs type where correlations should be accounted for, this should not be removed!
+
+        pe = 1
+        id_start(1) = 1
+        IF (thisobs%obsid>1) id_start(1) = id_start(1) + sum(obsdims(1, 1:thisobs%obsid-1))
+        id_end(1)   = id_start(1) + obsdims(1,thisobs%obsid) - 1
+        DO pe = 2, npes_filter
+          id_start(pe) = id_start(pe-1) + SUM(obsdims(pe-1,thisobs%obsid:))
+          IF (thisobs%obsid>1) id_start(pe) = id_start(pe) + sum(obsdims(pe,1:thisobs%obsid-1))
+          id_end(pe) = id_start(pe) + obsdims(pe,thisobs%obsid) - 1
+        END DO
+
+
+        cnt = 1 
+        DO pe = 1, npes_filter
+          DO i = id_start(pe), id_end(pe)
+            C(i,i) = C(i,i) + 1.0/thisobs%ivar_obs_f(cnt)
+            cnt = cnt + 1
+          end do
+        end do
+
+        DEALLOCATE(id_start, id_end)
+
+    end subroutine add_obs_err_SM
+
+
+    subroutine init_obscovar_SM(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+
+        USE mod_parallel_pdaf, &
+          ONLY: npes_filter
+
+        use PDAFomi, only: obsdims, map_obs_id
+
+        implicit none
+        INTEGER, INTENT(in) :: step                ! Current time step
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
+        INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
+        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
+        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+        LOGICAL, INTENT(inout) :: isdiag             ! Whether the observation error covar. matrix is diagonal
+
+        integer :: i, pe, cnt
+        INTEGER, ALLOCATABLE :: id_start(:) ! Start index of obs. type in global averall obs. vector
+        INTEGER, ALLOCATABLE :: id_end(:)   ! End index of obs. type in global averall obs. vector
+
+        ALLOCATE(id_start(npes_filter), id_end(npes_filter))
+
+        ! Initialize indices --> we only have information about local obs. dims per PE, so we use the same logic as in add_obs_err_SM
+        pe = 1
+        id_start(1) = 1
+        IF (thisobs%obsid>1) id_start(1) = id_start(1) + sum(obsdims(1, 1:thisobs%obsid-1))
+        id_end(1)   = id_start(1) + obsdims(1,thisobs%obsid) - 1
+        DO pe = 2, npes_filter
+            id_start(pe) = id_start(pe-1) + SUM(obsdims(pe-1,thisobs%obsid:))
+            IF (thisobs%obsid>1) id_start(pe) = id_start(pe) + sum(obsdims(pe,1:thisobs%obsid-1))
+            id_end(pe) = id_start(pe) + obsdims(pe,thisobs%obsid) - 1
+        END DO
+
+        ! Initialize mapping vector (to be used in PDAF_enkf_obs_ensemble) --> has to be initialized here, else there will be errors!
+        cnt = 1
+        IF (thisobs%obsid-1 > 0) cnt = cnt+ SUM(obsdims(:,1:thisobs%obsid-1))
+        DO pe = 1, npes_filter
+            DO i = id_start(pe), id_end(pe)
+              map_obs_id(i) = cnt
+              cnt = cnt + 1
+            END DO
+        END DO
+
+        cnt = 1 
+        DO pe = 1, npes_filter
+            DO i = id_start(pe), id_end(pe)
+              covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt) ! the inverse of the observation variance is saved for each observation, so we do not need any other
+              ! array here. As we initiliazed the indices for each process, we also can just take index cnt instead of complicated mapping between nc and pdaf indices
+              cnt = cnt + 1
+            ENDDO
+        ENDDO
+
+        ! The matrix is diagonal
+        ! This setting avoids the computation of the SVD of COVAR
+        ! in PDAF_enkf_obs_ensemble
+        isdiag = .TRUE.
+
+        DEALLOCATE(id_start, id_end)
+
+
+    end subroutine init_obscovar_SM
+
+
+    subroutine prodRinvA_SM(step, dim_obs_p, rank, obs_p, A_p, C_p)
+
+      INTEGER, INTENT(in) :: step                ! Current time step
+      INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of obs. vector
+      INTEGER, INTENT(in) :: rank                ! Rank of initial covariance matrix
+      REAL, INTENT(in)    :: obs_p(dim_obs_p)    ! PE-local vector of observations
+      REAL, INTENT(in)    :: A_p(dim_obs_p,rank) ! Input matrix from analysis routine
+      REAL, INTENT(inout)   :: C_p(dim_obs_p,rank) ! Output matrix
+
+      INTEGER :: i, j       ! index of observation component
+      INTEGER :: off        ! row offset in A_l and C_l
+
+      off = thisobs%off_obs_f
+
+      do j=1, rank
+        do i=1, thisobs%dim_obs_f
+          C_p(i+off, j) = thisobs%ivar_obs_f(i) * A_p(i+off, j)
+        END DO
+      end do
+
+    end subroutine prodRinvA_SM
+
+
+    subroutine prodRinvA_l_SM(domain_p, step, dim_obs, rank, obs_l, A_l, C_l)
+
+        use shr_kind_mod, only: r8 => shr_kind_r8
+        USE mod_assimilation, &   
+           ONLY: cradius_SM, locweight, sradius_SM
+        use pdafomi, only: PDAFomi_observation_localization_weights
+
+        implicit none
+
+        INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
+        INTEGER, INTENT(in) :: step                 ! Current time step
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l  
+        INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
+        REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
+        REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine
+        REAL, INTENT(out)   :: C_l(dim_obs, rank) ! Output matrix
+
+        INTEGER :: verbose       ! Verbosity flag
+        INTEGER :: verbose_w     ! Verbosity flag for weight computation
+        INTEGER, SAVE :: domain_save = -1  ! Save previous domain index
+        INTEGER :: wtype         ! Type of weight function
+        INTEGER :: rtype         ! Type of weight regulation
+        REAL, ALLOCATABLE :: weight(:)     ! Localization weights
+        REAL, ALLOCATABLE :: A_obs(:,:)    ! Array for a single row of A_l
+        REAL    :: var_obs                 ! Variance of observation error
+
+        INTEGER :: i, j
+
+        INTEGER :: off                     ! row offset in A_l and C_l
+        INTEGER :: idummy                  ! Dummy to access nobs_all
+
+        real(r8) :: ivariance_obs
+
+
+        off = thisobs_l%off_obs_l
+        idummy = dim_obs
+
+        IF ((domain_p <= domain_save .OR. domain_save < 0) .AND. mype_filter==0) THEN
+            verbose = 1
+        ELSE
+            verbose = 0
+        END IF
+        domain_save = domain_p
+    
+        ! Screen output
+        IF (verbose == 1) THEN
+            WRITE (*, '(8x, a, f12.3)') &
+                '--- Use global rms for observations of ', rms_obs_SM
+            WRITE (*, '(8x, a, 1x)') &
+                '--- Domain localization'
+            WRITE (*, '(12x, a, 1x, f12.2)') &
+                '--- Local influence radius', cradius_SM
+    
+            IF (locweight > 0) THEN
+                WRITE (*, '(12x, a)') &
+                        '--- Use distance-dependent weight for observation errors'
+        
+                IF (locweight == 3) THEN
+                    write (*, '(12x, a)') &
+                        '--- Use regulated weight with mean error variance'
+                ELSE IF (locweight == 4) THEN
+                    write (*, '(12x, a)') &
+                        '--- Use regulated weight with single-point error variance'
+                END IF
+            END IF
+        ENDIF
+
+        ALLOCATE(weight(thisobs_l%dim_obs_l))
+        call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
+                                         weight, verbose)
+
+        do j=1,rank
+            do i=1,thisobs_l%dim_obs_l
+                C_l(i+off,j) = thisobs_l%ivar_obs_l(i) * weight(i) * A_l(i+off, j)
+            end do
+        end do
+
+        deallocate(weight)
+
+    end subroutine prodRinvA_l_SM
+
+
   END MODULE obs_SM_pdafomi
 #endif

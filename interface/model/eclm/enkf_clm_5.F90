@@ -225,8 +225,6 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   call define_clm_statevec(mype) ! call define statevec not in the beginning
   ! but here as we can define the statevec for each obs type
 
-  ! maybe I have to cleanup before defining, check later
-
   ! Calling PDAF Function to set state vector before assimiliation
   call set_clm_statevec(tstartcycle, mype)
 #endif

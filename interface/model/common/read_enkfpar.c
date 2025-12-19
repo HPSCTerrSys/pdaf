@@ -113,6 +113,7 @@ void read_enkfpar(char *parname)
   update_snow           = iniparser_getint(pardict,"DA:update_snow",0);
   remove_mean           = iniparser_getint(pardict,"DA:remove_mean",0);
   exclude_greenland     = iniparser_getint(pardict,"DA:exclude_greenland",0);
+  set_zero_start        = iniparser_getint(pardict,"DA:set_zero_start",0);
 
   crns_flag             = iniparser_getint(pardict,"DA:crns_flag",0);
   da_crns_depth_tol     = iniparser_getdouble(pardict,"DA:da_crns_depth_tol",0.01);

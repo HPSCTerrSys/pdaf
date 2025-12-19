@@ -33,7 +33,7 @@
 ! Author: Yorck Ewerdwalbesloh
 
 #ifdef CLMFIVE
-SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
+  SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
 
     use enkf_clm_mod, only: clmupdate_swc, clmupdate_tws
 
@@ -227,4 +227,93 @@ SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
     DEALLOCATE(coords_p)
 
   END SUBROUTINE localize_covar_pdafomi
+
+
+  SUBROUTINE add_obs_err_pdafomi(step, dim_obs, C)
+
+    USE obs_GRACE_pdafomi, ONLY: add_obs_err_GRACE
+    USE obs_SM_pdafomi, ONLY: add_obs_err_SM
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(in) :: step                ! Current time step
+    INTEGER, INTENT(in) :: dim_obs             ! Dimension of obs. vector
+    REAL, INTENT(inout) :: C(dim_obs, dim_obs) ! Matrix to that the observation 
+                                              !    error covariance matrix is added
+    
+                                        
+    INTEGER :: i          ! index of observation component
+    REAL :: variance_obs  ! variance of observations
+    CALL add_obs_err_GRACE(step, dim_obs, C)
+    CALL add_obs_err_SM(step, dim_obs, C)
+    !CALL add_obs_err_C(step, dim_obs, C)
+
+  END SUBROUTINE add_obs_err_pdafomi
+
+
+  SUBROUTINE init_obscovar_pdafomi(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+
+    USE obs_GRACE_pdafomi, ONLY: init_obscovar_GRACE
+    USE obs_SM_pdafomi, ONLY: init_obscovar_SM
+    IMPLICIT NONE
+
+    INTEGER, INTENT(in) :: step                ! Current time step
+    INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
+    INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
+    REAL, INTENT(out) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
+    REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+    LOGICAL, INTENT(out) :: isdiag             ! Whether the observation error covar. matrix is diagonal
+
+    integer :: i
+    REAL :: variance_obs
+
+
+    CALL init_obscovar_GRACE(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    CALL init_obscovar_SM(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    !CALL init_obscovar_C(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+
+  END SUBROUTINE init_obscovar_pdafomi
+
+
+  SUBROUTINE prodRinvA_pdafomi(step, dim_obs_p, rank, obs_p, A_p, C_p)
+
+    use obs_GRACE_pdafomi, ONLY: prodRinvA_GRACE
+    use obs_SM_pdafomi, ONLY: prodRinvA_SM
+
+    implicit none
+    INTEGER, INTENT(in) :: step                ! Current time step
+    INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of obs. vector
+    INTEGER, INTENT(in) :: rank                ! Rank of initial covariance matrix
+    REAL, INTENT(in)    :: obs_p(dim_obs_p)    ! PE-local vector of observations
+    REAL, INTENT(in)    :: A_p(dim_obs_p,rank) ! Input matrix from analysis routine
+    REAL, INTENT(out)   :: C_p(dim_obs_p,rank) ! Output matrix
+
+    CALL prodRinvA_GRACE(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    CALL prodRinvA_SM(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    !CALL prodRinvA_C(step, dim_obs_p, rank, obs_p, A_p, C_p)
+
+  END SUBROUTINE prodRinvA_pdafomi
+
+
+  SUBROUTINE prodRinvA_l_pdafomi(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+
+    use obs_GRACE_pdafomi, ONLY: prodRinvA_l_GRACE
+    use obs_SM_pdafomi, ONLY: prodRinvA_l_SM
+
+    implicit none
+
+    INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
+    INTEGER, INTENT(in) :: step                 ! Current time step
+    INTEGER, INTENT(in) :: dim_obs_l            ! Dimension of local observation vector
+    INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
+    REAL, INTENT(in)    :: obs_l(dim_obs_l)     ! Local vector of observations
+    REAL, INTENT(inout) :: A_l(dim_obs_l, rank) ! Input matrix from analysis routine
+    REAL, INTENT(out)   :: C_l(dim_obs_l, rank) ! Output matrix
+
+    CALL prodRinvA_l_GRACE(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    CALL prodRinvA_l_SM(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    !CALL prodRinvA_l_C(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+
+  END SUBROUTINE prodRinvA_l_pdafomi
+
 #endif

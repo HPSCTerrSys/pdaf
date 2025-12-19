@@ -155,7 +155,7 @@ $(PROG) : $(LIBMODEL) libpdaf-d.a \
 	$(PREP_C) $(LD)  $(OPT_LNK)  -o $@ \
 	$(MODULES) $(MOD_ASSIM) $(MOD_USER_PDAFOMI) \
 	$(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER) \
-	-L$(BASEDIR)/lib -lpdaf-d $(LIBMODEL) $(LIBS) $(LINK_LIBS)
+	-L$(BASEDIR)/lib $(LIBMODEL) -lpdaf-d $(LIBS) $(LINK_LIBS)
 
 ######################################################
 
