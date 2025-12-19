@@ -17,7 +17,7 @@ OBJ =  dictionary.o\
 	   read_enkfpar.o\
 	   wrapper_tsmp.o\
 
-# OBJ += ${PDAF_SRC}/src/PDAF_reset_dim_p.o
+OBJ += ${BASEDIR}/src/PDAF_reset_dim_p.o
 
 ## clm object files
 OBJCLM = enkf_clm_mod.o\
