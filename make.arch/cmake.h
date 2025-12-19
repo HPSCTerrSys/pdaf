@@ -52,7 +52,7 @@ AR_SPEC =
 RAN_SPEC =
 
 # Specification for directory holding modules (-module for Intel, -J for GNU)
-MODULEOPT = -module
+MODULEOPT = ${TSMPPDAFMODULEOPT}
 
 # Include path for MPI header file
 MPI_INC = ${TSMPPDAFMPI_INC}
