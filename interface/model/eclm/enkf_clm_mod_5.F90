@@ -130,6 +130,7 @@ module enkf_clm_mod
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
     use clm_varcon, only: set_averaging_to_zero
+    use PDAF_interfaces_module, only: PDAF_reset_dim_p
 
     implicit none
 
