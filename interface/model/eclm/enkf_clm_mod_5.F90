@@ -1233,13 +1233,13 @@ module enkf_clm_mod
     endif
 
 #ifdef PDAF_DEBUG
-      IF(clmupdate_T/=0) THEN
+    IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble == -1) THEN
         ! TSMP-PDAF: For debug runs, output the state vector in files
         WRITE(fn, "(a,i5.5,a,i5.5,a)") "t_soisno_", mype, ".update.", tstartcycle, ".txt"
         OPEN(unit=71, file=fn, action="write")
         WRITE (71,"(es22.15)") t_soisno(:,1)
         CLOSE(71)
-      END IF
+    END IF
 #endif
 
   end subroutine update_clm_T
