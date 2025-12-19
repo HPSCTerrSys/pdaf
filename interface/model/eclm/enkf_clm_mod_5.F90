@@ -215,7 +215,7 @@ module enkf_clm_mod
       ! possibility to assimilate GRACE not in the first month --> enkfpf.par file has information set_zero_start where the running average should be resetted
       ! This is usually one month prior to the first GRACE observation. If it is not included in the file, it is resetted when the first GRACE observation
       ! is assimilated. Afterwards, the normal set_zero information inside the observation file is used (see next_observation_pdaf for details).
-      if (set_zero_start.ne.0) then
+      if (set_zero_start/=0) then
         set_averaging_to_zero = set_zero_start
       end if
     end if

@@ -226,12 +226,12 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 #ifdef CLMSA
 #ifdef CLMFIVE
   OMI:if (use_omi)  then
-    if (clmupdate_tws.ne.0) then ! only update set_zero when GRACE is assimilated at the current time step
+    if (clmupdate_tws/=0) then ! only update set_zero when GRACE is assimilated at the current time step
       nstep = get_nstep()
-      if (stepnow.ne.toffset) then
+      if (stepnow/=toffset) then
         write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
         call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
-        if (set_averaging_to_zero.ne.ispval) then
+        if (set_averaging_to_zero/=ispval) then
           set_averaging_to_zero = set_averaging_to_zero+nstep
         end if
 
@@ -258,7 +258,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
         if (trim(obs_type_str) /= '') then
           call update_obs_type(obs_type_str)
         end if
-    
+
         if (mype_world==0 .and. screen > 2) then
           write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
         end if

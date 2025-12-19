@@ -1116,7 +1116,7 @@ MODULE obs_SM_pdafomi
 
         ALLOCATE(id_start(npes_filter), id_end(npes_filter))
 
-        ! Initialize indices --> we only have information about local obs. dims per PE, so we get the global indices, more generalizable than using 
+        ! Initialize indices --> we only have information about local obs. dims per PE, so we get the global indices, more generalizable than using
         ! the arrays initiliazed in init_dim_obs_SM as we can also consider different observation types in one observation file. Arrays from init_dim_obs_pdaf
         ! (e.g. obs_nc2pdaf) may not be necessary anymore, @ Johannes, please have a check here., see also in PDAFomi_obs_f.F90, there the same code is used
         ! addition: I also use now the obs_pdaf2nc for reordering the observation covariance matrix to the PDAF internal order
@@ -1133,7 +1133,7 @@ MODULE obs_SM_pdafomi
         END DO
 
 
-        cnt = 1 
+        cnt = 1
         DO pe = 1, npes_filter
           DO i = id_start(pe), id_end(pe)
             C(i,i) = C(i,i) + 1.0/thisobs%ivar_obs_f(cnt)
@@ -1157,8 +1157,8 @@ MODULE obs_SM_pdafomi
         INTEGER, INTENT(in) :: step                ! Current time step
         INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
         INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
-        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
-        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix
+        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector
         LOGICAL, INTENT(inout) :: isdiag             ! Whether the observation error covar. matrix is diagonal
 
         integer :: i, pe, cnt
@@ -1188,7 +1188,7 @@ MODULE obs_SM_pdafomi
             END DO
         END DO
 
-        cnt = 1 
+        cnt = 1
         DO pe = 1, npes_filter
             DO i = id_start(pe), id_end(pe)
               covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt) ! the inverse of the observation variance is saved for each observation, so we do not need any other
@@ -1234,7 +1234,7 @@ MODULE obs_SM_pdafomi
     subroutine prodRinvA_l_SM(domain_p, step, dim_obs, rank, obs_l, A_l, C_l)
 
         use shr_kind_mod, only: r8 => shr_kind_r8
-        USE mod_assimilation, &   
+        USE mod_assimilation, &
            ONLY: cradius_SM, locweight, sradius_SM
         use pdafomi, only: PDAFomi_observation_localization_weights
 
@@ -1242,7 +1242,7 @@ MODULE obs_SM_pdafomi
 
         INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
         INTEGER, INTENT(in) :: step                 ! Current time step
-        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l  
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l
         INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
         REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
         REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine
@@ -1274,7 +1274,7 @@ MODULE obs_SM_pdafomi
             verbose = 0
         END IF
         domain_save = domain_p
-    
+
         ! Screen output
         IF (verbose == 1) THEN
             WRITE (*, '(8x, a, f12.3)') &
@@ -1283,11 +1283,11 @@ MODULE obs_SM_pdafomi
                 '--- Domain localization'
             WRITE (*, '(12x, a, 1x, f12.2)') &
                 '--- Local influence radius', cradius_SM
-    
+
             IF (locweight > 0) THEN
                 WRITE (*, '(12x, a)') &
                         '--- Use distance-dependent weight for observation errors'
-        
+
                 IF (locweight == 3) THEN
                     write (*, '(12x, a)') &
                         '--- Use regulated weight with mean error variance'

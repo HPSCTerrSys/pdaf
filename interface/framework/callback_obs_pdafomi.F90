@@ -238,10 +238,10 @@
 
     INTEGER, INTENT(in) :: step                ! Current time step
     INTEGER, INTENT(in) :: dim_obs             ! Dimension of obs. vector
-    REAL, INTENT(inout) :: C(dim_obs, dim_obs) ! Matrix to that the observation 
+    REAL, INTENT(inout) :: C(dim_obs, dim_obs) ! Matrix to that the observation
                                               !    error covariance matrix is added
-    
-                                        
+
+
     INTEGER :: i          ! index of observation component
     REAL :: variance_obs  ! variance of observations
     CALL add_obs_err_GRACE(step, dim_obs, C)
@@ -260,8 +260,8 @@
     INTEGER, INTENT(in) :: step                ! Current time step
     INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
     INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
-    REAL, INTENT(out) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
-    REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+    REAL, INTENT(out) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix
+    REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector
     LOGICAL, INTENT(out) :: isdiag             ! Whether the observation error covar. matrix is diagonal
 
     integer :: i

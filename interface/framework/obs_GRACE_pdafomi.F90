@@ -559,7 +559,7 @@ MODULE obs_GRACE_pdafomi
 
     dim_obs = count(vec_useObs_global)
 
-    if (multierr.eq.2) then ! compute inverse of covariance matrix for prodRinvA, has to be before PDAFomi_gather_obs because the routine changes dim_obs
+    if (multierr==2) then ! compute inverse of covariance matrix for prodRinvA, has to be before PDAFomi_gather_obs because the routine changes dim_obs
 
         if (allocated(obscov_inv)) deallocate(obscov_inv)
         allocate(obscov_inv(dim_obs, dim_obs))
@@ -1006,7 +1006,7 @@ MODULE obs_GRACE_pdafomi
 
         select case (multierr)
         case(0,1)
-            cnt = 1 
+            cnt = 1
             DO pe = 1, npes_filter
                 DO i = id_start(pe), id_end(pe)
                     C(i,i) = C(i,i) + 1.0/thisobs%ivar_obs_f(cnt)
@@ -1021,7 +1021,7 @@ MODULE obs_GRACE_pdafomi
                 end do
             end do
         end select
-            
+
 
         DEALLOCATE(id_start, id_end)
 
@@ -1043,8 +1043,8 @@ MODULE obs_GRACE_pdafomi
         INTEGER, INTENT(in) :: step                ! Current time step
         INTEGER, INTENT(in) :: dim_obs             ! Dimension of observation vector
         INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of observation vector
-        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix 
-        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector 
+        REAL, INTENT(inout) :: covar(dim_obs, dim_obs) ! Observation error covariance matrix
+        REAL, INTENT(in)  :: m_state_p(dim_obs_p)  ! PE-local observation vector
         LOGICAL, INTENT(inout) :: isdiag             ! Whether the observation error covar. matrix is diagonal
 
         integer :: i, pe, cnt, j
@@ -1077,7 +1077,7 @@ MODULE obs_GRACE_pdafomi
         select case(multierr)
         case(0,1)
 
-            cnt = 1 
+            cnt = 1
             DO pe = 1, npes_filter
                 DO i = id_start(pe), id_end(pe)
                 covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt)
@@ -1100,10 +1100,10 @@ MODULE obs_GRACE_pdafomi
             isdiag = .FALSE.
 
         end select
-        
+
 
         DEALLOCATE(id_start, id_end)
-        
+
 
     end subroutine init_obscovar_GRACE
 
@@ -1127,7 +1127,7 @@ MODULE obs_GRACE_pdafomi
         real(r8) :: obscov_inv_l(thisobs%dim_obs_f,thisobs%dim_obs_f) ! errors of observations in the model domain
 
         off = thisobs%off_obs_f ! account for offset if multiple observation types are assimilated at once
-    
+
         select case (multierr)
         case(0,1)
         do j=1, rank
@@ -1160,7 +1160,7 @@ MODULE obs_GRACE_pdafomi
 
         INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
         INTEGER, INTENT(in) :: step                 ! Current time step
-        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l  
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l
         INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
         REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
         REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine
@@ -1202,7 +1202,7 @@ MODULE obs_GRACE_pdafomi
             verbose = 0
         END IF
         domain_save = domain_p
-    
+
         ! Screen output
         IF (verbose == 1) THEN
             WRITE (*, '(8x, a, f12.3)') &
@@ -1211,11 +1211,11 @@ MODULE obs_GRACE_pdafomi
                 '--- Domain localization'
             WRITE (*, '(12x, a, 1x, f12.2)') &
                 '--- Local influence radius', cradius_GRACE
-    
+
             IF (locweight > 0) THEN
                 WRITE (*, '(12x, a)') &
                         '--- Use distance-dependent weight for observation errors'
-        
+
                 IF (locweight == 3) THEN
                     write (*, '(12x, a)') &
                         '--- Use regulated weight with mean error variance'
@@ -1229,7 +1229,7 @@ MODULE obs_GRACE_pdafomi
         ALLOCATE(weight(thisobs_l%dim_obs_l))
         call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
                                          weight, verbose)
-        
+
         select case(multierr)
         case(0,1)
             do j=1,rank
