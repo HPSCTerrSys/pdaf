@@ -210,6 +210,18 @@ contains
 
             end if
 
+            haserr = nf90_inq_varid(ncid, obscov_name, clmobscov_varid)
+            if(haserr == nf90_noerr) then
+
+                multierr = 2
+
+                if(allocated(obscov_g))   deallocate(obscov_g)
+                allocate(obscov_g(dim_obs,dim_obs))
+
+                call check(nf90_get_var(ncid, clmobscov_varid, obscov_g))
+
+            end if
+
             dim_obs_g = dim_obs
 
         end if
