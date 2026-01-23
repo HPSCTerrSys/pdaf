@@ -48,7 +48,6 @@ module enkf_clm_mod
   integer,allocatable :: state_pdaf2clm_c_p(:)
   integer,allocatable :: state_pdaf2clm_p_p(:)
   integer,allocatable :: state_pdaf2clm_j_p(:)
-  integer,allocatable :: state_pdaf2clm_v_p(:)
   integer,allocatable :: state_loc2clm_c_p(:)
   integer,allocatable :: state_loc2clm_p_p(:)
   ! clm_paramarr: Contains LAI used in obs_op_pdaf for computing model
@@ -481,8 +480,6 @@ module enkf_clm_mod
       allocate(state_pdaf2clm_c_p(clm_statevecsize))
       IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
       allocate(state_pdaf2clm_j_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_v_p)) deallocate(state_pdaf2clm_v_p)
-      allocate(state_pdaf2clm_v_p(clm_statevecsize))
 
       cc = 0
 
@@ -491,18 +488,15 @@ module enkf_clm_mod
         state_pdaf2clm_p_p(cc) = p !TSKIN
         state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
         state_pdaf2clm_j_p(cc) = 1
-        state_pdaf2clm_v_p(cc) = 1
         do lev=1,nlevgrnd
           ! ivar = 2-26: TSOIL
           state_pdaf2clm_p_p(cc + lev*clm_varsize) = p
           state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p)
           state_pdaf2clm_j_p(cc + lev*clm_varsize) = lev
-          state_pdaf2clm_v_p(cc + lev*clm_varsize) = 1+lev
         end do
         state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
         state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
         state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 1
-        state_pdaf2clm_v_p(cc+(1+nlevgrnd)*clm_varsize) = 2+nlevgrnd
       end do
 
     endif
