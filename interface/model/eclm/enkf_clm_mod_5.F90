@@ -441,45 +441,7 @@ module enkf_clm_mod
     endif
     !end hcp
 
-    ! skin temperature state vector
     if(clmupdate_T==2) then
-
-      IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1))
-
-      do p=clm_begp,clm_endp
-        state_clm2pdaf_p(p,1) = (p - clm_begp + 1)
-      end do
-
-      clm_varsize      =  endp-begp+1
-      ! clm_paramsize =  endp-begp+1         !LAI
-      clm_statevecsize =  3* (endp-begp+1)  !TSKIN, then TG and TV
-
-      IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
-      allocate(state_pdaf2clm_p_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
-      allocate(state_pdaf2clm_c_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
-      allocate(state_pdaf2clm_j_p(clm_statevecsize))
-
-      cc = 0
-
-      do p=clm_begp,clm_endp
-        cc = cc + 1
-        state_pdaf2clm_p_p(cc) = p !TSKIN
-        state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
-        state_pdaf2clm_j_p(cc) = 1
-        state_pdaf2clm_p_p(cc+clm_varsize) = p !TG
-        state_pdaf2clm_c_p(cc+clm_varsize) = patch%column(p) !TG
-        state_pdaf2clm_j_p(cc+clm_varsize) = 1
-        state_pdaf2clm_p_p(cc+2*clm_varsize) = p !TV
-        state_pdaf2clm_c_p(cc+2*clm_varsize) = patch%column(p) !TV
-        state_pdaf2clm_j_p(cc+2*clm_varsize) = 1
-      end do
-
-    endif
-
-    if(clmupdate_T==3) then
 
       ! Allocate with full dimension for all variables/layers
       !
@@ -545,77 +507,9 @@ module enkf_clm_mod
 
     endif
 
-    if(clmupdate_T==4) then
-
-      IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1))
-
-      do p=clm_begp,clm_endp
-        state_clm2pdaf_p(p,1) = (p - clm_begp + 1)
-      end do
-
-      clm_varsize      =  endp-begp+1
-      ! clm_paramsize =  endp-begp+1         !LAI
-      clm_statevecsize =  1* (endp-begp+1)  !TSOIL
-
-      IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
-      allocate(state_pdaf2clm_p_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
-      allocate(state_pdaf2clm_c_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
-      allocate(state_pdaf2clm_j_p(clm_statevecsize))
-
-      cc = 0
-
-      do p=clm_begp,clm_endp
-        cc = cc + 1
-        state_pdaf2clm_p_p(cc) = p !TSOIL
-        state_pdaf2clm_c_p(cc) = patch%column(p) !TSOIL
-        state_pdaf2clm_j_p(cc) = 1
-      end do
-
-    endif
-
-    if(clmupdate_T==5) then
-
-      IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1))
-
-      do p=clm_begp,clm_endp
-        state_clm2pdaf_p(p,1) = (p - clm_begp + 1)
-      end do
-
-      clm_varsize      =  endp-begp+1
-      ! clm_paramsize =  endp-begp+1         !LAI
-      clm_statevecsize =  2 * (endp-begp+1)  !TSKIN and TV
-
-      IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
-      allocate(state_pdaf2clm_p_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
-      allocate(state_pdaf2clm_c_p(clm_statevecsize))
-      IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
-      allocate(state_pdaf2clm_j_p(clm_statevecsize))
-
-      cc = 0
-
-      do p=clm_begp,clm_endp
-        cc = cc + 1
-        state_pdaf2clm_p_p(cc) = p !TSKIN
-        state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
-        state_pdaf2clm_j_p(cc) = 1
-        state_pdaf2clm_p_p(cc+clm_varsize) = p !TV
-        state_pdaf2clm_c_p(cc+clm_varsize) = patch%column(p) !TV
-        state_pdaf2clm_j_p(cc+clm_varsize) = 1
-
-        ! Check that cc is state_clm2pdaf_p
-        if (cc /= state_clm2pdaf_p(p,1)) then
-          print *, "ERROR: Index problem in clmupdate_T==5"
-          print *, "ERROR: Differences cc,state_clm2pdaf_p(p,1) = ", cc, state_clm2pdaf_p(p,1)
-        end if
-
-      end do
-
-    endif
+    if(clmupdate_T < 1 .or. clmupdate_T > 2) then
+      error stop "Only implemented for clmupdate_T==1 and clmupdate_T==2."
+    end if
 
   end subroutine define_clm_statevec_T
 
@@ -850,18 +744,8 @@ module enkf_clm_mod
     endif
     !end hcp  LAI
 
-    ! skin temperature state vector
-    if(clmupdate_T==2) then
-      do cc = 1, clm_varsize
-        ! t_skin iterated over patches
-        clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
-        clm_statevec(cc+clm_varsize)   = t_grnd(state_pdaf2clm_c_p(cc+clm_varsize))
-        clm_statevec(cc+2*clm_varsize) = t_veg(state_pdaf2clm_p_p(cc+2*clm_varsize))
-      end do
-    endif
-
     ! skin temperature updating state vector with skin, soil and vegetation temperature
-    if(clmupdate_T==3) then
+    if(clmupdate_T==2) then
       do cc = 1, clm_varsize
         ! t_skin iterated over patches
         clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
@@ -870,22 +754,6 @@ module enkf_clm_mod
             state_pdaf2clm_j_p(cc+lev*clm_varsize))
         end do
         clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = t_veg(state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize))
-      end do
-    endif
-
-    ! soil temperature updating state vector with soil temperature
-    if(clmupdate_T==4) then
-      do cc = 1, clm_varsize
-        clm_statevec(cc)               = t_soisno(state_pdaf2clm_c_p(cc), state_pdaf2clm_j_p(cc))
-      end do
-    endif
-
-    ! skin temperature updating state vector with skin and vegetation temperature
-    if(clmupdate_T==5) then
-      do cc = 1, clm_varsize
-        ! t_skin iterated over patches
-        clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
-        clm_statevec(cc+clm_varsize)   = t_veg(state_pdaf2clm_p_p(cc+clm_varsize))
       end do
     endif
 
@@ -1194,18 +1062,8 @@ module enkf_clm_mod
     endif
     ! end hcp TG, TV
 
-    ! skin temperature state vector
-    if(clmupdate_T==2) then
-      do p = clm_begp, clm_endp
-        c = patch%column(p)
-        t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
-        t_grnd(c)  = clm_statevec(state_clm2pdaf_p(p,1) + clm_varsize)
-        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,1) + 2*clm_varsize)
-      end do
-    endif
-
     ! skin temperature updating skin, soil and vegetation temperature
-    if(clmupdate_T==3) then
+    if(clmupdate_T==2) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
         t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
@@ -1213,22 +1071,6 @@ module enkf_clm_mod
           t_soisno(c,lev)  = clm_statevec(state_clm2pdaf_p(p,1+lev))
         end do
         t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,2+nlevgrnd))
-      end do
-    endif
-
-    ! soil temperature updating soil temperature
-    if(clmupdate_T==4) then
-      do p = clm_begp, clm_endp
-        c = patch%column(p)
-        t_soisno(c,1)  = clm_statevec(state_clm2pdaf_p(p,1))
-      end do
-    endif
-
-    ! skin temperature updating skin and vegetation temperature
-    if(clmupdate_T==5) then
-      do p = clm_begp, clm_endp
-        t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
-        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,1) + clm_varsize)
       end do
     endif
 

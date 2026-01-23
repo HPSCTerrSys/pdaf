@@ -484,11 +484,13 @@ CLM (standalone only).
 `CLM:update_T`: (integer) Flag for updating of ground and vegetation
 temperature.
 
-Currently only CLM3.5
-
 -  0: No update of ground and vegetation temperature
 
 -  1: Update of ground and vegetation temperature
+
+-  2: Update of soil and vegetation temperature (prognostic variables)
+   based on comparison of satellite LST with skin temperature
+   (diagnostic variable)
 
 ### CLM:print_swc ###
 
