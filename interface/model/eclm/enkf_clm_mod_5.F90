@@ -459,7 +459,7 @@ module enkf_clm_mod
         cc = (p - clm_begp + 1)
 
         ! TSKIN (variable index 1)
-        state_clm2pdaf_p(p,1) = (p - clm_begp + 1)
+        state_clm2pdaf_p(p,1) = cc
 
         ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
         do lev=1,nlevgrnd
