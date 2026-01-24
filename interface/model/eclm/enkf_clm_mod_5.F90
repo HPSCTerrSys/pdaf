@@ -1733,23 +1733,8 @@ module enkf_clm_mod
     endif
 
     if(clmupdate_T==2) then
-      ! TSKIN + TG + TV: 3 temperatures per patch
-      dim_l = 3
-    endif
-
-    if(clmupdate_T==3) then
       ! TSKIN + TSOIL(nlevgrnd layers) + TV
       dim_l = 1 + nlevgrnd + 1
-    endif
-
-    if(clmupdate_T==4) then
-      ! TSOIL (first layer only)
-      dim_l = 1
-    endif
-
-    if(clmupdate_T==5) then
-      ! TSKIN + TV (first layer only)
-      dim_l = 2
     endif
 
   end subroutine init_dim_l_clm
@@ -1791,7 +1776,7 @@ module enkf_clm_mod
     END DO
     end if
 
-    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
+    if(clmupdate_T==1 .or. clmupdate_T==2) then
     DO i = 1, dim_l
       ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
       ! Variable index: i
@@ -1839,7 +1824,7 @@ module enkf_clm_mod
     END DO
     end if
 
-    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
+    if(clmupdate_T==1 .or. clmupdate_T==2) then
     DO i = 1, dim_l
       ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
       ! Variable index: i
