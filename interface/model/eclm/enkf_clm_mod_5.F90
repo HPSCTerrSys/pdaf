@@ -160,9 +160,9 @@ module enkf_clm_mod
 
     ! Allocate statevector-duplicate for saving original column mean
     ! values used in computing increments during updating the state
-    ! vector in column-mean-mode.
+    ! vector in column-mean-mode (SWC) or gridcell-mean-mode (T).
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
-    if (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) then
+    if ((clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. clmupdate_T==2) then
       allocate(clm_statevec_orig(clm_statevecsize))
     end if
 
@@ -372,6 +372,7 @@ module enkf_clm_mod
   subroutine define_clm_statevec_T(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevgrnd
+    use clm_varcon , only : ispval
     use PatchType  , only : patch
 
     implicit none
@@ -425,6 +426,13 @@ module enkf_clm_mod
       IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
       allocate(state_pdaf2clm_j_p(clm_statevecsize))
 
+      ! Default: inactive
+      do cc=1,clm_statevecsize
+        state_pdaf2clm_p_p(cc) = ispval
+        state_pdaf2clm_c_p(cc) = ispval
+        state_pdaf2clm_j_p(cc) = ispval
+      end do
+
       cc = 0
 
       do p=clm_begp,clm_endp
@@ -442,6 +450,7 @@ module enkf_clm_mod
 
     if(clmupdate_T==2) then
 
+      ! 1) PATCH/GRC: CLM->PDAF
       ! Allocate with full dimension for all variables/layers
       !
       ! Here, the second index of STATE_CLM2PDAF_P is NOT simply the
@@ -454,26 +463,49 @@ module enkf_clm_mod
       !                                      1: TSKIN
       !                                      2:(1+nlevgrnd): TSOIL layers
       !                                      (2+nlevgrnd): TVEG
+      do lev=1,(2+nlevgrnd)
+        do p=begp,endp
+          ! Default: inactive
+          state_clm2pdaf_p(p,lev) = ispval
+        end do
+      end do
 
       do p=clm_begp,clm_endp
-        cc = (p - clm_begp + 1)
+        ! All patches in a gridcell are assigned the index of
+        ! the gridcell-average in the state vector
+        cc = (patch%gridcell(p) - clm_begg + 1)
 
         ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = cc
 
         ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
         do lev=1,nlevgrnd
-          state_clm2pdaf_p(p, 1+lev) = cc + lev*clm_varsize
+          state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
         end do
 
         ! TVEG (variable index 2+nlevgrnd)
-        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*clm_varsize
+        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*(clm_endg - clm_begg + 1)
       end do
 
-      clm_varsize      =  endp-begp+1
-      ! clm_paramsize =  endp-begp+1         !LAI
-      clm_statevecsize =  (1 + nlevgrnd + 1)* (endp-begp+1)  !TSKIN, then nlevgrnd times TSOIL and TV
+      ! 2) PATCH/GRC: STATEVECSIZE
+      clm_varsize      =  endg-begg+1
+      clm_statevecsize =  (1 + nlevgrnd + 1)* (endg-begg+1)  !TSKIN, then nlevgrnd times TSOIL and TV
 
+      ! 3) PATCH/GRC: PDAF->CLM
+      !
+      ! Inverse mapping from state vector index to CLM indices.
+      ! STATE_PDAF2CLM_*_P is the inverse of STATE_CLM2PDAF_P:
+      !   state_pdaf2clm_p_p(cc) = p      (patch index)
+      !   state_pdaf2clm_c_p(cc) = c      (column index)
+      !   state_pdaf2clm_j_p(cc) = j      (variable index, NOT CLM level)
+      !
+      ! Variable index j layout (same as STATE_CLM2PDAF_P second dimension):
+      !   j = 1:              TSKIN
+      !   j = 2:(1+nlevgrnd): TSOIL layers (CLM level = j - 1)
+      !   j = (2+nlevgrnd):   TVEG
+      !
+      ! NOTE: To get the CLM level from j for TSOIL, use: clm_level = j - 1
+      !
       IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
       allocate(state_pdaf2clm_p_p(clm_statevecsize))
       IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
@@ -481,28 +513,43 @@ module enkf_clm_mod
       IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
       allocate(state_pdaf2clm_j_p(clm_statevecsize))
 
+      ! Default: inactive
+      do cc=1,clm_statevecsize
+        state_pdaf2clm_p_p(cc) = ispval
+        state_pdaf2clm_c_p(cc) = ispval
+        state_pdaf2clm_j_p(cc) = ispval
+      end do
+
       cc = 0
 
-      do p=clm_begp,clm_endp
-        cc = cc + 1
-        state_pdaf2clm_p_p(cc) = p !TSKIN
-        state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
-        state_pdaf2clm_j_p(cc) = 1
-        do lev=1,nlevgrnd
-          ! ivar = 2-26: TSOIL
-          state_pdaf2clm_p_p(cc + lev*clm_varsize) = p
-          state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p)
-          state_pdaf2clm_j_p(cc + lev*clm_varsize) = lev
+      do cc=1,clm_statevecsize
+
+        do p=clm_begp,clm_endp
+          if(state_clm2pdaf_p(p, 1) == cc) then
+            ! Set indices for the three temperature variables and then
+            ! exit loops
+            state_pdaf2clm_p_p(cc) = p !TSKIN
+            state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
+            state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
+            do lev=1,nlevgrnd
+              ! variable index 2 to 1+nlevgrnd: TSOIL layers
+              state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
+              state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
+              state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
+            end do
+            state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 2 + nlevgrnd ! variable index: TVEG
+            exit
+          end if
         end do
-        state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
-        state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
-        state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 1
+
       end do
 
     endif
 
     if(clmupdate_T < 1 .or. clmupdate_T > 2) then
-      error stop "Only implemented for clmupdate_T==1 and clmupdate_T==2."
+      error stop "LST-DA only implemented for clmupdate_T==1 and clmupdate_T==2."
     end if
 
   end subroutine define_clm_statevec_T
@@ -681,6 +728,7 @@ module enkf_clm_mod
     use clm_instMod, only : canopystate_inst
     use clm_varpar   , only : nlevgrnd
     use PatchType , only : patch
+    use ColumnType , only : col
     use shr_kind_mod, only: r8 => shr_kind_r8
 
     implicit none
@@ -693,8 +741,8 @@ module enkf_clm_mod
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
     real(r8), pointer :: tlai(:)
-    integer :: j,g,cc,c
-    integer :: n_c
+    integer :: j,g,cc,c,p
+    integer :: n_c,n_p
     integer :: lev
 
     character (len = 34) :: fn    !TSMP-PDAF: function name for swc output
@@ -738,17 +786,74 @@ module enkf_clm_mod
     endif
     !end hcp  LAI
 
-    ! skin temperature updating state vector with skin, soil and vegetation temperature
+    ! Skin temperature updating state vector with skin, soil and vegetation temperature.
+    ! Uses gridcell mean: averages over all patches (for TSKIN, TVEG) or
+    ! columns (for TSOIL) within each gridcell.
     if(clmupdate_T==2) then
+
       do cc = 1, clm_varsize
-        ! t_skin iterated over patches
-        clm_statevec(cc)               = t_skin(state_pdaf2clm_p_p(cc))
-        do lev=1,nlevgrnd
-          clm_statevec(cc+lev*clm_varsize) = t_soisno(state_pdaf2clm_c_p(cc+lev*clm_varsize), &
-            state_pdaf2clm_j_p(cc+lev*clm_varsize))
+
+        ! Get gridcell from the reference patch
+        g = patch%gridcell(state_pdaf2clm_p_p(cc))
+
+        ! --- TSKIN: average over patches in gridcell ---
+        clm_statevec(cc) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          if(patch%gridcell(p)==g) then
+            clm_statevec(cc) = clm_statevec(cc) + t_skin(p)
+            n_p = n_p + 1
+          end if
         end do
-        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = t_veg(state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize))
+        if(n_p > 0) then
+          clm_statevec(cc) = clm_statevec(cc) / real(n_p, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TSKIN averaging"
+          error stop "Gridcell without patches in set_clm_statevec_T (TSKIN)"
+        end if
+
+        ! --- TSOIL: average over columns in gridcell (per layer) ---
+        do lev=1,nlevgrnd
+          clm_statevec(cc+lev*clm_varsize) = 0.0
+          n_c = 0
+          do c=clm_begc,clm_endc
+            if(col%gridcell(c)==g) then
+              clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) + t_soisno(c,lev)
+              n_c = n_c + 1
+            end if
+          end do
+          if(n_c > 0) then
+            clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) / real(n_c, r8)
+          else
+            write(*,*) "ERROR: Gridcell g=", g, " layer=", lev, " has no columns for TSOIL averaging"
+            error stop "Gridcell without columns in set_clm_statevec_T (TSOIL)"
+          end if
+        end do
+
+        ! --- TVEG: average over patches in gridcell ---
+        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          if(patch%gridcell(p)==g) then
+            clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) + t_veg(p)
+            n_p = n_p + 1
+          end if
+        end do
+        if(n_p > 0) then
+          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
+          error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
+        end if
+
       end do
+
+      ! Save prior gridcell mean state vector for computing
+      ! increment in updating the state vector
+      do cc = 1, clm_statevecsize
+        clm_statevec_orig(cc) = clm_statevec(cc)
+      end do
+
     endif
 
   end subroutine set_clm_statevec_T
@@ -1020,6 +1125,7 @@ module enkf_clm_mod
     use PatchType , only : patch
     use clm_varpar   , only : nlevgrnd
     use clm_instMod, only : temperature_inst
+    use IEEE_ARITHMETIC, only: ieee_is_nan
 
     implicit none
 
@@ -1030,12 +1136,16 @@ module enkf_clm_mod
     integer :: j
     integer :: c
     integer :: p
+    integer :: cc
     integer :: lev
 
     real(r8), pointer :: t_grnd(:)
     real(r8), pointer :: t_soisno(:,:)
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
+
+    real(r8) :: increment_factor
+    real(r8) :: t_update
 
     character (len = 31) :: fn    !TSMP-PDAF: function name for swc output
 
@@ -1056,15 +1166,54 @@ module enkf_clm_mod
     endif
     ! end hcp TG, TV
 
-    ! skin temperature updating skin, soil and vegetation temperature
+    ! Skin temperature updating skin, soil and vegetation temperature.
+    ! Uses gridcell mean increment factor: applies the ratio of
+    ! (new gridcell mean / old gridcell mean) to each patch/column value.
     if(clmupdate_T==2) then
       do p = clm_begp, clm_endp
         c = patch%column(p)
-        t_skin(p)  = clm_statevec(state_clm2pdaf_p(p,1))
+
+        ! --- TSKIN: update with increment factor ---
+        cc = state_clm2pdaf_p(p,1)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+          t_update = t_skin(p) * increment_factor
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_skin update is NaN at p=", p
+          else
+            t_skin(p) = t_update
+          end if
+        end if
+
+        ! --- TSOIL: update with increment factor for each layer ---
         do lev=1,nlevgrnd
-          t_soisno(c,lev)  = clm_statevec(state_clm2pdaf_p(p,1+lev))
+          cc = state_clm2pdaf_p(p, 1+lev)
+          ! Skip if no significant change in gridcell mean
+          if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_soisno(c,lev) * increment_factor
+            if (ieee_is_nan(t_update)) then
+              print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
+            else
+              t_soisno(c,lev) = t_update
+            end if
+          end if
         end do
-        t_veg(p)   = clm_statevec(state_clm2pdaf_p(p,2+nlevgrnd))
+
+        ! --- TVEG: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 2+nlevgrnd)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+          t_update = t_veg(p) * increment_factor
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_veg update is NaN at p=", p
+          else
+            t_veg(p) = t_update
+          end if
+        end if
+
       end do
     endif
 
@@ -1558,10 +1707,11 @@ module enkf_clm_mod
         n_domains_p = endg - begg + 1
       end if
     else if (clmupdate_T/=0) then
-      ! For LSTDA: patches are domains
-      ! Each patch is a local domain
-      ! -> DIM_L: number of layers in patch
-      n_domains_p = endp - begp + 1
+      ! For LSTDA: gridcells are domains
+      ! Each gridcell is a local domain
+      ! -> DIM_L: number of temperature variables (each with gridcell
+      ! -> averages)
+      n_domains_p = endg - begg + 1
     else
       ! Process-local number of gridcells Default, possibly not tested
       ! for other updates except SWC
@@ -1577,84 +1727,6 @@ module enkf_clm_mod
     ! derived)
 
     if(clmupdate_swc==1) then
-    ! Allocate state_loc2clm_c_p with preliminary n_domains_p
-    IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
-    allocate(state_loc2clm_c_p(n_domains_p))
-    do domain_p=1,n_domains_p
-      state_loc2clm_c_p(domain_p) = ispval
-    end do
-
-    if(clmstatevec_only_active == 1) then
-
-      ! Reset n_domains_p
-      n_domains_p = 0
-      domain_p = 0
-
-      if(clmstatevec_allcol == 1) then
-        ! COLUMNS
-
-        ! Each hydrologically active column is a local domain
-        ! -> DIM_L: number of layers in hydrologically active column
-        do c=clm_begc,clm_endc
-          ! Skip state vector loop and directly check if column is
-          ! hydrologically active
-          if(col%hydrologically_active(c)) then
-            domain_p = domain_p + 1
-            n_domains_p = n_domains_p + 1
-            state_loc2clm_c_p(domain_p) = c
-          end if
-        end do
-
-      else
-        ! GRIDCELLS
-
-        ! For gridcells
-        do g = clm_begg,clm_endg
-
-          ! Search the state vector for col in grc
-          do cc = 1,clm_statevecsize
-
-            if (col%gridcell(state_pdaf2clm_c_p(cc)) == g) then
-              ! Set local domain index
-              domain_p = domain_p + 1
-              ! Set new number of local domains
-              n_domains_p = n_domains_p + 1
-              ! Set CLM-column-index corresponding to local domain
-              state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(cc)
-              ! Exit state vector loop, when fitting column is found
-              exit
-            end if
-          end do
-
-        end do
-
-      end if
-
-    else
-
-      ! Set state_loc2clm_c_p for non-excluding hydrologically
-      ! inactive cols/grcs
-      if(clmstatevec_allcol == 1) then
-        ! COLUMNS
-        do domain_p=1,n_domains_p
-          state_loc2clm_c_p(domain_p) = clm_begc + domain_p - 1
-        end do
-      else
-        ! GRIDCELLS
-        do domain_p=1,n_domains_p
-          state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(domain_p)
-        end do
-      end if
-
-    end if
-    end if
-
-    ! Possibly: Warning when final n_domains_p actually excludes
-    ! hydrologically inactive gridcells
-
-    if(clmupdate_T/=0) then
-      ! For LSTDA: Patches are domains
-
       ! Allocate state_loc2clm_c_p with preliminary n_domains_p
       IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
       allocate(state_loc2clm_c_p(n_domains_p))
@@ -1662,21 +1734,98 @@ module enkf_clm_mod
         state_loc2clm_c_p(domain_p) = ispval
       end do
 
-      ! Columns corresponding to patches
-      do domain_p=1,n_domains_p
-        state_loc2clm_c_p(domain_p) = patch%column(begp + domain_p - 1)
-      end do
+      if(clmstatevec_only_active == 1) then
 
-      ! Allocate state_loc2clm_p_p
+        ! Reset n_domains_p
+        n_domains_p = 0
+        domain_p = 0
+
+        if(clmstatevec_allcol == 1) then
+          ! COLUMNS
+
+          ! Each hydrologically active column is a local domain
+          ! -> DIM_L: number of layers in hydrologically active column
+          do c=clm_begc,clm_endc
+            ! Skip state vector loop and directly check if column is
+            ! hydrologically active
+            if(col%hydrologically_active(c)) then
+              domain_p = domain_p + 1
+              n_domains_p = n_domains_p + 1
+              state_loc2clm_c_p(domain_p) = c
+            end if
+          end do
+
+        else
+          ! GRIDCELLS
+
+          ! For gridcells
+          do g = clm_begg,clm_endg
+
+            ! Search the state vector for col in grc
+            do cc = 1,clm_statevecsize
+
+              if (col%gridcell(state_pdaf2clm_c_p(cc)) == g) then
+                ! Set local domain index
+                domain_p = domain_p + 1
+                ! Set new number of local domains
+                n_domains_p = n_domains_p + 1
+                ! Set CLM-column-index corresponding to local domain
+                state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(cc)
+                ! Exit state vector loop, when fitting column is found
+                exit
+              end if
+            end do
+
+          end do
+
+        end if
+
+      else
+
+        ! Set state_loc2clm_c_p for non-excluding hydrologically
+        ! inactive cols/grcs
+        if(clmstatevec_allcol == 1) then
+          ! COLUMNS
+          do domain_p=1,n_domains_p
+            state_loc2clm_c_p(domain_p) = clm_begc + domain_p - 1
+          end do
+        else
+          ! GRIDCELLS
+          do domain_p=1,n_domains_p
+            state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(domain_p)
+          end do
+        end if
+
+      end if
+    end if
+
+    ! Possibly: Warning when final n_domains_p actually excludes
+    ! hydrologically inactive gridcells
+
+    if(clmupdate_T/=0) then
+      ! For LSTDA: Gridcells are domains
+
+      ! Allocate state_loc2clm_c_p with preliminary n_domains_p
+      IF (allocated(state_loc2clm_c_p)) deallocate(state_loc2clm_c_p)
+      allocate(state_loc2clm_c_p(n_domains_p))
+      do domain_p=1,n_domains_p
+        state_loc2clm_c_p(domain_p) = ispval
+      end do
       IF (allocated(state_loc2clm_p_p)) deallocate(state_loc2clm_p_p)
       allocate(state_loc2clm_p_p(n_domains_p))
       do domain_p=1,n_domains_p
         state_loc2clm_p_p(domain_p) = ispval
       end do
 
-      ! Patches
+      ! Columns from gridcells
+      ! Patches from gridcells
+      !
+      ! domain_p is equal to cc for the first variable TSKIN
+      ! Therefore, state_pdaf2clm_c_p / state_pdaf2clm_p_p can be used
+      ! to derive the corresponding column / patch
       do domain_p=1,n_domains_p
-        state_loc2clm_p_p(domain_p) = begp + domain_p - 1
+        state_loc2clm_c_p(domain_p) = state_pdaf2clm_c_p(domain_p)
+        state_loc2clm_p_p(domain_p) = state_pdaf2clm_p_p(domain_p)
       end do
 
     end if
