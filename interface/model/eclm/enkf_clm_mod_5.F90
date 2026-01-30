@@ -1128,6 +1128,7 @@ module enkf_clm_mod
     use clm_instMod, only : temperature_inst
     use clm_instMod, only : waterstate_inst
     use IEEE_ARITHMETIC, only: ieee_is_nan
+    use shr_const_mod, only: SHR_CONST_TKFRZ
 
     implicit none
 
@@ -1182,6 +1183,8 @@ module enkf_clm_mod
 
         ! If snow is masked, update only, when snow depth is less than 1mm
         mask_snow: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        ! No update for (near-to) freezing soil temperatures
+        mask_freeze: if( t_soisno(c,1) > SHR_CONST_TKFRZ ) then
 
         ! --- TSKIN: update with increment factor ---
         cc = state_clm2pdaf_p(p,1)
@@ -1224,6 +1227,7 @@ module enkf_clm_mod
           end if
         end if
 
+        end if mask_freeze
         end if mask_snow
 
       end do
