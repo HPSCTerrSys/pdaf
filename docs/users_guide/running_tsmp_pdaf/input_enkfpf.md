@@ -63,6 +63,7 @@ statevec_max_layer =
 t_printensemble =
 watmin_switch =
 swc_mask_snow =
+T_mask_snow =
 
 [COSMO]
 nprocs      =
@@ -600,6 +601,17 @@ cover from SWC updates.
 Snow covers larger than 1mm are switched off for the update.
 
 Only takes effect if `CLM:update_swc``is switched on.
+
+Default setting is `0`: No masking of columns with snow cover.
+
+### CLM:T_mask_snow ###
+
+`CLM:T_mask_snow`: (integer) Switch for masking columns with snow
+cover from T updates.
+
+Snow covers larger than 1mm are switched off for the update.
+
+Only takes effect if `CLM:update_T``is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
 

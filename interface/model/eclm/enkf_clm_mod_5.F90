@@ -67,6 +67,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmt_printensemble")       :: clmt_printensemble
   integer(c_int),bind(C,name="clmwatmin_switch")         :: clmwatmin_switch
   integer(c_int),bind(C,name="clmswc_mask_snow")            :: clmswc_mask_snow
+  integer(c_int),bind(C,name="clmT_mask_snow")            :: clmT_mask_snow
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
 
   integer  :: nstep     ! time step index
@@ -1125,6 +1126,7 @@ module enkf_clm_mod
     use PatchType , only : patch
     use clm_varpar   , only : nlevgrnd
     use clm_instMod, only : temperature_inst
+    use clm_instMod, only : waterstate_inst
     use IEEE_ARITHMETIC, only: ieee_is_nan
 
     implicit none
@@ -1144,6 +1146,8 @@ module enkf_clm_mod
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
 
+    real(r8), pointer :: snow_depth(:)
+
     real(r8) :: increment_factor
     real(r8) :: t_update
 
@@ -1155,6 +1159,8 @@ module enkf_clm_mod
     t_veg  => temperature_inst%t_veg_patch
     t_skin => temperature_inst%t_skin_patch
     ! tlai   => canopystate_inst%tlai_patch
+
+    snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
 
     !hcp: TG, TV
     if(clmupdate_T==1) then
@@ -1170,8 +1176,12 @@ module enkf_clm_mod
     ! Uses gridcell mean increment factor: applies the ratio of
     ! (new gridcell mean / old gridcell mean) to each patch/column value.
     if(clmupdate_T==2) then
+
       do p = clm_begp, clm_endp
         c = patch%column(p)
+
+        ! If snow is masked, update only, when snow depth is less than 1mm
+        mask_snow: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
 
         ! --- TSKIN: update with increment factor ---
         cc = state_clm2pdaf_p(p,1)
@@ -1213,6 +1223,8 @@ module enkf_clm_mod
             t_veg(p) = t_update
           end if
         end if
+
+        end if mask_snow
 
       end do
     endif
