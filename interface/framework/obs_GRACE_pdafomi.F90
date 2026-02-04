@@ -1359,7 +1359,6 @@ MODULE obs_GRACE_pdafomi
         end if
         call PDAFomi_deallocate_obs(thisobs)
 
-        ! deallocate also local observation arrays --> this should be done in PDAF but the error persists for the LESTKF while it is not there for the EnKF
         if (allocated(thisobs_l%id_obs_l)) deallocate(thisobs_l%id_obs_l)
         if (allocated(thisobs_l%ivar_obs_l)) deallocate(thisobs_l%ivar_obs_l)
         if (allocated(thisobs_l%distance_l)) deallocate(thisobs_l%distance_l)
