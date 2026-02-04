@@ -316,4 +316,17 @@
 
   END SUBROUTINE prodRinvA_l_pdafomi
 
+  SUBROUTINE deallocate_obs_pdafomi()
+
+    use obs_GRACE_pdafomi, ONLY: deallocate_obs_GRACE
+    use obs_SM_pdafomi, ONLY: deallocate_obs_SM
+
+    implicit none
+
+    CALL deallocate_obs_GRACE()
+    CALL deallocate_obs_SM()
+    !CALL deallocate_obs_C()
+
+  END SUBROUTINE deallocate_obs_pdafomi
+
 #endif

@@ -309,6 +309,10 @@ MODULE obs_GRACE_pdafomi
                     trim(current_observation_filename)
         end if
         dim_obs_p = 0
+        if (allocated(obs_p)) deallocate(obs_p)
+        if (allocated(ivar_obs_p)) deallocate(ivar_obs_p)
+        if (allocated(ocoord_p)) deallocate(ocoord_p)
+        if (allocated(thisobs%id_obs_p)) deallocate(thisobs%id_obs_p)
         ALLOCATE(obs_p(1))
         ALLOCATE(ivar_obs_p(1))
         ALLOCATE(ocoord_p(2, 1))
@@ -316,6 +320,8 @@ MODULE obs_GRACE_pdafomi
         thisobs%infile=0
         CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
            thisobs%ncoord, cradius_GRACE, dim_obs)
+        DEALLOCATE(obs_g)
+        DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
         return
       end if
       thisobs%infile=1
@@ -1339,6 +1345,35 @@ MODULE obs_GRACE_pdafomi
         call check( nf90_close(ncid) )
 
     end subroutine read_temp_mean_model
+
+
+    subroutine deallocate_obs_GRACE()
+
+        USE PDAFomi, ONLY: PDAFomi_deallocate_obs
+        USE PDAFomi_obs_l, ONLY: obs_l_all, firstobs
+
+        implicit none
+
+        if (mype_filter==0) then
+            WRITE (*,*) 'Deallocating observations type GRACE'
+        end if
+        call PDAFomi_deallocate_obs(thisobs)
+
+        ! deallocate also local observation arrays --> this should be done in PDAF but the error persists for the LESTKF while it is not there for the EnKF
+        if (allocated(thisobs_l%id_obs_l)) deallocate(thisobs_l%id_obs_l)
+        if (allocated(thisobs_l%ivar_obs_l)) deallocate(thisobs_l%ivar_obs_l)
+        if (allocated(thisobs_l%distance_l)) deallocate(thisobs_l%distance_l)
+        if (allocated(thisobs_l%cradius_l)) deallocate(thisobs_l%cradius_l)
+        if (allocated(thisobs_l%sradius_l)) deallocate(thisobs_l%sradius_l)
+        if (allocated(thisobs_l%dist_l_v)) deallocate(thisobs_l%dist_l_v)
+        if (allocated(thisobs_l%cradius)) deallocate(thisobs_l%cradius)
+        if (allocated(thisobs_l%sradius)) deallocate(thisobs_l%sradius)
+
+        if (allocated(obs_l_all)) deallocate(obs_l_all)
+
+        firstobs=0
+
+    end subroutine deallocate_obs_GRACE
 
   END MODULE obs_GRACE_pdafomi
 #endif

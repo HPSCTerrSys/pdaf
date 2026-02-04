@@ -337,7 +337,7 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
     status =  nf90_def_var(il_file_id, "SOILLIQ", NF90_FLOAT, dimids, ncvarid(1))
     status =  nf90_def_var(il_file_id, "SOILICE", NF90_FLOAT, dimids, ncvarid(2))
     status =  nf90_def_var(il_file_id, "H2OSNO", NF90_FLOAT, dimids_1level, ncvarid(3))
-    status =  nf90_def_var(il_file_id, "TWS", NF90_FLOAT, dimids_1level, ncvarid(3))
+    status =  nf90_def_var(il_file_id, "TWS", NF90_FLOAT, dimids_1level, ncvarid(4))
     status =  nf90_enddef(il_file_id)
   end if
 
