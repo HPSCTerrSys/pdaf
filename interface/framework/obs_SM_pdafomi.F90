@@ -332,7 +332,7 @@ MODULE obs_SM_pdafomi
         thisobs%infile=0
         CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
            thisobs%ncoord, cradius_SM, dim_obs)
-        DEALLOCATE(obs_g)
+        if (mype_filter==0) DEALLOCATE(obs_g)
         DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
         return
       end if
