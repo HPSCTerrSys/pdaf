@@ -449,7 +449,7 @@ MODULE obs_SM_pdafomi
                   ! Here, I will just set the id_obs_p to 1, not to i to not cause this error for large observation dimensions
                   ! Note that id_obs_p could be used correctly if an internal observation operator is used but in this case, it has to be allocated with dim_obs_p, so after this loop
                   ! This could then be filled with the state vector element index used to predict each observation, for now I set this everywhere to 1.
-                  ! Note that I keep the initial implementation for GRACE as I use the obs_id_p there for the observation operator. But the number of observations is there usually pretty 
+                  ! Note that I keep the initial implementation for GRACE as I use the obs_id_p there for the observation operator. But the number of observations is there usually pretty
                   ! low, so this should not make a problem
                   thisobs%id_obs_p(1,state_clm2pdaf_p(c,layer_obs(i))) = 1
 
