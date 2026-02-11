@@ -321,6 +321,10 @@ MODULE obs_SM_pdafomi
                     trim(current_observation_filename)
         end if
         dim_obs_p = 0
+        if (allocated(obs_p)) deallocate(obs_p)
+        if (allocated(ivar_obs_p)) deallocate(ivar_obs_p)
+        if (allocated(ocoord_p)) deallocate(ocoord_p)
+        if (allocated(thisobs%id_obs_p)) deallocate(thisobs%id_obs_p)
         ALLOCATE(obs_p(1))
         ALLOCATE(ivar_obs_p(1))
         ALLOCATE(ocoord_p(2, 1))
@@ -328,6 +332,8 @@ MODULE obs_SM_pdafomi
         thisobs%infile=0
         CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
            thisobs%ncoord, cradius_SM, dim_obs)
+        if (mype_filter==0) DEALLOCATE(obs_g)
+        DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
         return
       end if
 
@@ -434,7 +440,18 @@ MODULE obs_SM_pdafomi
 
                   dim_obs_p = dim_obs_p + 1
                   ! Use index array for setting the correct state vector index in `obs_id_p`
-                  thisobs%id_obs_p(1,state_clm2pdaf_p(c,layer_obs(i))) = i
+
+
+                  ! id_obs_p has to be allocated but it is not really used when a self implemented observation operator is used. Else, the structure has to point for each observation
+                  ! on the state vector element that is used to predict that observation. The dimension is then not the number of gridcells but dim_obs
+                  ! Normally, this does not yield any error. But when the number of observations is larger than the process-local state vector size, the model will crash.
+                  ! This is caused by an internal check in the PDAFomi_obs_f script: IF (MAXVAL(thisobs%id_obs_p) > dim_p .AND. dim_obs_p>0)
+                  ! Here, I will just set the id_obs_p to 1, not to i to not cause this error for large observation dimensions
+                  ! Note that id_obs_p could be used correctly if an internal observation operator is used but in this case, it has to be allocated with dim_obs_p, so after this loop
+                  ! This could then be filled with the state vector element index used to predict each observation, for now I set this everywhere to 1.
+                  ! Note that I keep the initial implementation for GRACE as I use the obs_id_p there for the observation operator. But the number of observations is there usually pretty 
+                  ! low, so this should not make a problem
+                  thisobs%id_obs_p(1,state_clm2pdaf_p(c,layer_obs(i))) = 1
 
                   if (obs_snapped) then
                     print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR Observation snapped at multiple grid cells."
@@ -978,6 +995,7 @@ MODULE obs_SM_pdafomi
         else
           coords_l(1) = lon(state_loc2clm_c_p(domain_p))
         end if
+        coords_l(2) = lat(state_loc2clm_c_p(domain_p))
 
       else
 
@@ -1311,6 +1329,33 @@ MODULE obs_SM_pdafomi
         deallocate(weight)
 
     end subroutine prodRinvA_l_SM
+
+    subroutine deallocate_obs_SM()
+
+        USE PDAFomi, ONLY: PDAFomi_deallocate_obs
+        USE PDAFomi_obs_l, ONLY: obs_l_all, firstobs
+
+        implicit none
+
+        if (mype_filter==0) then
+            WRITE (*,*) 'Deallocating observations type SM'
+        end if
+        call PDAFomi_deallocate_obs(thisobs)
+
+        if (allocated(thisobs_l%id_obs_l)) deallocate(thisobs_l%id_obs_l)
+        if (allocated(thisobs_l%ivar_obs_l)) deallocate(thisobs_l%ivar_obs_l)
+        if (allocated(thisobs_l%distance_l)) deallocate(thisobs_l%distance_l)
+        if (allocated(thisobs_l%cradius_l)) deallocate(thisobs_l%cradius_l)
+        if (allocated(thisobs_l%sradius_l)) deallocate(thisobs_l%sradius_l)
+        if (allocated(thisobs_l%dist_l_v)) deallocate(thisobs_l%dist_l_v)
+        if (allocated(thisobs_l%cradius)) deallocate(thisobs_l%cradius)
+        if (allocated(thisobs_l%sradius)) deallocate(thisobs_l%sradius)
+
+        if (allocated(obs_l_all)) deallocate(obs_l_all)
+
+        firstobs=0
+
+    end subroutine deallocate_obs_SM
 
 
   END MODULE obs_SM_pdafomi

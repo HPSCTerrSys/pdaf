@@ -90,6 +90,7 @@ contains
     use netcdf, only: nf90_inq_varid
     use netcdf, only: nf90_noerr
     use netcdf, only: nf90_get_var
+    use netcdf, only: nf90_close
     use mod_assimilation, only: screen
     implicit none
 
@@ -225,6 +226,8 @@ contains
             dim_obs_g = dim_obs
 
         end if
+
+        call check( nf90_close(ncid) )
 
     end if
 
