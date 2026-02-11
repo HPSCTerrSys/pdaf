@@ -23,7 +23,7 @@
 !-------------------------------------------------------------------------------------------
 
 module mod_read_obs
-  use iso_C_binding, only: c_int, c_ptr, c_loc
+  use, intrinsic :: iso_C_binding, only: c_int, c_ptr, c_loc
 
   implicit none
 
