@@ -25,7 +25,7 @@
 #if defined CLMSA
 subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
-    use iso_c_binding, only : c_int
+    use, intrinsic :: iso_c_binding, only : c_int
     use shr_kind_mod , only : r8 => shr_kind_r8
     use subgridavemod, only : p2g, c2g
     use domainMod    , only : ldomain

@@ -24,8 +24,8 @@
 
 module enkf_clm_mod
 
-  use iso_c_binding, only: c_int, c_double, c_char
-  use IEEE_ARITHMETIC, only: ieee_is_nan
+  use, intrinsic :: iso_c_binding, only: c_int, c_double, c_char
+  use, intrinsic :: IEEE_ARITHMETIC, only: ieee_is_nan
 
 ! !USES:
   use shr_kind_mod    , only : r8 => shr_kind_r8, SHR_KIND_CL

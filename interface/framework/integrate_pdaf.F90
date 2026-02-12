@@ -24,5 +24,8 @@
 !-------------------------------------------------------------------------------------------
 
 subroutine integrate
+
+  implicit none
+
   print *, "Hello World!"
 end subroutine integrate
