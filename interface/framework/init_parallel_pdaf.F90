@@ -44,18 +44,18 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
 ! over to PDAF in the call to
 ! PDAF\_init\_parallel.
 !
-! 3 Communicators are generated:\\
+! 3 Communicators are generated:
 ! - COMM\_filter: Communicator in which the
-!   filter itself operates\\
+!   filter itself operates
 ! - COMM\_model: Communicators for parallel
-!   model forecasts\\
+!   model forecasts
 ! - COMM\_couple: Communicator for coupling
-!   between models and filter\\
-! Other variables that have to be initialized are:\\
+!   between models and filter
+! Other variables that have to be initialized are:
 ! - filterpe - Logical: Does the PE execute the
-! filter?\\
+! filter?
 ! - my\_ensemble - Integer: The index of the PE's
-! model task\\
+! model task
 ! - local\_npes\_model - Integer array holding
 ! numbers of PEs per model task
 !
