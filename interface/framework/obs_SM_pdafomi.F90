@@ -442,15 +442,42 @@ MODULE obs_SM_pdafomi
                   ! Use index array for setting the correct state vector index in `obs_id_p`
 
 
-                  ! id_obs_p has to be allocated but it is not really used when a self implemented observation operator is used. Else, the structure has to point for each observation
-                  ! on the state vector element that is used to predict that observation. The dimension is then not the number of gridcells but dim_obs
-                  ! Normally, this does not yield any error. But when the number of observations is larger than the process-local state vector size, the model will crash.
-                  ! This is caused by an internal check in the PDAFomi_obs_f script: IF (MAXVAL(thisobs%id_obs_p) > dim_p .AND. dim_obs_p>0)
-                  ! Here, I will just set the id_obs_p to 1, not to i to not cause this error for large observation dimensions
-                  ! Note that id_obs_p could be used correctly if an internal observation operator is used but in this case, it has to be allocated with dim_obs_p, so after this loop
-                  ! This could then be filled with the state vector element index used to predict each observation, for now I set this everywhere to 1.
-                  ! Note that I keep the initial implementation for GRACE as I use the obs_id_p there for the observation operator. But the number of observations is there usually pretty
-                  ! low, so this should not make a problem
+                  ! id_obs_p has to be allocated but it is not really
+                  ! used when a self implemented observation operator
+                  ! is used. Else, the structure has to point for each
+                  ! observation on the state vector element that is
+                  ! used to predict that observation.
+                  !
+                  ! The dimension is then not the number of gridcells
+                  ! but dim_obs
+                  !
+                  ! Normally, this does not yield any error. But when
+                  ! the number of observations is larger than the
+                  ! process-local state vector size, the model will
+                  ! crash.
+                  !
+                  ! This is caused by an internal check in the
+                  ! PDAFomi_obs_f script: IF (MAXVAL(thisobs%id_obs_p)
+                  ! > dim_p .AND. dim_obs_p>0)
+                  !
+                  ! Here, I will just set the id_obs_p to 1, not to i
+                  ! to not cause this error for large observation
+                  ! dimensions
+                  !
+                  ! Note that id_obs_p could be used correctly if an
+                  ! internal observation operator is used but in this
+                  ! case, it has to be allocated with dim_obs_p, so
+                  ! after this loop
+                  !
+                  ! This could then be filled with the state vector
+                  ! element index used to predict each observation,
+                  ! for now I set this everywhere to 1.
+                  !
+                  ! Note that I keep the initial implementation for
+                  ! GRACE as I use the obs_id_p there for the
+                  ! observation operator. But the number of
+                  ! observations is there usually pretty low, so this
+                  ! should not make a problem
                   thisobs%id_obs_p(1,state_clm2pdaf_p(c,layer_obs(i))) = 1
 
                   if (obs_snapped) then
@@ -1134,11 +1161,20 @@ MODULE obs_SM_pdafomi
 
         ALLOCATE(id_start(npes_filter), id_end(npes_filter))
 
-        ! Initialize indices --> we only have information about local obs. dims per PE, so we get the global indices, more generalizable than using
-        ! the arrays initiliazed in init_dim_obs_SM as we can also consider different observation types in one observation file. Arrays from init_dim_obs_pdaf
-        ! (e.g. obs_nc2pdaf) may not be necessary anymore, @ Johannes, please have a check here., see also in PDAFomi_obs_f.F90, there the same code is used
-        ! addition: I also use now the obs_pdaf2nc for reordering the observation covariance matrix to the PDAF internal order
-        ! So for an obs type where correlations should be accounted for, this should not be removed!
+        ! Initialize indices --> we only have information about local
+        ! obs. dims per PE, so we get the global indices, more
+        ! generalizable than using the afrrays initiliazed in
+        ! init_dim_obs_SM as we can also consider different
+        ! observation types in one observation file. Arrays from
+        ! init_dim_obs_pdaf (e.g. obs_nc2pdaf) may not be necessary
+        ! anymore, @ Johannes, please have a check here., see also in
+        ! PDAFomi_obs_f.F90, there the same code is used
+        !
+        ! addition: I also use now the obs_pdaf2nc for reordering the
+        ! observation covariance matrix to the PDAF internal order
+        !
+        ! So for an obs type where correlations should be accounted
+        ! for, this should not be removed!
 
         pe = 1
         id_start(1) = 1
@@ -1185,7 +1221,9 @@ MODULE obs_SM_pdafomi
 
         ALLOCATE(id_start(npes_filter), id_end(npes_filter))
 
-        ! Initialize indices --> we only have information about local obs. dims per PE, so we use the same logic as in add_obs_err_SM
+        ! Initialize indices --> we only have information about local
+        ! obs. dims per PE, so we use the same logic as in
+        ! add_obs_err_SM
         pe = 1
         id_start(1) = 1
         IF (thisobs%obsid>1) id_start(1) = id_start(1) + sum(obsdims(1, 1:thisobs%obsid-1))
@@ -1196,7 +1234,9 @@ MODULE obs_SM_pdafomi
             id_end(pe) = id_start(pe) + obsdims(pe,thisobs%obsid) - 1
         END DO
 
-        ! Initialize mapping vector (to be used in PDAF_enkf_obs_ensemble) --> has to be initialized here, else there will be errors!
+        ! Initialize mapping vector (to be used in
+        ! PDAF_enkf_obs_ensemble) --> has to be initialized here, else
+        ! there will be errors!
         cnt = 1
         IF (thisobs%obsid-1 > 0) cnt = cnt+ SUM(obsdims(:,1:thisobs%obsid-1))
         DO pe = 1, npes_filter
@@ -1209,8 +1249,12 @@ MODULE obs_SM_pdafomi
         cnt = 1
         DO pe = 1, npes_filter
             DO i = id_start(pe), id_end(pe)
-              covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt) ! the inverse of the observation variance is saved for each observation, so we do not need any other
-              ! array here. As we initiliazed the indices for each process, we also can just take index cnt instead of complicated mapping between nc and pdaf indices
+              ! the inverse of the observation variance is saved for
+              ! each observation, so we do not need any other
+              covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt)
+              ! array here. As we initiliazed the indices for each
+              ! process, we also can just take index cnt instead of
+              ! complicated mapping between nc and pdaf indices
               cnt = cnt + 1
             ENDDO
         ENDDO
@@ -1260,7 +1304,8 @@ MODULE obs_SM_pdafomi
 
         INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
         INTEGER, INTENT(in) :: step                 ! Current time step
-        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible,
+                                                   ! then we have to access with thisobs_l%dim_obs_l
         INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
         REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
         REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine

@@ -217,7 +217,8 @@ MODULE obs_GRACE_pdafomi
       REAL, ALLOCATABLE :: obs_g(:)        ! Global observation vector
       REAL, ALLOCATABLE :: ivar_obs_p(:)   ! PE-local inverse observation error variance
       REAL, ALLOCATABLE :: ocoord_p(:,:)   ! PE-local observation coordinates
-      REAL, ALLOCATABLE :: clm_obscov(:,:) ! full observation error covariance matrix before removing observations that cannot be seen by enough gridcells
+      REAL, ALLOCATABLE :: clm_obscov(:,:) ! full observation error covariance matrix before removing
+                                           ! observations that cannot be seen by enough gridcells
       CHARACTER(len=2) :: stepstr          ! String for time step
       character (len = 110) :: current_observation_filename
 
@@ -565,7 +566,8 @@ MODULE obs_GRACE_pdafomi
 
     dim_obs = count(vec_useObs_global)
 
-    if (multierr==2) then ! compute inverse of covariance matrix for prodRinvA, has to be before PDAFomi_gather_obs because the routine changes dim_obs
+    if (multierr==2) then ! compute inverse of covariance matrix for prodRinvA, has to be before
+                          ! PDAFomi_gather_obs because the routine changes dim_obs
 
         if (allocated(obscov_inv)) deallocate(obscov_inv)
         allocate(obscov_inv(dim_obs, dim_obs))
@@ -680,6 +682,8 @@ MODULE obs_GRACE_pdafomi
 
         use mod_parallel_pdaf, &
                 only: comm_filter
+        use mod_parallel_pdaf, only: abort_parallel
+        use mod_parallel_pdaf, only: mype_world
 
         use clm_varpar   , only : nlevsoi
 
@@ -804,6 +808,12 @@ MODULE obs_GRACE_pdafomi
                     g = hactiveg_levels(count,13)
                     tws_from_statevector(g) = tws_from_statevector(g) + state_p(count + clm_varsize_tws(1) + clm_varsize_tws(2))
                 end do
+
+            case default
+
+              print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR", &
+                " invalid `state_setup` in obs_GRACE_pdafomi.F90."
+              call abort_parallel()
 
             end select
 
@@ -986,6 +996,8 @@ MODULE obs_GRACE_pdafomi
         use mod_read_obs, only: multierr
         USE mod_parallel_pdaf, &
           ONLY: npes_filter
+        USE mod_parallel_pdaf, ONLY: abort_parallel
+        USE mod_parallel_pdaf, ONLY: mype_world
 
         use PDAFomi, only: obsdims
 
@@ -1026,6 +1038,12 @@ MODULE obs_GRACE_pdafomi
                     C(i,j) = C(i,j) + obscov(obs_pdaf2nc(i),obs_pdaf2nc(j))
                 end do
             end do
+        case default
+
+          print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR", &
+            " invalid `multierr` in obs_GRACE_pdafomi.F90."
+          call abort_parallel()
+
         end select
 
 
@@ -1040,6 +1058,8 @@ MODULE obs_GRACE_pdafomi
 
         USE mod_parallel_pdaf, &
           ONLY: npes_filter
+        USE mod_parallel_pdaf, ONLY: abort_parallel
+        USE mod_parallel_pdaf, ONLY: mype_world
 
         use PDAFomi, only: obsdims, map_obs_id
 
@@ -1105,6 +1125,12 @@ MODULE obs_GRACE_pdafomi
 
             isdiag = .FALSE.
 
+        case default
+
+          print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR", &
+            " invalid `multierr` in obs_GRACE_pdafomi.F90."
+          call abort_parallel()
+
         end select
 
 
@@ -1119,6 +1145,8 @@ MODULE obs_GRACE_pdafomi
         use mod_read_obs, only: multierr
         use mod_assimilation, only: obscov_inv, obs_pdaf2nc
         use shr_kind_mod, only: r8 => shr_kind_r8
+        USE mod_parallel_pdaf, ONLY: abort_parallel
+        USE mod_parallel_pdaf, ONLY: mype_world
 
         INTEGER, INTENT(in) :: step                ! Current time step
         INTEGER, INTENT(in) :: dim_obs_p           ! PE-local dimension of obs. vector
@@ -1149,6 +1177,12 @@ MODULE obs_GRACE_pdafomi
                 end do
             end do
             C_p(off+1:off+thisobs%dim_obs_f,:) = matmul(obscov_inv_l,A_p(off+1:off+thisobs%dim_obs_f,:))
+        case default
+
+          print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR", &
+            " invalid `multierr` in obs_GRACE_pdafomi.F90."
+          call abort_parallel()
+
         end select
 
 
@@ -1161,12 +1195,15 @@ MODULE obs_GRACE_pdafomi
         use mod_assimilation, only: obscov, obs_pdaf2nc, cradius_GRACE, locweight
         use mod_read_obs, only: multierr
         use PDAFomi, only: PDAFomi_observation_localization_weights
+        USE mod_parallel_pdaf, ONLY: abort_parallel
+        USE mod_parallel_pdaf, ONLY: mype_world
 
         implicit none
 
         INTEGER, INTENT(in) :: domain_p             ! Current local analysis domain
         INTEGER, INTENT(in) :: step                 ! Current time step
-        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible, then we have to access with thisobs_l%dim_obs_l
+        INTEGER, INTENT(in) :: dim_obs             ! Dimension of local observation vector, multiple observation types possible,
+                                                   ! then we have to access with thisobs_l%dim_obs_l
         INTEGER, INTENT(in) :: rank                 ! Rank of initial covariance matrix
         REAL, INTENT(in)    :: obs_l(dim_obs)     ! Local vector of observations
         REAL, INTENT(inout) :: A_l(dim_obs, rank) ! Input matrix from analysis routine
@@ -1283,6 +1320,12 @@ MODULE obs_GRACE_pdafomi
             end do
 
             C_l(off+1:off+thisobs_l%dim_obs_l,:) = matmul(obscov_inv_l,A_l(off+1:off+thisobs_l%dim_obs_l,:))
+
+        case default
+
+          print *, "TSMP-PDAF mype(w)=", mype_world, ": ERROR", &
+            " invalid `multierr` in obs_GRACE_pdafomi.F90."
+          call abort_parallel()
 
         end select
 

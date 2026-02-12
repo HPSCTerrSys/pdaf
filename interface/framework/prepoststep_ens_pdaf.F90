@@ -110,7 +110,9 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
     LOGICAL, SAVE :: firstio = .TRUE.   ! File output is peformed for first time?
     LOGICAL, SAVE :: firsttime = .TRUE. ! Routine is called for first time?
-    LOGICAL, SAVE :: firsttime_omi = .TRUE. ! Routine is called for first time? --> for PDAF OMI, for backward compatibility if the statement in 1==2 should be used at one point
+    LOGICAL, SAVE :: firsttime_omi = .TRUE. ! Routine is called for first time?
+                                            ! --> for PDAF OMI, for backward compatibility
+                                            ! if the statement in 1==2 should be used at one point
     REAL :: invdim_ens                  ! Inverse ensemble size
     REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
     REAL :: rmserror_est                ! estimated RMS error
