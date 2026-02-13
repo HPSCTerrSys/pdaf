@@ -64,6 +64,7 @@ t_printensemble =
 watmin_switch =
 swc_mask_snow =
 T_mask_snow =
+T_mask_T =
 
 [COSMO]
 nprocs      =
@@ -615,6 +616,17 @@ Only takes effect if `CLM:update_T``is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
 
+### CLM:T_mask_T ###
+
+`CLM:T_mask_T`: (double) Temperature difference to add to freezing
+temperature resulting in a threshold temperature for masking out T
+updates.  Whenever the soil temperature of the surface layer falls
+below this threshold temperature, no T is not updated.
+
+Only takes effect if `CLM:update_T``is switched on.
+
+Default setting is `0.`: Masking updates below freezing temperaturs.
+
 (enkfpf:cosmo)=
 ## [COSMO] ##
 
@@ -914,6 +926,8 @@ Default: 0, output turned off.
  |           | `statevec_max_layer`    | 25            |
  |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
+ |           | `T_mask_snow`           | 0             |
+ |           | `T_mask_T`              | 0.0           |
  | `[COSMO]` |                         |               |
  |           | `nprocs`                | 0             |
  |           | `dtmult`                | 0             |

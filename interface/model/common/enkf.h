@@ -140,3 +140,4 @@ GLOBAL double dampfac_state_time_dependent;
 GLOBAL double dampfac_param_time_dependent;
 GLOBAL double da_crns_depth_tol;
 GLOBAL double clmcrns_bd;
+GLOBAL double clmT_mask_T;
