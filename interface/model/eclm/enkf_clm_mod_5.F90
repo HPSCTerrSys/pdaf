@@ -68,6 +68,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmwatmin_switch")         :: clmwatmin_switch
   integer(c_int),bind(C,name="clmswc_mask_snow")            :: clmswc_mask_snow
   integer(c_int),bind(C,name="clmT_mask_snow")            :: clmT_mask_snow
+  real(c_double),bind(C,name="clmT_mask_T")            :: clmT_mask_T
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
 
   integer  :: nstep     ! time step index
@@ -1184,7 +1185,7 @@ module enkf_clm_mod
         ! If snow is masked, update only, when snow depth is less than 1mm
         mask_snow: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
         ! No update for (near-to) freezing soil temperatures
-        mask_freeze: if( t_soisno(c,1) > SHR_CONST_TKFRZ ) then
+        mask_freeze: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
         ! --- TSKIN: update with increment factor ---
         cc = state_clm2pdaf_p(p,1)
