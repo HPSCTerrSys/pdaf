@@ -66,11 +66,9 @@ OBJ_USER_GEN =  init_ens_pdaf.o \
 		distribute_state_pdaf.o \
 		collect_state_pdaf.o
 
-# User-supplied routines for state in localized analysis (LESTKF/LSEIK/LETKF)
+# User-supplied routines for state in localized analysis (LESTKF/LSEIK/LETKF/LNETF/LKNETF)
 OBJ_USER_LOCAL = init_n_domains_pdaf.o \
-		init_dim_l_pdaf.o \
-		g2l_state_pdaf.o \
-		l2g_state_pdaf.o 
+		init_dim_l_pdaf.o
 
 # Full list of user-supplied routines for online mode
 OBJ_PDAF_USER = $(OBJ_USER_PDAFOMI) $(OBJ_PDAF_INT) $(OBJ_USER_GEN) $(OBJ_USER_LOCAL)
@@ -105,7 +103,7 @@ model_pdaf : libpdaf-d.a \
 
 libpdaf-d.a: 
 	@echo "++++++ Generate Filter library ++++++"
-	@cd $(BASEDIR)/src; make;
+	@cd $(BASEDIR); make;
 
 
 ######################################################
@@ -130,7 +128,7 @@ clean :
 
 cleanpdaf:
 	@echo "+++ Clean up PDAF directory"
-	cd $(BASEDIR)/src; make clean
+	cd $(BASEDIR); make clean
 
 cleandata:
 	rm -f ens*ana.txt ens*for.txt state_*ana.txt state_*for.txt stateB_*txt ensB*.txt
