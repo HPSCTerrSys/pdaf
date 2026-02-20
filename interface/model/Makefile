@@ -72,7 +72,7 @@ $(info $$OBJ is [${OBJ}])
 all: libmodel.a
 
 libmodel.a: $(OBJ)
-	ar rcs $@ *.o 
+	ar rcs $@ $(OBJ) 
 	ranlib $@
 	mv $@ $(TSMPPDAFLIBDIR)
 	@echo "library compilation suceeded"
@@ -93,4 +93,4 @@ wrapper_tsmp.o:
 	$(PREP_C) $(FC) $(OPT) $(FCPP_FLAGS) $(FFLAGS) $(FINCS) -c $< -o $@
 
 clean:
-	rm -f *.o *.mod $(PROG) libmodel.a 
+	rm -f *.o *.mod $(PROG) libmodel.a
