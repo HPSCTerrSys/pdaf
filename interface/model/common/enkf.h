@@ -98,6 +98,7 @@ GLOBAL int clmt_printensemble;
 GLOBAL int clmwatmin_switch;
 GLOBAL int clmswc_mask_snow;
 GLOBAL int clmT_mask_snow;
+GLOBAL int clmincrement_type;
 GLOBAL int dtmult_cosmo;
 GLOBAL int pf_olfmasking;
 GLOBAL int pf_olfmasking_param;

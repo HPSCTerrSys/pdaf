@@ -68,6 +68,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmwatmin_switch")         :: clmwatmin_switch
   integer(c_int),bind(C,name="clmswc_mask_snow")            :: clmswc_mask_snow
   integer(c_int),bind(C,name="clmT_mask_snow")            :: clmT_mask_snow
+  integer(c_int),bind(C,name="clmincrement_type")            :: clmincrement_type
   real(c_double),bind(C,name="clmT_mask_T")            :: clmT_mask_T
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
 
@@ -1191,8 +1192,13 @@ module enkf_clm_mod
         cc = state_clm2pdaf_p(p,1)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-          increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
-          t_update = t_skin(p) * increment_factor
+          increment_type: if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_skin(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            t_update = t_skin(p) + increment_factor
+          end if increment_type
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
@@ -1205,8 +1211,13 @@ module enkf_clm_mod
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
-            t_update = t_soisno(c,lev) * increment_factor
+            increment_type: if( (clmincrement_type == 0)) then
+              increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+              t_update = t_soisno(c,lev) * increment_factor
+            else
+              increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+              t_update = t_soisno(c,lev) + increment_factor
+            end if increment_type
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
@@ -1219,8 +1230,13 @@ module enkf_clm_mod
         cc = state_clm2pdaf_p(p, 2+nlevgrnd)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-          increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
-          t_update = t_veg(p) * increment_factor
+          increment_type: if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_veg(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            t_update = t_veg(p) + increment_factor
+          end if increment_type
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else

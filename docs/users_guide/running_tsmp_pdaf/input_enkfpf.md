@@ -64,6 +64,7 @@ t_printensemble =
 watmin_switch =
 swc_mask_snow =
 T_mask_snow =
+increment_type =
 T_mask_T =
 
 [COSMO]
@@ -615,6 +616,18 @@ Snow covers larger than 1mm are switched off for the update.
 Only takes effect if `CLM:update_T``is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
+
+### CLM:increment_type ###
+
+`CLM:increment_type`: (integer) Switch for changing increment type in
+T-update.
+
+- `0`: Multiplicative increment
+- `1`: Additive increment
+
+Only takes effect if `CLM:update_T` is switched on.
+
+Default setting is `0`: Multiplicative increment.
 
 ### CLM:T_mask_T ###
 
