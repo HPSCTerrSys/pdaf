@@ -64,7 +64,9 @@ t_printensemble =
 watmin_switch =
 swc_mask_snow =
 T_mask_snow =
+increment_type =
 T_mask_T =
+T_max_increment =
 
 [COSMO]
 nprocs      =
@@ -615,6 +617,28 @@ Snow covers larger than 1mm are switched off for the update.
 Only takes effect if `CLM:update_T``is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
+
+### CLM:increment_type ###
+
+`CLM:increment_type`: (integer) Switch for changing increment type in
+T-update.
+
+- `0`: Multiplicative increment
+- `1`: Additive increment
+
+Only takes effect if `CLM:update_T` is switched on.
+
+Default setting is `0`: Multiplicative increment.
+
+### CLM:T_max_increment ###
+
+`CLM:T_max_increment`: (double) Maximum T-increment to update
+(additively).
+
+Only takes effect if `CLM:update_T` is switched on and
+`CLM:increment_type` is set to `1`.
+
+Default setting is `5.0`: Updates larger than 5K are not applied.
 
 ### CLM:T_mask_T ###
 
