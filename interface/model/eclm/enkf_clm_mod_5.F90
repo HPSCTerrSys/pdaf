@@ -71,6 +71,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmincrement_type")            :: clmincrement_type
   real(c_double),bind(C,name="clmT_mask_T")            :: clmT_mask_T
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
+  real(c_double),bind(C,name="clmT_max_increment")      :: clmT_max_increment
 
   integer  :: nstep     ! time step index
   real(r8) :: dtime     ! time step increment (sec)
@@ -1197,7 +1198,11 @@ module enkf_clm_mod
             t_update = t_skin(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            t_update = t_skin(p) + increment_factor
+            if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_skin(p) + increment_factor
+            else
+              print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
+            end if
           end if increment_type
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
@@ -1216,7 +1221,11 @@ module enkf_clm_mod
               t_update = t_soisno(c,lev) * increment_factor
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-              t_update = t_soisno(c,lev) + increment_factor
+              if (abs(increment_factor) < clmT_max_increment) then
+                t_update = t_soisno(c,lev) + increment_factor
+              else
+                print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
+              end if
             end if increment_type
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
@@ -1235,7 +1244,11 @@ module enkf_clm_mod
             t_update = t_veg(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            t_update = t_veg(p) + increment_factor
+            if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_veg(p) + increment_factor
+            else
+              print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
+            end if
           end if increment_type
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p

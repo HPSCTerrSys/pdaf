@@ -66,6 +66,7 @@ swc_mask_snow =
 T_mask_snow =
 increment_type =
 T_mask_T =
+T_max_increment =
 
 [COSMO]
 nprocs      =
@@ -628,6 +629,16 @@ T-update.
 Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0`: Multiplicative increment.
+
+### CLM:T_max_increment ###
+
+`CLM:T_max_increment`: (double) Maximum T-increment to update
+(additively).
+
+Only takes effect if `CLM:update_T` is switched on and
+`CLM:increment_type` is set to `1`.
+
+Default setting is `5.0`: Updates larger than 5K are not applied.
 
 ### CLM:T_mask_T ###
 
