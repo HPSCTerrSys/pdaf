@@ -1380,9 +1380,9 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_1: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
         ! No update for (near-to) freezing soil temperatures
-        mask_freeze: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
+        mask_freeze_1: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
         ! --- TSKIN: update with increment factor ---
         cc = state_clm2pdaf_p(p,1)
@@ -1452,8 +1452,8 @@ module enkf_clm_mod
           end if
         end if
 
-        end if mask_freeze
-        end if mask_snow
+        end if mask_freeze_1
+        end if mask_snow_1
 
       end do
     endif
@@ -1467,15 +1467,15 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_2: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
         ! No update for (near-to) freezing soil temperatures
-        mask_freeze: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
+        mask_freeze_2: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
         ! --- TSKIN: update with increment factor ---
         cc = state_clm2pdaf_p(p,1)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-          increment_type: if( (clmincrement_type == 0)) then
+          if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_skin(p) * increment_factor
           else
@@ -1485,7 +1485,7 @@ module enkf_clm_mod
             else
               print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
             end if
-          end if increment_type
+          end if
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
@@ -1561,8 +1561,8 @@ module enkf_clm_mod
           end if
         end if
 
-        end if mask_freeze
-        end if mask_snow
+        end if mask_freeze_2
+        end if mask_snow_2
 
       end do
     endif
