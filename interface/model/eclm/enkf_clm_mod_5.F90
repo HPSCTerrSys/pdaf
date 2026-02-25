@@ -1193,7 +1193,7 @@ module enkf_clm_mod
         cc = state_clm2pdaf_p(p,1)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-          increment_type: if( (clmincrement_type == 0)) then
+          if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_skin(p) * increment_factor
           else
@@ -1203,7 +1203,7 @@ module enkf_clm_mod
             else
               print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
             end if
-          end if increment_type
+          end if
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
@@ -1216,7 +1216,7 @@ module enkf_clm_mod
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-            increment_type: if( (clmincrement_type == 0)) then
+            if( (clmincrement_type == 0)) then
               increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
               t_update = t_soisno(c,lev) * increment_factor
             else
@@ -1226,7 +1226,7 @@ module enkf_clm_mod
               else
                 print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
               end if
-            end if increment_type
+            end if
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
@@ -1239,7 +1239,7 @@ module enkf_clm_mod
         cc = state_clm2pdaf_p(p, 2+nlevgrnd)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
-          increment_type: if( (clmincrement_type == 0)) then
+          if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_veg(p) * increment_factor
           else
@@ -1249,7 +1249,7 @@ module enkf_clm_mod
             else
               print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
             end if
-          end if increment_type
+          end if
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else
