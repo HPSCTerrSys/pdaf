@@ -1396,7 +1396,7 @@ module enkf_clm_mod
             if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
-              t_update = t_skin(p)
+              t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
               print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
             end if
           end if
@@ -1420,7 +1420,7 @@ module enkf_clm_mod
               if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
-                t_update = t_soisno(c,lev)
+                t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
                 print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
               end if
             end if
@@ -1444,7 +1444,7 @@ module enkf_clm_mod
             if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
-              t_update = t_veg(p)
+              t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
               print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
             end if
           end if
@@ -1486,7 +1486,7 @@ module enkf_clm_mod
             if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
-              t_update = t_skin(p)
+              t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
               print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
             end if
           end if
@@ -1510,7 +1510,7 @@ module enkf_clm_mod
               if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
-                t_update = t_soisno(c,lev)
+                t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
                 print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
               end if
             end if
@@ -1534,7 +1534,7 @@ module enkf_clm_mod
             if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
-              t_update = t_veg(p)
+              t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
               print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
             end if
           end if
@@ -1557,7 +1557,7 @@ module enkf_clm_mod
             if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_grnd(c) + increment_factor
             else
-              t_update = t_grnd(c)
+              t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
               print *, "WARNING: t_grnd increment is larger then T_max_increment at c=", c
             end if
           end if
