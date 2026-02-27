@@ -1352,6 +1352,11 @@ module enkf_clm_mod
 
     character (len = 31) :: fn    !TSMP-PDAF: function name for swc output
 
+    logical :: incr_warn_switch_skin, incr_warn_switch_soisno, &
+               incr_warn_switch_veg, incr_warn_switch_grnd
+    integer :: incr_warn_count_skin, incr_warn_count_soisno, &
+               incr_warn_count_veg, incr_warn_count_grnd
+
     ! LST
     t_grnd => temperature_inst%t_grnd_col
     t_soisno => temperature_inst%t_soisno_col
@@ -1360,6 +1365,15 @@ module enkf_clm_mod
     ! tlai   => canopystate_inst%tlai_patch
 
     snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
+
+    incr_warn_switch_skin   = .true.
+    incr_warn_switch_soisno = .true.
+    incr_warn_switch_veg    = .true.
+    incr_warn_switch_grnd   = .true.
+    incr_warn_count_skin    = 0
+    incr_warn_count_soisno  = 0
+    incr_warn_count_veg     = 0
+    incr_warn_count_grnd    = 0
 
     !hcp: TG, TV
     if(clmupdate_T==1) then
@@ -1397,7 +1411,11 @@ module enkf_clm_mod
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
-              print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
+              incr_warn_count_skin = incr_warn_count_skin + 1
+              if(incr_warn_switch_skin) then
+                print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
+                incr_warn_switch_skin = .false.
+              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1421,7 +1439,11 @@ module enkf_clm_mod
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
-                print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
+                incr_warn_count_soisno = incr_warn_count_soisno + 1
+                if(incr_warn_switch_soisno) then
+                  print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
+                  incr_warn_switch_soisno = .false.
+                end if
               end if
             end if
             if (ieee_is_nan(t_update)) then
@@ -1445,7 +1467,11 @@ module enkf_clm_mod
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
-              print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
+              incr_warn_count_veg = incr_warn_count_veg + 1
+              if(incr_warn_switch_veg) then
+                print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
+                incr_warn_switch_veg = .false.
+              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1459,6 +1485,9 @@ module enkf_clm_mod
         end if mask_snow_1
 
       end do
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", incr_warn_count_veg
     endif
 
     ! Skin temperature updating skin, soil, vegetation and ground temperature.
@@ -1487,7 +1516,11 @@ module enkf_clm_mod
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
-              print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
+              incr_warn_count_skin = incr_warn_count_skin + 1
+              if(incr_warn_switch_skin) then
+                print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
+                incr_warn_switch_skin = .false.
+              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1511,7 +1544,11 @@ module enkf_clm_mod
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
-                print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
+                incr_warn_count_soisno = incr_warn_count_soisno + 1
+                if(incr_warn_switch_soisno) then
+                  print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
+                  incr_warn_switch_soisno = .false.
+                end if
               end if
             end if
             if (ieee_is_nan(t_update)) then
@@ -1535,7 +1572,11 @@ module enkf_clm_mod
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
-              print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
+              incr_warn_count_veg = incr_warn_count_veg + 1
+              if(incr_warn_switch_veg) then
+                print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
+                incr_warn_switch_veg = .false.
+              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1558,7 +1599,11 @@ module enkf_clm_mod
               t_update = t_grnd(c) + increment_factor
             else
               t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
-              print *, "WARNING: t_grnd increment is larger then T_max_increment at c=", c
+              incr_warn_count_grnd = incr_warn_count_grnd + 1
+              if(incr_warn_switch_grnd) then
+                print *, "WARNING: t_grnd increment is larger then T_max_increment at c=", c
+                incr_warn_switch_grnd = .false.
+              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1572,6 +1617,10 @@ module enkf_clm_mod
         end if mask_snow_2
 
       end do
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", incr_warn_count_veg
+      if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", incr_warn_count_grnd
     endif
 
 #ifdef PDAF_DEBUG
