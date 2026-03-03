@@ -912,7 +912,7 @@ Default: 0, output turned off.
 ## Parameter Summary ##
 
  | section   | parameter               | default value |
- |:---------:|:-----------------------:|:-------------:|
+ |:----------|:------------------------|:--------------|
  | `[PF]`    |                         |               |
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
@@ -942,6 +942,8 @@ Default: 0, output turned off.
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
  |           | `update_swc`            | 1             |
+ |           | `update_texture`        | 0             |
+ |           | `update_T`              | 0             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `statevec_allcol`       | 0             |
