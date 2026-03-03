@@ -508,6 +508,14 @@ State vector variables updated for each option:
 -  3: Like `2`, but additionally updates ground temperature (`t_grnd`).
    State vector: TSKIN, TSOIL (nlevgrnd layers), TVEG, TGRND.
 
+-  4: Like `2`, but additionally updates surface water temperature
+   (`t_h2osfc`).
+   State vector: TSKIN, TSOIL (nlevgrnd layers), TVEG, T_H2OSFC.
+
+-  5: Like `3`, but additionally updates surface water temperature
+   (`t_h2osfc`).
+   State vector: TSKIN, TSOIL (nlevgrnd layers), TVEG, TGRND, T_H2OSFC.
+
 ### CLM:print_swc ###
 
 `CLM:print_swc`: (integer) If set to `1`, the updated soil moisture
