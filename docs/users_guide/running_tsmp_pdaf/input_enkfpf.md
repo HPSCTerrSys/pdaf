@@ -485,16 +485,28 @@ CLM (standalone only).
 
 ### CLM:update_T ###
 
-`CLM:update_T`: (integer) Flag for updating of ground and vegetation
-temperature.
+`CLM:update_T`: (integer) Flag for updating temperature variables in
+eCLM via LST data assimilation.
 
--  0: No update of ground and vegetation temperature
+The observation operator uses the skin temperature (TSKIN) as the
+simulated LST equivalent for all options except `1`.
 
--  1: Update of ground and vegetation temperature
+State vector variables updated for each option:
 
--  2: Update of soil and vegetation temperature (prognostic variables)
-   based on comparison of satellite LST with skin temperature
-   (diagnostic variable)
+-  0: No update of temperature variables.
+
+-  1: Update of ground temperature (`t_grnd`) and vegetation
+   temperature (`t_veg`) directly. The simulated LST is computed from
+   `t_grnd` and `t_veg` using a radiometric mixing formula (Kustas
+   2009, Eq. 7) with LAI.
+
+-  2: Gridcell-mean update of skin temperature (`t_skin`), soil/snow
+   temperatures (`t_soisno`, all `nlevgrnd` layers), and vegetation
+   temperature (`t_veg`). Updates are applied as gridcell-mean
+   increment factors to each individual patch/column value.
+
+-  3: Like `2`, but additionally updates ground temperature (`t_grnd`).
+   State vector: TSKIN, TSOIL (nlevgrnd layers), TVEG, TGRND.
 
 ### CLM:print_swc ###
 
@@ -912,7 +924,7 @@ Default: 0, output turned off.
 ## Parameter Summary ##
 
  | section   | parameter               | default value |
- |:---------:|:-----------------------:|:-------------:|
+ |:----------|:------------------------|:--------------|
  | `[PF]`    |                         |               |
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
@@ -942,6 +954,8 @@ Default: 0, output turned off.
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
  |           | `update_swc`            | 1             |
+ |           | `update_texture`        | 0             |
+ |           | `update_T`              | 0             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `statevec_allcol`       | 0             |
