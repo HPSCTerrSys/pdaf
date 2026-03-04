@@ -1352,8 +1352,6 @@ module enkf_clm_mod
 
     character (len = 31) :: fn    !TSMP-PDAF: function name for swc output
 
-    logical :: incr_warn_switch_skin, incr_warn_switch_soisno, &
-               incr_warn_switch_veg, incr_warn_switch_grnd
     integer :: incr_warn_count_skin, incr_warn_count_soisno, &
                incr_warn_count_veg, incr_warn_count_grnd
 
@@ -1366,10 +1364,6 @@ module enkf_clm_mod
 
     snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
 
-    incr_warn_switch_skin   = .true.
-    incr_warn_switch_soisno = .true.
-    incr_warn_switch_veg    = .true.
-    incr_warn_switch_grnd   = .true.
     incr_warn_count_skin    = 0
     incr_warn_count_soisno  = 0
     incr_warn_count_veg     = 0
@@ -1412,10 +1406,6 @@ module enkf_clm_mod
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
               incr_warn_count_skin = incr_warn_count_skin + 1
-              if(incr_warn_switch_skin) then
-                print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
-                incr_warn_switch_skin = .false.
-              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1440,10 +1430,6 @@ module enkf_clm_mod
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
                 incr_warn_count_soisno = incr_warn_count_soisno + 1
-                if(incr_warn_switch_soisno) then
-                  print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
-                  incr_warn_switch_soisno = .false.
-                end if
               end if
             end if
             if (ieee_is_nan(t_update)) then
@@ -1468,10 +1454,6 @@ module enkf_clm_mod
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
               incr_warn_count_veg = incr_warn_count_veg + 1
-              if(incr_warn_switch_veg) then
-                print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
-                incr_warn_switch_veg = .false.
-              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1517,10 +1499,6 @@ module enkf_clm_mod
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
               incr_warn_count_skin = incr_warn_count_skin + 1
-              if(incr_warn_switch_skin) then
-                print *, "WARNING: t_skin increment is larger then T_max_increment at p=", p
-                incr_warn_switch_skin = .false.
-              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1545,10 +1523,6 @@ module enkf_clm_mod
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
                 incr_warn_count_soisno = incr_warn_count_soisno + 1
-                if(incr_warn_switch_soisno) then
-                  print *, "WARNING: t_soisno increment is larger then T_max_increment at p=", p
-                  incr_warn_switch_soisno = .false.
-                end if
               end if
             end if
             if (ieee_is_nan(t_update)) then
@@ -1573,10 +1547,6 @@ module enkf_clm_mod
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
               incr_warn_count_veg = incr_warn_count_veg + 1
-              if(incr_warn_switch_veg) then
-                print *, "WARNING: t_veg increment is larger then T_max_increment at p=", p
-                incr_warn_switch_veg = .false.
-              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
@@ -1600,10 +1570,6 @@ module enkf_clm_mod
             else
               t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
               incr_warn_count_grnd = incr_warn_count_grnd + 1
-              if(incr_warn_switch_grnd) then
-                print *, "WARNING: t_grnd increment is larger then T_max_increment at c=", c
-                incr_warn_switch_grnd = .false.
-              end if
             end if
           end if
           if (ieee_is_nan(t_update)) then
