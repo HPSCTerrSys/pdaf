@@ -464,13 +464,13 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(2+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(2+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
       !                                      2:(1+n_lev_T): TSOIL layers
       !                                      (2+n_lev_T): TVEG
-      do lev=1,(2+nlevgrnd)
+      do lev=1,(2+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
@@ -564,14 +564,14 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(3+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(3+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
       !                                      2:(1+n_lev_T): TSOIL layers
       !                                      (2+n_lev_T): TVEG
       !                                      (3+n_lev_T): TGRND
-      do lev=1,(3+nlevgrnd)
+      do lev=1,(3+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
