@@ -1476,9 +1476,12 @@ module enkf_clm_mod
         end if mask_snow_1
 
       end do
-      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", incr_warn_count_skin
-      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", incr_warn_count_soisno
-      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", incr_warn_count_veg
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", &
+        incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", &
+        incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
+        incr_warn_count_veg
     endif
 
     ! Skin temperature updating skin, soil, vegetation and ground temperature.
@@ -1592,10 +1595,14 @@ module enkf_clm_mod
         end if mask_snow_2
 
       end do
-      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", incr_warn_count_skin
-      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", incr_warn_count_soisno
-      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", incr_warn_count_veg
-      if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", incr_warn_count_grnd
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", &
+        incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", &
+        incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
+        incr_warn_count_veg
+      if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
+        incr_warn_count_grnd
     endif
 
 #ifdef PDAF_DEBUG
