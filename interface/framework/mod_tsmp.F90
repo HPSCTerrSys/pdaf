@@ -23,7 +23,7 @@
 !-------------------------------------------------------------------------------------------
 
 module mod_tsmp
-    use iso_c_binding, only: c_int, c_ptr, c_double
+    use, intrinsic ::  iso_c_binding, only: c_int, c_ptr, c_double
 
     implicit none
 
@@ -96,7 +96,7 @@ module mod_tsmp
 
      interface
         subroutine init_n_domains_pfl(n_domains_p) bind(c)
-            use iso_c_binding, only: c_int
+            use, intrinsic :: iso_c_binding, only: c_int
             import
             implicit none
             INTEGER(c_int), INTENT(out) :: n_domains_p ! PE-local number of analysis domains
@@ -105,7 +105,7 @@ module mod_tsmp
 
      interface
         subroutine init_dim_l_pfl(dim_l) bind(c)
-            use iso_c_binding, only: c_int
+            use, intrinsic :: iso_c_binding, only: c_int
             import
             implicit none
               INTEGER(c_int), INTENT(out) :: dim_l ! Local state dimension

@@ -24,6 +24,7 @@ read_enkfpar.c: Function for reading controle file of TSMP-PDAF
 
 #include "enkf.h"
 #include "iniparser.h"
+#include <math.h>
 
 void read_enkfpar(char *parname)
 {
@@ -52,7 +53,7 @@ void read_enkfpar(char *parname)
   pf_aniso_perm_z       = iniparser_getdouble(pardict,"PF:aniso_perm_z",1);
   pf_aniso_use_parflow  = iniparser_getint(pardict,"PF:aniso_use_parflow",0);
   pf_printensemble      = iniparser_getint(pardict,"PF:printensemble",1);
-  pf_t_printensemble    = iniparser_getint(pardict,"PF:t_printensemble",-1);
+  pf_t_printensemble    = iniparser_getint(pardict,"PF:t_printensemble",-2);
   pf_printstat          = iniparser_getint(pardict,"PF:printstat",1);
   pf_paramprintensemble = iniparser_getint(pardict,"PF:paramprintensemble",1);
   pf_paramprintstat     = iniparser_getint(pardict,"PF:paramprintstat",1);
@@ -86,7 +87,7 @@ void read_enkfpar(char *parname)
   clmstatevec_colmean   = iniparser_getint(pardict,"CLM:statevec_colmean",0);
   clmstatevec_only_active = iniparser_getint(pardict,"CLM:statevec_only_active",0);
   clmstatevec_max_layer = iniparser_getint(pardict,"CLM:statevec_max_layer",25);
-  clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-1);
+  clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-2);
   clmwatmin_switch      = iniparser_getint(pardict,"CLM:watmin_switch",0);
   clmswc_mask_snow      = iniparser_getint(pardict,"CLM:swc_mask_snow",0);
 
@@ -110,8 +111,8 @@ void read_enkfpar(char *parname)
   da_crns_depth_tol     = iniparser_getdouble(pardict,"DA:da_crns_depth_tol",0.01);
   clmcrns_bd            = iniparser_getdouble(pardict, "DA:crns_bd", -1.0);
   da_print_obs_index    = iniparser_getint(pardict,"DA:print_obs_index",0);
-  total_steps = (int) (t_sim/da_interval);
-  tstartcycle = (int) (t_start/da_interval);
+  total_steps = (int) round(t_sim/da_interval);
+  tstartcycle = (int) round(t_start/da_interval);
 
   /* print inputs / debug output for data assimilation settings */
   if (mype_world == 0) {

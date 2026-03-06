@@ -56,6 +56,7 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
   USE mod_assimilation, ONLY: obs_index_l
   USE mod_parallel_pdaf, &
        ONLY: mype_filter
+  USE mod_parallel_pdaf, ONLY: abort_parallel
   USE mod_read_obs, ONLY: multierr
   USE mod_read_obs, ONLY: clm_obserr
   USE mod_read_obs, ONLY: pressure_obserr
@@ -218,6 +219,10 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 #endif
      END DO
    END DO
+ CASE DEFAULT
+
+   print *, "ERROR: unsupported multierr in prodrinva_l_pdaf.F90"
+   call abort_parallel()
 
  END SELECT
 
