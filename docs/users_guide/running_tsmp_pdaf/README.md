@@ -15,6 +15,9 @@ COSMO](cos)). Additionally, a control file for the data assimilation
 Furthermore, some command line options ([Command line options](cmd))
 need to be specified when TSMP-PDAF is executed.
 
+For assimilation of snow observations into CLM, see [Snow Data
+Assimilation](snowda).
+
 See the Virtual Machine download on webpage
 <https://datapub.fz-juelich.de/slts/tsmp-vm/index.html>.
 
