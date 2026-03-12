@@ -590,16 +590,32 @@ are allowed.
   CLM5.0's `watmin` from `clm_varcon.F90` (current value `0.01`). If
   yes, set SM to `watmin`.
 
+(enkfpf:clm:swc_mask_snow)=
 ### CLM:swc_mask_snow ###
 
 `CLM:swc_mask_snow`: (integer) Switch for masking columns with snow
 cover from SWC updates.
 
-Snow covers larger than 1mm are switched off for the update.
+Columns with snow depth ≥ 1 mm are excluded from the update.
 
-Only takes effect if `CLM:update_swc``is switched on.
+Only takes effect if `CLM:update_swc` is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
+
+(enkfpf:clm:swc_mask_snow_ens)=
+### CLM:swc_mask_snow_ens ###
+
+`CLM:swc_mask_snow_ens`: (integer) Switch for ensemble-consistent snow
+masking. When set to `1`, a column is excluded from the SWC update if
+**any** ensemble member has snow depth ≥ 1 mm there, rather than each
+member masking independently based on its own snow state. Requires an
+MPI reduction across ensemble members via `COMM_couple`.
+
+Only takes effect if both `CLM:update_swc` and `CLM:swc_mask_snow` are
+switched on.
+
+Default setting is `0`: each member applies the snow mask based on its
+own snow depth (original behaviour).
 
 (enkfpf:cosmo)=
 ## [COSMO] ##
@@ -900,6 +916,8 @@ Default: 0, output turned off.
  |           | `statevec_max_layer`    | 25            |
  |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
+ |           | `swc_mask_snow`         | 0             |
+ |           | `swc_mask_snow_ens`     | 0             |
  | `[COSMO]` |                         |               |
  |           | `nprocs`                | 0             |
  |           | `dtmult`                | 0             |
