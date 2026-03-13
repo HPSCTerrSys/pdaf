@@ -632,7 +632,10 @@ module enkf_clm_mod
     use clm_varcon      , only : denh2o, denice, watmin
     use clm_varcon      , only : ispval
     use clm_varcon      , only : spval
-    use mpi
+    use mpi, only: MPI_Allreduce
+    use mpi, only: MPI_IN_PLACE
+    use mpi, only: MPI_INTEGER
+    use mpi, only: MPI_MAX
 
     implicit none
 
