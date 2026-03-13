@@ -70,8 +70,8 @@
     !dim_obs_C = 0
 
 
-    assim_SM = .true.
-    assim_GRACE = .true.
+    assim_GRACE = (clmupdate_tws /= 0)
+    assim_SM = (clmupdate_swc /= 0)
 
 
 
