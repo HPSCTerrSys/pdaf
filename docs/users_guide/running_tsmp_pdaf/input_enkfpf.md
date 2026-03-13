@@ -483,18 +483,37 @@ CLM (standalone only).
    manual
    <https://escomp.github.io/ctsm-docs/versions/release-clm5.0/html/tech_note/index.html>)
 
+(enkfpf:clm:update_T)=
 ### CLM:update_T ###
 
-`CLM:update_T`: (integer) Flag for updating of ground and vegetation
-temperature.
+`CLM:update_T`: (integer) Flag for updating temperature variables in
+eCLM via LST data assimilation.
 
--  0: No update of ground and vegetation temperature
+State vector variables updated for each option:
 
--  1: Update of ground and vegetation temperature
+-  0: No update of temperature variables.
 
--  2: Update of soil and vegetation temperature (prognostic variables)
-   based on comparison of satellite LST with skin temperature
-   (diagnostic variable)
+-  1: Update of ground temperature (`t_grnd`) and vegetation
+   temperature (`t_veg`) directly. The simulated LST is computed from
+   `t_grnd` and `t_veg` using a radiometric mixing formula
+   ([Kustas & Anderson, 2009](https://doi.org/10.1016/j.agrformet.2009.05.016),
+   Eq. 7) with LAI.
+
+-  2: Gridcell-mean update of skin temperature (`t_skin`, not
+   prognostic), soil/snow temperatures (`t_soisno`, all `nlevgrnd`
+   layers), and vegetation temperature (`t_veg`). Each patch/column is
+   updated based on gridcell-mean increments and according to selected
+   [increment type](enkfpf:clm:increment_type). The observation
+   operator uses the skin temperature (TSKIN) as the simulated LST
+   equivalent.
+
+-  3: Like `2`, but additionally updates ground temperature
+   (`t_grnd`).  State vector: `t_skin`, `t_soisno` (`nlevgrnd`
+   layers), `t_veg`, `t_grnd`.
+
+
+See [Land Surface Temperature Data Assimilation](lstda) for a detailed
+description.
 
 ### CLM:print_swc ###
 
@@ -601,12 +620,13 @@ are allowed.
 `CLM:swc_mask_snow`: (integer) Switch for masking columns with snow
 cover from SWC updates.
 
-Snow covers larger than 1mm are switched off for the update.
+Columns with snow depth ≥ 1 mm are excluded from the update.
 
 Only takes effect if `CLM:update_swc``is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
 
+(enkfpf:clm:T_mask_snow)=
 ### CLM:T_mask_snow ###
 
 `CLM:T_mask_snow`: (integer) Switch for masking columns with snow
@@ -614,10 +634,11 @@ cover from T updates.
 
 Snow covers larger than 1mm are switched off for the update.
 
-Only takes effect if `CLM:update_T``is switched on.
+Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
 
+(enkfpf:clm:increment_type)=
 ### CLM:increment_type ###
 
 `CLM:increment_type`: (integer) Switch for changing increment type in
@@ -630,26 +651,30 @@ Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0`: Multiplicative increment.
 
+(enkfpf:clm:T_max_increment)=
 ### CLM:T_max_increment ###
 
-`CLM:T_max_increment`: (double) Maximum T-increment to update
-(additively).
+`CLM:T_max_increment`: (double) Maximum allowed magnitude of the
+additive temperature increment (K).
 
 Only takes effect if `CLM:update_T` is switched on and
 `CLM:increment_type` is set to `1`.
 
 Default setting is `5.0`: Updates larger than 5K are not applied.
 
+(enkfpf:clm:T_mask_T)=
 ### CLM:T_mask_T ###
 
-`CLM:T_mask_T`: (double) Temperature difference to add to freezing
-temperature resulting in a threshold temperature for masking out T
-updates.  Whenever the soil temperature of the surface layer falls
-below this threshold temperature, no T is not updated.
+`CLM:T_mask_T`: (double) Offset above freezing (K) used as the
+lower-temperature masking threshold. The update is suppressed whenever
 
-Only takes effect if `CLM:update_T``is switched on.
+```
+t_soisno(:,1) < 273.15 K + CLM:T_mask_T.
+```
 
-Default setting is `0.`: Masking updates below freezing temperaturs.
+Only takes effect if `CLM:update_T` is switched on.
+
+Default setting is `0.`: Masking updates below freezing temperatures.
 
 (enkfpf:cosmo)=
 ## [COSMO] ##
@@ -912,7 +937,7 @@ Default: 0, output turned off.
 ## Parameter Summary ##
 
  | section   | parameter               | default value |
- |:---------:|:-----------------------:|:-------------:|
+ |:----------|:------------------------|:--------------|
  | `[PF]`    |                         |               |
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
@@ -942,6 +967,8 @@ Default: 0, output turned off.
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
  |           | `update_swc`            | 1             |
+ |           | `update_texture`        | 0             |
+ |           | `update_T`              | 0             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `statevec_allcol`       | 0             |
@@ -951,6 +978,8 @@ Default: 0, output turned off.
  |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
  |           | `T_mask_snow`           | 0             |
+ |           | `increment_type`        | 0             |
+ |           | `T_max_increment`       | 5.0           |
  |           | `T_mask_T`              | 0.0           |
  | `[COSMO]` |                         |               |
  |           | `nprocs`                | 0             |
