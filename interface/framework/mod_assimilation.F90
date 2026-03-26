@@ -65,12 +65,15 @@ MODULE mod_assimilation
 ! *** Variables specific for TSMP-PDAF ***
 
   ! gw
-  INTEGER, ALLOCATABLE :: dim_state_p_count(:) !Vector holding local state vector dimensions for processors of a single model communicator
+  INTEGER, ALLOCATABLE :: dim_state_p_count(:) !Vector holding local state vector dimensions for
+                                               ! processors of a single model communicator
   ! gw end
   REAL, ALLOCATABLE    :: obs(:)          ! Vector holding all observations for Global domain
   INTEGER, ALLOCATABLE :: obs_index_l(:)  ! Vector holding local state-vector indices of observations
-  INTEGER, ALLOCATABLE :: obs_interp_indices_p(:,:)  ! Vector holding state-vector indices of grid cells surrounding interpolation for PE-local domain
-  INTEGER, ALLOCATABLE :: obs_interp_weights_p(:,:)  ! Vector holding weights of grid cells surrounding observation for PE-local domain
+  INTEGER, ALLOCATABLE :: obs_interp_indices_p(:,:)  ! Vector holding state-vector indices of grid cells
+                                                     ! surrounding interpolation for PE-local domain
+  INTEGER, ALLOCATABLE :: obs_interp_weights_p(:,:)  ! Vector holding weights of grid cells surrounding
+                                                     ! observation for PE-local domain
   INTEGER, ALLOCATABLE :: local_dims_obs(:) ! Array for process-local observation dimensions
   INTEGER, ALLOCATABLE :: local_disp_obs(:) ! Observation displacement array for gathering. Displacement: #obs before current PE
   ! pdaf-ordered index: determined by domain-decomposition
@@ -88,8 +91,10 @@ MODULE mod_assimilation
   REAL, ALLOCATABLE :: clm_obserr_p(:)    ! Vector holding  observation errors for CLM run at each PE-local domain
   REAL, ALLOCATABLE :: distance(:)        ! Localization distance
   INTEGER, ALLOCATABLE :: global_to_local(:)  ! Vector to map global index to local domain index
-  INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:) ! longitude and latitude of grid cells and observation cells
-  INTEGER, ALLOCATABLE :: longxy_obs_floor(:), latixy_obs_floor(:) ! indices of grid cells with smaller lon/lat than observation location
+  INTEGER, ALLOCATABLE :: longxy(:), latixy(:), longxy_obs(:), latixy_obs(:) ! longitude and latitude of grid cells
+                                                                             ! and observation cells
+  INTEGER, ALLOCATABLE :: longxy_obs_floor(:), latixy_obs_floor(:) ! indices of grid cells with smaller lon/lat
+                                                                   ! than observation location
   INTEGER, ALLOCATABLE :: var_id_obs(:)   ! for remote sensing data the variable identifier to group
                                           ! variables distributed over a grid surface area
   !kuw
