@@ -54,6 +54,8 @@ nprocs      =
 update_swc  =
 update_texture  =
 update_T  =
+update_lai  =
+update_lai_params =
 print_swc   =
 print_et   =
 statevec_allcol =
@@ -490,6 +492,50 @@ Currently only CLM3.5
 
 -  1: Update of ground and vegetation temperature
 
+(enkfpf:clm:update_lai)=
+### CLM:update_lai ###
+
+`CLM:update_lai`: (integer) Flag for assimilation of Leaf Area Index
+(LAI) in eCLM. Default: `0`.
+
+Only available for eCLM with Biogeochemical Cycling (BGC) enabled.
+See [LAI Data Assimilation](laida) for algorithmic details.
+
+-  0: No LAI assimilation.
+
+-  1: Gridcell-averaged LAI state vector. One LAI value per grid cell
+   is stored in the state vector, computed as a patch-weight-averaged
+   LAI derived from per-patch leaf carbon (`leafc`) and the specific
+   leaf area parameters (`slatop`, `dsladlai`) using the formula of
+   Thornton and Zimmermann (2007, J. Clim., 20, 3902–3923). After the
+   PDAF update, the updated gridcell LAI is back-transformed to
+   per-patch `leafc` and `leafn`.
+
+-  2: Patch-level state vector. `leafc`, `slatop`, and `dsladlai` are
+   stored for every patch (state vector size: 3 × number of patches).
+   The LAI-to-observation mapping is computed inside the observation
+   operator `obs_op_pdaf`. The `slatop` and `dsladlai` portions of the
+   state vector can optionally be estimated jointly; set
+   `CLM:update_lai_params=2` to write them back to eCLM after the
+   update.
+
+(enkfpf:clm:update_lai_params)=
+### CLM:update_lai_params ###
+
+`CLM:update_lai_params`: (integer) Flag for joint
+state–parameter estimation of specific leaf area parameters alongside
+LAI. Only takes effect if `CLM:update_lai` is non-zero. Default: `0`.
+
+-  0: No parameter estimation.
+
+-  1: Only for `CLM:update_lai=1`. Appends `slatop` (specific leaf
+   area at the canopy top) for each patch to the state vector as an
+   additional parameter.
+
+-  2: Only for `CLM:update_lai=2`. After the PDAF update, writes the
+   updated `slatop` and `dsladlai` values from the state vector back to
+   the eCLM plant functional type constants.
+
 ### CLM:print_swc ###
 
 `CLM:print_swc`: (integer) If set to `1`, the updated soil moisture
@@ -892,6 +938,8 @@ Default: 0, output turned off.
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
  |           | `update_swc`            | 1             |
+ |           | `update_lai`            | 0             |
+ |           | `update_lai_params`     | 0             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `statevec_allcol`       | 0             |

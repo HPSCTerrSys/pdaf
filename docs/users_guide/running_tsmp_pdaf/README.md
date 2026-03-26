@@ -14,6 +14,8 @@ COSMO](cos)). Additionally, a control file for the data assimilation
 ([Observation files](obs)) need to be present in the run directory.
 Furthermore, some command line options ([Command line options](cmd))
 need to be specified when TSMP-PDAF is executed.
+For assimilation of LAI observations into eCLM, see
+[LAI Data Assimilation](laida).
 
 See the Virtual Machine download on webpage
 <https://datapub.fz-juelich.de/slts/tsmp-vm/index.html>.

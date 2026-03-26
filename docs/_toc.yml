@@ -28,6 +28,7 @@ parts:
       - file: users_guide/running_tsmp_pdaf/input_cmd
       - file: users_guide/running_tsmp_pdaf/input_obs
       - file: users_guide/running_tsmp_pdaf/input_enkfpf
+      - file: users_guide/running_tsmp_pdaf/lai_da
 
     - file: users_guide/debugging_tsmp_pdaf/README
       title: Debugging TSMP-PDAF
