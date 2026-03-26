@@ -147,7 +147,8 @@ if (clmupdate_lai==2) then
       if (obs_index_p(i)==clm_patch2gc(j)) then
         write(*,*) 'DEBUG LAI : state dsladlai', state_p(j+2*clm_varsize)
         if (state_p(j+2*clm_varsize)>0.0) then
-          avesm = avesm + clm_patchwt(j) * ((state_p(j+1*clm_varsize)*(exp(state_p(j)*state_p(j+2*clm_varsize)) - 1.0))/state_p(j+2*clm_varsize)) ! formula for tlai from leafc
+          avesm = avesm + clm_patchwt(j) * ((state_p(j+1*clm_varsize)&
+            *(exp(state_p(j)*state_p(j+2*clm_varsize)) - 1.0))/state_p(j+2*clm_varsize)) ! formula for tlai from leafc
         else
           avesm = avesm +  clm_patchwt(j) *(state_p(j+1*clm_varsize)*state_p(j)) ! 2nd formula
         endif ! dsladlai decider
