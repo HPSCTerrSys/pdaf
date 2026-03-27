@@ -52,13 +52,13 @@ SUBROUTINE init_pdaf_parse()
        rms_obs, model_error, model_err_amp, incremental, type_forget, &
        forget, rank_analysis_enkf, locweight, cradius, &
        sradius, filename, type_trans, dim_obs, &
-       type_sqrt, obs_filename, dim_lag, temp_mean_filename
+       type_sqrt, obs_filename, dim_lag
+  USE mod_assimilation, ONLY: temp_mean_filename
   USE mod_assimilation, ONLY: use_omi
 
   use mod_assimilation,&
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
-
 #ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM

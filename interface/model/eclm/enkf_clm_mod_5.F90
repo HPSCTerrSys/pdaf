@@ -207,6 +207,7 @@ module enkf_clm_mod
     !
 
     ! reset PDAF dimensions for multivariate assimilation, only not for first call as PDAF did not initalize yet
+    ! non-first-cycle is only called in OMI simulations from clm_advance
     if (.not. first_cycle) then
         call PDAF_reset_dim_p(clm_statevecsize,ierror)
     end if
@@ -307,7 +308,7 @@ module enkf_clm_mod
 
       ! 1) COL/GRC: CLM->PDAF
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(clm_begc:clm_endc,nlevsoi))
+      allocate(state_clm2pdaf_p(begc:endc,nlevsoi))
       do i=1,nlevsoi
         do c=clm_begc,clm_endc
           ! Default: inactive
@@ -2308,7 +2309,7 @@ module enkf_clm_mod
         ! -> DIM_L: number of layers in gridcell
         n_domains_p = endg - begg + 1
       end if
-    elseif (clmupdate_tws/=1) then
+    else
       ! Process-local number of gridcells Default, possibly not tested
       ! for other updates except SWC
       n_domains_p = endg - begg + 1

@@ -104,9 +104,6 @@ MODULE mod_assimilation
 
   ! Yorck
 
-  ! interval until next observation, used by next_observation_pdaf.F90,
-  ! better solution for next assimilation time step
-  REAL :: da_interval_variable
   ! has to be read from observation file --> no empty observation files have to be written
   REAL, ALLOCATABLE :: obscov(:,:) ! observation covariance matrix
   REAL, ALLOCATABLE :: obscov_inv(:,:) ! inverse of the observation covariance matrix
