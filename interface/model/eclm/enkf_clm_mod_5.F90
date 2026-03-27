@@ -95,6 +95,7 @@ module enkf_clm_mod
 
 #endif
   integer(c_int),bind(C,name="clmprint_et")       :: clmprint_et
+  integer(c_int),bind(C,name="clmprint_inc")       :: clmprint_inc
   integer(c_int),bind(C,name="clmstatevec_allcol")       :: clmstatevec_allcol
   integer(c_int),bind(C,name="clmstatevec_colmean")       :: clmstatevec_colmean
   integer(c_int),bind(C,name="clmstatevec_only_active")  :: clmstatevec_only_active
