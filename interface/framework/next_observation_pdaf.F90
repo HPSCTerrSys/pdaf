@@ -52,7 +52,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 !
 ! !USES:
   USE mod_assimilation, &
-       ONLY: delt_obs, toffset, screen, da_interval_variable
+       ONLY: delt_obs, toffset, screen
   USE mod_parallel_pdaf, &
        ONLY: mype_world
   USE mod_tsmp, &
@@ -64,13 +64,14 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
        ONLY: obs_filename
   USE mod_assimilation, ONLY: use_omi
   use mod_read_obs, &
-       only: check_n_observationfile, check_n_observationfile_da_interval, check_n_observationfile_set_zero, &
-              check_n_observationfile_next_type
+       only: check_n_observationfile, check_n_observationfile_da_interval
+  use mod_read_obs, only: check_n_observationfile_set_zero
+  use mod_read_obs, only: check_n_observationfile_next_type
 #ifdef CLMFIVE
   use mod_read_obs, only: update_obs_type
-  use clm_time_manager, &
-       only: get_nstep
-  use clm_varcon, only: set_averaging_to_zero, ispval
+  use clm_time_manager, only: get_nstep
+  use clm_varcon, only: set_averaging_to_zero
+  use clm_varcon, only: ispval
   use enkf_clm_mod, only: clmupdate_tws
 #endif
   IMPLICIT NONE
@@ -196,6 +197,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
 
 
+
 !  IF (stepnow + nsteps <= total_steps) THEN
 !   if (2<1) then
 !    ! *** During the assimilation process ***
@@ -269,6 +271,5 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 #endif
 
 END SUBROUTINE next_observation_pdaf
-
 
 
