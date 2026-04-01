@@ -1313,6 +1313,8 @@ module enkf_clm_mod
     integer :: ncols, counter
     integer :: npatches, ncohorts
     real :: minlon, minlat, maxlon, maxlat
+    real(r8) :: dlon_span, dlat_span
+    real(r8), parameter :: tol_degen = 1.0e-6_r8 
     real(r8), pointer :: lon(:)
     real(r8), pointer :: lat(:)
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
@@ -1371,6 +1373,11 @@ module enkf_clm_mod
     maxlon = MAXVAL(lon(:) + 180)
     minlat = MINVAL(lat(:) + 90)
     maxlat = MAXVAL(lat(:) + 90)
+    
+    ! Degenerate horizontal domain (e.g. 1x1 grid): min==max => zero span; 
+    ! Avoid dividing by (maxlon-minlon) or (maxlat-minlat). 
+    dlon_span = maxval(lon(:) + 180._r8) - minval(lon(:) + 180._r8)
+    dlat_span = maxval(lat(:) + 90._r8) - minval(lat(:) + 90._r8)
 
     if(allocated(longxy_obs)) deallocate(longxy_obs)
     allocate(longxy_obs(dim_obs), stat=ier)
@@ -1378,7 +1385,16 @@ module enkf_clm_mod
     allocate(latixy_obs(dim_obs), stat=ier)
 
     do i = 1, dim_obs
-       if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
+       if (dlon_span <= tol_degen .and. dlat_span <= tol_degen) then
+          longxy_obs(i) = 1
+          latixy_obs(i) = 1
+       else if (dlon_span <= tol_degen) then
+          longxy_obs(i) = 1
+          latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat))
+       else if (dlat_span <= tol_degen) then
+          longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
+          latixy_obs(i) = 1
+       else if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
          ((lat_clmobs(i) + 90) - minlat) /= 0) then
           longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1
           latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat)) !+ 1
@@ -1395,6 +1411,7 @@ module enkf_clm_mod
           latixy_obs(i) = 1
        endif
     end do
+    
     ! deallocate temporary arrays
     !deallocate(longxy)
     !deallocate(latixy)
