@@ -955,7 +955,25 @@ module enkf_clm_mod
         if(n_p > 0) then
           clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
         else
-          ! No vegetated patches: reuse TSKIN mean as safe fallback.
+          ! No vegetated patches in this gridcell (bare ground, glacier, lake):
+          ! t_veg retains spval (~1e36) for all patches, so no meaningful TVEG
+          ! average can be formed. TSKIN is used as a fallback to keep the value
+          ! physically plausible within the DA step.
+          !
+          ! Note: this slot does not affect the model state. The distribution
+          ! step guards against writing back to patches where t_veg >= 1e20
+          ! (see update_clm_statevec_T), so the fallback value is never applied.
+          !
+          ! The fallback does, however, participate in ensemble covariance
+          ! estimation during DA, introducing an artificial TSKIN-TVEG
+          ! correlation for these cells. A conceptually cleaner solution would
+          ! be to exclude non-vegetated gridcells from the TVEG part of the
+          ! state vector entirely (detectable at initialisation: all patches in
+          ! the gridcell have t_veg >= 1e20). This would require a mask array
+          ! and non-uniform state vector layout, breaking the current assumption
+          ! that every gridcell contributes the same variable block. The mapping
+          ! arrays state_pdaf2clm_p_p / state_clm2pdaf_p already handle
+          ! non-trivial patch mappings and could serve as a template for this.
           clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc)
         end if
 
