@@ -10,12 +10,15 @@ physically meaningful regimes.
 
 ## Configuration ##
 
-LST-DA is controlled by five parameters in the [`[CLM]` section of
+LST-DA is controlled by six parameters in the [`[CLM]` section of
 `enkfpf.par`](enkfpf:clm):
 
 - [`CLM:update_T`](enkfpf:clm:update_T): selects which CLM temperature
   variables are placed in the state vector and updated after the analysis
   step.
+- [`CLM:statevec_max_layer`](enkfpf:clm:statevec_max_layer): limits the
+  number of `t_soisno` layers included in the state vector for options 2
+  and 3 (default 25, i.e. all layers).
 - [`CLM:T_mask_snow`](enkfpf:clm:T_mask_snow): optionally masks out
   columns with snow cover from the temperature update.
 - [`CLM:increment_type`](enkfpf:clm:increment_type): switches between
@@ -38,12 +41,12 @@ The state vector content depends on `CLM:update_T`. For options 2 and 3
 the state vector is defined at the gridcell level (one value per grid
 cell); for option 1 it is defined at the patch level.
 
-| `update_T` | State vector variables                                       |
-|:-----------|:-------------------------------------------------------------|
-| `1`        | `t_grnd` (per patch) + `t_veg` (per patch)                   |
-| `2`        | `t_skin` (per gridcell) + `t_soisno` (all `nlevgrnd` layers) |
-|            | + `t_veg` (per gridcell)                                     |
-| `3`        | Same as `2`, plus `t_grnd` (per gridcell)                    |
+| `update_T` | State vector variables                                                                   |
+|:-----------|:-----------------------------------------------------------------------------------------|
+| `1`        | `t_grnd` (per patch) + `t_veg` (per patch)                                               |
+| `2`        | `t_skin` (per gridcell) + `t_soisno` (`min(nlevgrnd, statevec_max_layer)` layers)        |
+|            | + `t_veg` (per gridcell)                                                                 |
+| `3`        | Same as `2`, plus `t_grnd` (per gridcell)                                                |
 
 ## Observation Operator ##
 

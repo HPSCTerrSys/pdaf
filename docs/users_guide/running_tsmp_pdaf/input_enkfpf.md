@@ -501,16 +501,18 @@ State vector variables updated for each option:
    Eq. 7) with LAI.
 
 -  2: Gridcell-mean update of skin temperature (`t_skin`, not
-   prognostic), soil/snow temperatures (`t_soisno`, all `nlevgrnd`
-   layers), and vegetation temperature (`t_veg`). Each patch/column is
-   updated based on gridcell-mean increments and according to selected
+   prognostic), soil/snow temperatures (`t_soisno`,
+   `min(nlevgrnd, CLM:statevec_max_layer)` layers), and vegetation
+   temperature (`t_veg`). Each patch/column is updated based on
+   gridcell-mean increments and according to selected
    [increment type](enkfpf:clm:increment_type). The observation
    operator uses the skin temperature (TSKIN) as the simulated LST
    equivalent.
 
 -  3: Like `2`, but additionally updates ground temperature
-   (`t_grnd`).  State vector: `t_skin`, `t_soisno` (`nlevgrnd`
-   layers), `t_veg`, `t_grnd`.
+   (`t_grnd`).  State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_grnd`.
 
 
 See [Land Surface Temperature Data Assimilation](lstda) for a detailed
@@ -572,24 +574,35 @@ If `0` (default): Use all columns and all layers.
 If `1`: Use only hydrologically active columns and only layers until
 bedrock.
 
+(enkfpf:clm:statevec_max_layer)=
 ### CLM:statevec_max_layer ###
 
 **Not yet in main branch**
 
-`CLM:statevec_max_layer`: (integer) Number of layers to add in the
-state vector.
+`CLM:statevec_max_layer`: (integer) Maximum number of soil layers
+included in the state vector.
 
-Only used, when `CLM:statevec_allcol` and `CLM:statevec_only_active`
-are switched on.
+Used in two contexts:
 
-If `25` (default): All layers are in state vector.
+- **SWC state vector**: when `CLM:statevec_allcol` and
+  `CLM:statevec_only_active` are both switched on, limits the number
+  of soil layers included per column.
+- **T state vector**: when `CLM:update_T` is `2` or `3`, limits the
+  number of `t_soisno` layers included. The effective number of layers
+  is `min(nlevgrnd, CLM:statevec_max_layer)`.
 
-If `9`: Only the first nine layers in state vector (corresponds to 1.2
-meter).
+If `25` (default): All layers are in the state vector (CLM5 has 25
+soil layers by default, so this effectively means no restriction).
+
+If `9`: Only the first nine layers are included (corresponds to
+approximately 1.2 m depth).
 
 For a depth profile of CLM layers, see [CLM Technical Note: 2.2.2.1
 Soil
 Layers](https://escomp.github.io/ctsm-docs/versions/master/html/tech_note/Ecosystem/CLM50_Tech_Note_Ecosystem.html#soil-layers).
+
+See [Land Surface Temperature Data Assimilation](lstda) for context on
+the T state vector use.
 
 ### CLM:t_printensemble ###
 
