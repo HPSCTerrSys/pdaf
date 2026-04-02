@@ -10,7 +10,7 @@ physically meaningful regimes.
 
 ## Configuration ##
 
-LST-DA is controlled by six parameters in the [`[CLM]` section of
+LST-DA is controlled by the following parameters in the [`[CLM]` section of
 `enkfpf.par`](enkfpf:clm):
 
 - [`CLM:update_T`](enkfpf:clm:update_T): selects which CLM temperature
@@ -37,16 +37,17 @@ not supported.
 
 ## State Vector ##
 
-The state vector content depends on `CLM:update_T`. For options 2 and 3
+The state vector content depends on `CLM:update_T`. For options 2–5
 the state vector is defined at the gridcell level (one value per grid
 cell); for option 1 it is defined at the patch level.
 
-| `update_T` | State vector variables                                                                   |
-|:-----------|:-----------------------------------------------------------------------------------------|
-| `1`        | `t_grnd` (per patch) + `t_veg` (per patch)                                               |
-| `2`        | `t_skin` (per gridcell) + `t_soisno` (`min(nlevgrnd, statevec_max_layer)` layers)        |
-|            | + `t_veg` (per gridcell)                                                                 |
-| `3`        | Same as `2`, plus `t_grnd` (per gridcell)                                                |
+| `update_T` | State vector variables                                                                        |
+|:-----------|:----------------------------------------------------------------------------------------------|
+| `1`        | `t_grnd` (per patch) + `t_veg` (per patch)                                                    |
+| `2`        | `t_skin` + `t_soisno` (`min(nlevgrnd, statevec_max_layer)` layers) + `t_veg` (per gridcell)  |
+| `3`        | Same as `2`, plus `t_grnd` (per gridcell)                                                     |
+| `4`        | Same as `2`, plus `t_h2osfc` (per gridcell)                                                   |
+| `5`        | Same as `3`, plus `t_h2osfc` (per gridcell)                                                   |
 
 ## Observation Operator ##
 
@@ -56,7 +57,7 @@ The observation operator maps the CLM state to a simulated LST:
   `t_veg` using the radiometric mixing formula of [Kustas & Anderson
   (2009)](https://doi.org/10.1016/j.agrformet.2009.05.016) (Eq. 7),
   weighted by leaf area index (LAI).
-- **Options 2 and 3**: The skin temperature `t_skin` is used directly as
+- **Options 2–5**: The skin temperature `t_skin` is used directly as
   the simulated LST. Observations are indexed at the gridcell level
   (one observation per grid cell).
 
@@ -168,4 +169,28 @@ T_mask_snow    = 1
 ```
 
 Like option 2, but `t_grnd` is additionally included in the state vector
+and updated. Snow-covered columns are masked out.
+
+### Assimilate LST including surface water temperature (option 4) ###
+
+```text
+[CLM]
+update_T       = 4
+increment_type = 0
+T_mask_snow    = 1
+```
+
+Like option 2, but `t_h2osfc` is additionally included in the state vector
+and updated. Snow-covered columns are masked out.
+
+### Assimilate LST including ground and surface water temperature (option 5) ###
+
+```text
+[CLM]
+update_T       = 5
+increment_type = 0
+T_mask_snow    = 1
+```
+
+Like option 3, but `t_h2osfc` is additionally included in the state vector
 and updated. Snow-covered columns are masked out.
