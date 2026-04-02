@@ -142,4 +142,5 @@ GLOBAL double dampfac_param_time_dependent;
 GLOBAL double da_crns_depth_tol;
 GLOBAL double clmcrns_bd;
 GLOBAL double clmT_mask_T;
+GLOBAL double clmT_mask_snow_depth;
 GLOBAL double clmT_max_increment;

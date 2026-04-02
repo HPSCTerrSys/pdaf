@@ -91,8 +91,10 @@ Two independent masking conditions can suppress the update for individual
 columns or grid cells:
 
 **Snow masking** (`CLM:T_mask_snow`): When set to `1`, columns with a
-snow depth ≥ 1 mm are excluded from the temperature update. This avoids
-applying a bare-soil LST increment to snow-covered grid cells.
+snow depth exceeding `CLM:T_mask_snow_depth` (default 1 mm) are excluded
+from the temperature update. This avoids applying a bare-soil LST
+increment to snow-covered grid cells. The threshold can be adjusted via
+[`CLM:T_mask_snow_depth`](enkfpf:clm:T_mask_snow_depth).
 
 **Freeze masking** (`CLM:T_mask_T`): The update is suppressed whenever
 the soil/snow temperature of the surface layer (`t_soisno(:,1)`) falls
