@@ -952,7 +952,8 @@ module enkf_clm_mod
         clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
-          if(patch%gridcell(p)==g) then
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
             clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
@@ -960,8 +961,26 @@ module enkf_clm_mod
         if(n_p > 0) then
           clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
-          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
-          error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
+          ! No vegetated patches in this gridcell (bare ground, glacier, lake):
+          ! t_veg retains spval (~1e36) for all patches, so no meaningful TVEG
+          ! average can be formed. TSKIN is used as a fallback to keep the value
+          ! physically plausible within the DA step.
+          !
+          ! Note: this slot does not affect the model state. The distribution
+          ! step guards against writing back to patches where t_veg >= 1e20
+          ! (see update_clm_statevec_T), so the fallback value is never applied.
+          !
+          ! The fallback does, however, participate in ensemble covariance
+          ! estimation during DA, introducing an artificial TSKIN-TVEG
+          ! correlation for these cells. A conceptually cleaner solution would
+          ! be to exclude non-vegetated gridcells from the TVEG part of the
+          ! state vector entirely (detectable at initialisation: all patches in
+          ! the gridcell have t_veg >= 1e20). This would require a mask array
+          ! and non-uniform state vector layout, breaking the current assumption
+          ! that every gridcell contributes the same variable block. The mapping
+          ! arrays state_pdaf2clm_p_p / state_clm2pdaf_p already handle
+          ! non-trivial patch mappings and could serve as a template for this.
+          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc)
         end if
 
       end do
@@ -1362,6 +1381,10 @@ module enkf_clm_mod
     integer :: incr_warn_count_skin, incr_warn_count_soisno, &
                incr_warn_count_veg, incr_warn_count_grnd
 
+    ! Guard against applying t_soisno increment multiple times to the same
+    ! column when several patches share a column (T==2 loop is over patches).
+    logical, allocatable :: col_updated(:)
+
     ! LST
     t_grnd => temperature_inst%t_grnd_col
     t_soisno => temperature_inst%t_soisno_col
@@ -1375,6 +1398,9 @@ module enkf_clm_mod
     incr_warn_count_soisno  = 0
     incr_warn_count_veg     = 0
     incr_warn_count_grnd    = 0
+
+    allocate(col_updated(clm_begc:clm_endc))
+    col_updated = .false.
 
     n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
@@ -1410,7 +1436,10 @@ module enkf_clm_mod
             t_update = t_skin(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
@@ -1420,10 +1449,12 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
-            t_skin(p) = t_update
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
         do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
@@ -1434,7 +1465,10 @@ module enkf_clm_mod
               t_update = t_soisno(c,lev) * increment_factor
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-              if (abs(increment_factor) < clmT_max_increment) then
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
@@ -1444,21 +1478,27 @@ module enkf_clm_mod
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
-              t_soisno(c,lev) = t_update
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
             end if
           end if
         end do
 
+        col_updated(c) = .true.
+        end if ! col_updated
+
         ! --- TVEG: update with increment factor ---
         cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
-        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_veg(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
@@ -1468,7 +1508,7 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else
-            t_veg(p) = t_update
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
@@ -1482,6 +1522,7 @@ module enkf_clm_mod
         incr_warn_count_soisno
       if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
         incr_warn_count_veg
+      deallocate(col_updated)
     endif
 
     ! Skin temperature updating skin, soil, vegetation and ground temperature.
@@ -1506,7 +1547,10 @@ module enkf_clm_mod
             t_update = t_skin(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
@@ -1516,10 +1560,12 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
-            t_skin(p) = t_update
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
         do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
@@ -1530,7 +1576,10 @@ module enkf_clm_mod
               t_update = t_soisno(c,lev) * increment_factor
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-              if (abs(increment_factor) < clmT_max_increment) then
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
@@ -1540,21 +1589,25 @@ module enkf_clm_mod
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
-              t_soisno(c,lev) = t_update
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
             end if
           end if
         end do
+        end if ! col_updated
 
         ! --- TVEG: update with increment factor ---
         cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
-        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_veg(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
@@ -1564,10 +1617,12 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else
-            t_veg(p) = t_update
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TGRND: update with increment factor ---
         cc = state_clm2pdaf_p(p, 3+n_lev_T)
         ! Skip if no significant change in gridcell mean
@@ -1577,7 +1632,10 @@ module enkf_clm_mod
             t_update = t_grnd(c) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_grnd increment_factor is NaN at c=", c, " - leaving t_grnd unchanged"
+              t_update = t_grnd(c)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_grnd(c) + increment_factor
             else
               t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
@@ -1587,9 +1645,12 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_grnd update is NaN at c=", c
           else
-            t_grnd(c) = t_update
+            t_grnd(c) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
+
+        col_updated(c) = .true.
+        end if ! col_updated
 
         end if mask_freeze_2
         end if mask_snow_2
@@ -1603,6 +1664,7 @@ module enkf_clm_mod
         incr_warn_count_veg
       if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
         incr_warn_count_grnd
+      deallocate(col_updated)
     endif
 
 #ifdef PDAF_DEBUG
