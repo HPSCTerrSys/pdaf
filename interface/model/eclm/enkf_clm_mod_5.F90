@@ -1204,7 +1204,8 @@ module enkf_clm_mod
         clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
-          if(patch%gridcell(p)==g) then
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
             clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
@@ -1212,8 +1213,9 @@ module enkf_clm_mod
         if(n_p > 0) then
           clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
-          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
-          error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
+          ! No vegetated patches: reuse TSKIN mean as safe fallback.
+          ! See the analogous block in clmupdate_T==2 for a detailed discussion.
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
         end if
 
         ! --- TGRND: average over columns in gridcell ---
