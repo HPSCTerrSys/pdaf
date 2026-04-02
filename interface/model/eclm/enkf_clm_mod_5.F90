@@ -1428,6 +1428,7 @@ module enkf_clm_mod
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
             if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
               t_update = t_skin(p)
             else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
@@ -1456,6 +1457,7 @@ module enkf_clm_mod
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
               if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
                 t_update = t_soisno(c,lev)
               else if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
@@ -1484,6 +1486,7 @@ module enkf_clm_mod
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
             if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
               t_update = t_veg(p)
             else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
