@@ -389,6 +389,7 @@ module enkf_clm_mod
     integer :: lev
     integer :: p
     integer :: cc
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
@@ -397,6 +398,8 @@ module enkf_clm_mod
 
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
 #ifdef PDAF_DEBUG
     WRITE(*,"(a,i5,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a)") &
@@ -462,13 +465,13 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(2+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(2+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
-      !                                      2:(1+nlevgrnd): TSOIL layers
-      !                                      (2+nlevgrnd): TVEG
-      do lev=1,(2+nlevgrnd)
+      !                                      2:(1+n_lev_T): TSOIL layers
+      !                                      (2+n_lev_T): TVEG
+      do lev=1,(2+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
@@ -483,18 +486,18 @@ module enkf_clm_mod
         ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = cc
 
-        ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
-        do lev=1,nlevgrnd
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
           state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
         end do
 
-        ! TVEG (variable index 2+nlevgrnd)
-        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
       end do
 
       ! 2) PATCH/GRC: STATEVECSIZE
       clm_varsize      =  endg-begg+1
-      clm_statevecsize =  (1 + nlevgrnd + 1)* (endg-begg+1)  !TSKIN, then nlevgrnd times TSOIL and TV
+      clm_statevecsize =  (2 + n_lev_T)* (endg-begg+1)  !TSKIN, then n_lev_T times TSOIL and TV
 
       ! 3) PATCH/GRC: PDAF->CLM
       !
@@ -506,8 +509,8 @@ module enkf_clm_mod
       !
       ! Variable index j layout (same as STATE_CLM2PDAF_P second dimension):
       !   j = 1:              TSKIN
-      !   j = 2:(1+nlevgrnd): TSOIL layers (CLM level = j - 1)
-      !   j = (2+nlevgrnd):   TVEG
+      !   j = 2:(1+n_lev_T): TSOIL layers (CLM level = j - 1)
+      !   j = (2+n_lev_T):   TVEG
       !
       ! NOTE: To get the CLM level from j for TSOIL, use: clm_level = j - 1
       !
@@ -536,15 +539,15 @@ module enkf_clm_mod
             state_pdaf2clm_p_p(cc) = p !TSKIN
             state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
             state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
-            do lev=1,nlevgrnd
-              ! variable index 2 to 1+nlevgrnd: TSOIL layers
+            do lev=1,n_lev_T
+              ! variable index 2 to 1+n_lev_T: TSOIL layers
               state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
               state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
               state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
             end do
-            state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
-            state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
-            state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 2 + nlevgrnd ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
             exit
           end if
         end do
@@ -562,14 +565,14 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(3+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(3+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
-      !                                      2:(1+nlevgrnd): TSOIL layers
-      !                                      (2+nlevgrnd): TVEG
-      !                                      (3+nlevgrnd): TGRND
-      do lev=1,(3+nlevgrnd)
+      !                                      2:(1+n_lev_T): TSOIL layers
+      !                                      (2+n_lev_T): TVEG
+      !                                      (3+n_lev_T): TGRND
+      do lev=1,(3+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
@@ -584,21 +587,21 @@ module enkf_clm_mod
         ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = cc
 
-        ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
-        do lev=1,nlevgrnd
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
           state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
         end do
 
-        ! TVEG (variable index 2+nlevgrnd)
-        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
 
-        ! TGRND (variable index 3+nlevgrnd)
-        state_clm2pdaf_p(p, 3+nlevgrnd) = cc + (2+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TGRND (variable index 3+n_lev_T)
+        state_clm2pdaf_p(p, 3+n_lev_T) = cc + (2+n_lev_T)*(clm_endg - clm_begg + 1)
       end do
 
       ! 2) PATCH/GRC: STATEVECSIZE
       clm_varsize      =  endg-begg+1
-      clm_statevecsize =  (3 + nlevgrnd)* (endg-begg+1)  !TSKIN, then nlevgrnd times TSOIL, TV and TGRND
+      clm_statevecsize =  (3 + n_lev_T)* (endg-begg+1)  !TSKIN, then n_lev_T times TSOIL, TV and TGRND
 
       ! 3) PATCH/GRC: PDAF->CLM
       !
@@ -610,9 +613,9 @@ module enkf_clm_mod
       !
       ! Variable index j layout (same as STATE_CLM2PDAF_P second dimension):
       !   j = 1:              TSKIN
-      !   j = 2:(1+nlevgrnd): TSOIL layers (CLM level = j - 1)
-      !   j = (2+nlevgrnd):   TVEG
-      !   j = (3+nlevgrnd):   TGRND
+      !   j = 2:(1+n_lev_T): TSOIL layers (CLM level = j - 1)
+      !   j = (2+n_lev_T):   TVEG
+      !   j = (3+n_lev_T):   TGRND
       !
       ! NOTE: To get the CLM level from j for TSOIL, use: clm_level = j - 1
       !
@@ -641,18 +644,18 @@ module enkf_clm_mod
             state_pdaf2clm_p_p(cc) = p !TSKIN
             state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
             state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
-            do lev=1,nlevgrnd
-              ! variable index 2 to 1+nlevgrnd: TSOIL layers
+            do lev=1,n_lev_T
+              ! variable index 2 to 1+n_lev_T: TSOIL layers
               state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
               state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
               state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
             end do
-            state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
-            state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
-            state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 2 + nlevgrnd ! variable index: TVEG
-            state_pdaf2clm_p_p(cc+(2+nlevgrnd)*clm_varsize) = p !TGRND
-            state_pdaf2clm_c_p(cc+(2+nlevgrnd)*clm_varsize) = patch%column(p) !TGRND
-            state_pdaf2clm_j_p(cc+(2+nlevgrnd)*clm_varsize) = 3 + nlevgrnd ! variable index: TGRND
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(2+n_lev_T)*clm_varsize) = p !TGRND
+            state_pdaf2clm_c_p(cc+(2+n_lev_T)*clm_varsize) = patch%column(p) !TGRND
+            state_pdaf2clm_j_p(cc+(2+n_lev_T)*clm_varsize) = 3 + n_lev_T ! variable index: TGRND
             exit
           end if
         end do
@@ -857,8 +860,11 @@ module enkf_clm_mod
     integer :: j,g,cc,c,p
     integer :: n_c,n_p
     integer :: lev
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     character (len = 34) :: fn    !TSMP-PDAF: function name for swc output
+
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
     ! LST variables
     t_grnd => temperature_inst%t_grnd_col
@@ -926,7 +932,7 @@ module enkf_clm_mod
         end if
 
         ! --- TSOIL: average over columns in gridcell (per layer) ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           clm_statevec(cc+lev*clm_varsize) = 0.0
           n_c = 0
           do c=clm_begc,clm_endc
@@ -944,17 +950,17 @@ module enkf_clm_mod
         end do
 
         ! --- TVEG: average over patches in gridcell ---
-        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
           ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
           if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
-            clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) + t_veg(p)
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
         end do
         if(n_p > 0) then
-          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
           ! No vegetated patches in this gridcell (bare ground, glacier, lake):
           ! t_veg retains spval (~1e36) for all patches, so no meaningful TVEG
@@ -1016,7 +1022,7 @@ module enkf_clm_mod
         end if
 
         ! --- TSOIL: average over columns in gridcell (per layer) ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           clm_statevec(cc+lev*clm_varsize) = 0.0
           n_c = 0
           do c=clm_begc,clm_endc
@@ -1034,32 +1040,32 @@ module enkf_clm_mod
         end do
 
         ! --- TVEG: average over patches in gridcell ---
-        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
           if(patch%gridcell(p)==g) then
-            clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) + t_veg(p)
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
         end do
         if(n_p > 0) then
-          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
           write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
           error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
         end if
 
         ! --- TGRND: average over columns in gridcell ---
-        clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(2+n_lev_T)*clm_varsize) = 0.0
         n_c = 0
         do c=clm_begc,clm_endc
           if(col%gridcell(c)==g) then
-            clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = clm_statevec(cc+(2+nlevgrnd)*clm_varsize) + t_grnd(c)
+            clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) + t_grnd(c)
             n_c = n_c + 1
           end if
         end do
         if(n_c > 0) then
-          clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = clm_statevec(cc+(2+nlevgrnd)*clm_varsize) / real(n_c, r8)
+          clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) / real(n_c, r8)
         else
           write(*,*) "ERROR: Gridcell g=", g, " has no columns for TGRND averaging"
           error stop "Gridcell without columns in set_clm_statevec_T (TGRND)"
@@ -1359,6 +1365,7 @@ module enkf_clm_mod
     integer :: p
     integer :: cc
     integer :: lev
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     real(r8), pointer :: t_grnd(:)
     real(r8), pointer :: t_soisno(:,:)
@@ -1395,6 +1402,8 @@ module enkf_clm_mod
 
     allocate(col_updated(clm_begc:clm_endc))
     col_updated = .false.
+
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
     !hcp: TG, TV
     if(clmupdate_T==1) then
@@ -1448,7 +1457,7 @@ module enkf_clm_mod
         ! Guard: only update each column once even if multiple patches share it.
         if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
@@ -1479,7 +1488,7 @@ module enkf_clm_mod
         end if ! col_updated
 
         ! --- TVEG: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 2+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
@@ -1559,7 +1568,7 @@ module enkf_clm_mod
         ! Guard: only update each column once even if multiple patches share it.
         if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
@@ -1588,7 +1597,7 @@ module enkf_clm_mod
         end if ! col_updated
 
         ! --- TVEG: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 2+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
@@ -1616,7 +1625,7 @@ module enkf_clm_mod
         ! Guard: only update each column once even if multiple patches share it.
         if (.not. col_updated(c)) then
         ! --- TGRND: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 3+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 3+n_lev_T)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
           if( (clmincrement_type == 0)) then
@@ -2324,13 +2333,13 @@ module enkf_clm_mod
     endif
 
     if(clmupdate_T==2) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV
-      dim_l = 1 + nlevgrnd + 1
+      ! TSKIN + TSOIL(n_lev_T layers) + TV
+      dim_l = 2 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
     if(clmupdate_T==3) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV + TGRND
-      dim_l = 3 + nlevgrnd
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND
+      dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
   end subroutine init_dim_l_clm
