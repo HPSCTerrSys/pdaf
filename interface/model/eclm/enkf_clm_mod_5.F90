@@ -981,7 +981,7 @@ module enkf_clm_mod
           ! that every gridcell contributes the same variable block. The mapping
           ! arrays state_pdaf2clm_p_p / state_clm2pdaf_p already handle
           ! non-trivial patch mappings and could serve as a template for this.
-          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc)
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
         end if
 
       end do
