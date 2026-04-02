@@ -64,6 +64,7 @@ t_printensemble =
 watmin_switch =
 swc_mask_snow =
 T_mask_snow =
+T_mask_snow_depth =
 increment_type =
 T_mask_T =
 T_max_increment =
@@ -632,11 +633,25 @@ Default setting is `0`: No masking of columns with snow cover.
 `CLM:T_mask_snow`: (integer) Switch for masking columns with snow
 cover from T updates.
 
-Snow covers larger than 1mm are switched off for the update.
+When set to `1`, columns with a snow depth exceeding
+`CLM:T_mask_snow_depth` are excluded from the temperature update.
 
 Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
+
+(enkfpf:clm:T_mask_snow_depth)=
+### CLM:T_mask_snow_depth ###
+
+`CLM:T_mask_snow_depth`: (double) Snow depth threshold (m) used by
+the snow masking condition. Columns with `snow_depth >=
+CLM:T_mask_snow_depth` are excluded from the temperature update when
+`CLM:T_mask_snow = 1`.
+
+Only takes effect if `CLM:update_T` and `CLM:T_mask_snow` are both
+switched on.
+
+Default setting is `0.001` (1 mm).
 
 (enkfpf:clm:increment_type)=
 ### CLM:increment_type ###
@@ -978,6 +993,7 @@ Default: 0, output turned off.
  |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
  |           | `T_mask_snow`           | 0             |
+ |           | `T_mask_snow_depth`     | 0.001         |
  |           | `increment_type`        | 0             |
  |           | `T_max_increment`       | 5.0           |
  |           | `T_mask_T`              | 0.0           |

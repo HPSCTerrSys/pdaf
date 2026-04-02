@@ -70,8 +70,9 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmT_mask_snow")            :: clmT_mask_snow
   integer(c_int),bind(C,name="clmincrement_type")            :: clmincrement_type
   real(c_double),bind(C,name="clmT_mask_T")            :: clmT_mask_T
-  real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
-  real(c_double),bind(C,name="clmT_max_increment")      :: clmT_max_increment
+  real(c_double),bind(C,name="clmT_mask_snow_depth")   :: clmT_mask_snow_depth
+  real(c_double),bind(C,name="clmcrns_bd")             :: clmcrns_bd
+  real(c_double),bind(C,name="clmT_max_increment")     :: clmT_max_increment
 
   integer  :: nstep     ! time step index
   real(r8) :: dtime     ! time step increment (sec)
@@ -1414,7 +1415,7 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow_1: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_1: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
         ! No update for (near-to) freezing soil temperatures
         mask_freeze_1: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
@@ -1525,7 +1526,7 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow_2: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_2: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
         ! No update for (near-to) freezing soil temperatures
         mask_freeze_2: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
