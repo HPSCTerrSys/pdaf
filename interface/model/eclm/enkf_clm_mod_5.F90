@@ -2321,7 +2321,8 @@ module enkf_clm_mod
         incr_warn_count_veg
       if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
         incr_warn_count_grnd
-      if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", incr_warn_count_h2osfc
+      if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", &
+        incr_warn_count_h2osfc
       deallocate(col_updated)
     endif
 
