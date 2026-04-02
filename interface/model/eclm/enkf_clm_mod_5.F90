@@ -2930,12 +2930,12 @@ module enkf_clm_mod
     endif
 
     if(clmupdate_T==4) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV + T_H2OSFC
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + T_H2OSFC
       dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
     if(clmupdate_T==5) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV + TGRND + T_H2OSFC
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND + T_H2OSFC
       dim_l = 4 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
