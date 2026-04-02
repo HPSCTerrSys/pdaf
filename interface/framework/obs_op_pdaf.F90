@@ -102,7 +102,7 @@ real, dimension(:), allocatable :: soide !soil depth
 ! soide=(/0.d0,  0.02d0,  0.05d0,  0.1d0,  0.17d0, 0.3d0,  0.5d0, &
 !                0.8d0,   1.3d0,   2.d0,  3.d0, 5.d0,  12.d0/) !soil depth
 
-real :: tot, avesm, avesm_temp, Dp
+real :: tot, avesm, avelai, avesm_temp, Dp
 integer :: nsc
 ! end of hcp
 
@@ -141,21 +141,21 @@ if (clmupdate_lai==2) then
   ! this should not happen, but would cause div by zero.
 
   do i = 1, dim_obs_p ! loop over all observations
-    avesm = 0.0 ! use avesm as grid cell average collecter
-    do j = 1, clm_endp-clm_begp ! loop over all patches
+    avelai = 0.0 ! use avelai as grid cell average collecter
+    do j = 1, clm_endp-clm_begp+1 ! loop over all patches
       write(*,*) 'DEBUG LAI : obs_index_p(i), clm_patch2gc(j)', obs_index_p(i), clm_patch2gc(j)
       if (obs_index_p(i)==clm_patch2gc(j)) then
         write(*,*) 'DEBUG LAI : state dsladlai', state_p(j+2*clm_varsize)
         if (state_p(j+2*clm_varsize)>0.0) then
-          avesm = avesm + clm_patchwt(j) * ((state_p(j+1*clm_varsize)&
+          avelai = avelai + clm_patchwt(j) * ((state_p(j+1*clm_varsize)&
             *(exp(state_p(j)*state_p(j+2*clm_varsize)) - 1.0))/state_p(j+2*clm_varsize)) ! formula for tlai from leafc
         else
-          avesm = avesm +  clm_patchwt(j) *(state_p(j+1*clm_varsize)*state_p(j)) ! 2nd formula
+          avelai = avelai +  clm_patchwt(j) *(state_p(j+1*clm_varsize)*state_p(j)) ! 2nd formula
         endif ! dsladlai decider
       endif ! this patch is in gridcell of observation
-      write(*,*) 'DEBUG LAI : average ', avesm
+      write(*,*) 'DEBUG LAI : average ', avelai
     enddo ! all patches for obs checked
-    m_state_p(i) = avesm ! == lai of gridcell where the observation is
+    m_state_p(i) = avelai ! == lai of gridcell where the observation is
   enddo ! all observations
 endif ! clmupdate_lai == 2 : m_state_p now contains lai for each gridcell with an observation.
 
