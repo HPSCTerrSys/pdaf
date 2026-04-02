@@ -514,6 +514,15 @@ State vector variables updated for each option:
    (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
    `t_grnd`.
 
+-  4: Like `2`, but additionally updates surface water temperature
+   (`t_h2osfc`). State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_h2osfc`.
+
+-  5: Like `3`, but additionally updates surface water temperature
+   (`t_h2osfc`). State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_grnd`, `t_h2osfc`.
 
 See [Land Surface Temperature Data Assimilation](lstda) for a detailed
 description.
@@ -587,9 +596,9 @@ Used in two contexts:
 - **SWC state vector**: when `CLM:statevec_allcol` and
   `CLM:statevec_only_active` are both switched on, limits the number
   of soil layers included per column.
-- **T state vector**: when `CLM:update_T` is `2` or `3`, limits the
-  number of `t_soisno` layers included. The effective number of layers
-  is `min(nlevgrnd, CLM:statevec_max_layer)`.
+- **T state vector**: when `CLM:update_T` is `2`, `3`, `4`, or `5`,
+  limits the number of `t_soisno` layers included. The effective number
+  of layers is `min(nlevgrnd, CLM:statevec_max_layer)`.
 
 If `25` (default): All layers are in the state vector (CLM5 has 25
 soil layers by default, so this effectively means no restriction).
