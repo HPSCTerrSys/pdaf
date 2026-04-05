@@ -7,7 +7,7 @@ Data Assimilation Framework ([PDAF](http://pdaf.awi.de/trac/wiki)).
 
 Note that TSMP-PDAF does not follow the multiple program multiple data
 (MPMD) paradigm that TSMP does. Instead component models are loaded as
-libraries and compiled into a single executable (@Kurtz2016).
+libraries and compiled into a single executable ({cite}`Kurtz2016`).
 
 ## Issues
 

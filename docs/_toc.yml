@@ -34,13 +34,12 @@ parts:
   - caption: Developer's Guide
     chapters:
 
-    - file: developers_guide/README
-      title: Developer's Guide
-      sections:
-      - file: developers_guide/dev
-      - file: developers_guide/debugging
-        title: Debugging TSMP-PDAF
-      - file: developers_guide/build_preprocessor_variables
+    - file: developers_guide/dev
+
+    - file: developers_guide/debugging
+      title: Debugging TSMP-PDAF
+
+    - file: developers_guide/build_preprocessor_variables
 
   - caption: Reference
     chapters:
