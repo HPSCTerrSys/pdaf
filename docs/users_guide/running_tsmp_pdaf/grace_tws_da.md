@@ -1,9 +1,9 @@
 (gracetws)=
 # GRACE/TWS Data Assimilation #
 
-This page describes the assimilation of Terrestrial Water Storage (TWS)
-anomaly observations derived from GRACE/GRACE-FO satellite data into the
-eCLM/CLM5 land-surface model using the PDAF-OMI framework.
+This page describes the assimilation of Terrestrial Water Storage
+(TWS) anomaly observations derived from GRACE/GRACE-FO satellite data
+into the eCLM land-surface model using the PDAF-OMI framework.
 
 ## Configuration ##
 
@@ -11,14 +11,14 @@ TWS DA is enabled by setting
 [`CLM:update_tws = 1`](enkfpf:clm:update_tws) in `enkfpf.par`.  The
 following additional parameters control its behaviour:
 
-| Parameter | Section | Purpose |
-|-----------|---------|---------|
-| [`CLM:update_tws`](enkfpf:clm:update_tws) | `[CLM]` | Enable/disable TWS DA |
-| [`DA:state_setup`](enkfpf:da:state_setup) | `[DA]` | State vector composition |
-| [`DA:TWS_smoother`](enkfpf:da:tws_smoother) | `[DA]` | Instantaneous vs. monthly-mean water storage |
-| [`DA:max_inc`](enkfpf:da:max_inc) | `[DA]` | Maximum increment as fraction of state value |
-| [`DA:exclude_greenland`](enkfpf:da:exclude_greenland) | `[DA]` | Exclude Greenland from state vector |
-| [`DA:set_zero_start`](enkfpf:da:set_zero_start) | `[DA]` | Reset running average before first GRACE obs |
+| Parameter                                             | Section | Purpose                                      |
+|-------------------------------------------------------|---------|----------------------------------------------|
+| [`CLM:update_tws`](enkfpf:clm:update_tws)             | `[CLM]` | Enable/disable TWS DA                        |
+| [`DA:state_setup`](enkfpf:da:state_setup)             | `[DA]`  | State vector composition                     |
+| [`DA:TWS_smoother`](enkfpf:da:tws_smoother)           | `[DA]`  | Instantaneous vs. monthly-mean water storage |
+| [`DA:max_inc`](enkfpf:da:max_inc)                     | `[DA]`  | Maximum increment as fraction of state value |
+| [`DA:exclude_greenland`](enkfpf:da:exclude_greenland) | `[DA]`  | Exclude Greenland from state vector          |
+| [`DA:set_zero_start`](enkfpf:da:set_zero_start)       | `[DA]`  | Reset running average before first GRACE obs |
 
 ## State Vector ##
 
@@ -30,11 +30,11 @@ vector.  Greenland can optionally be excluded via
 The composition of the state vector is controlled by
 [`DA:state_setup`](enkfpf:da:state_setup):
 
-| `state_setup` | Contents per gridcell |
-|:---:|---|
-| `0` | Liquid + ice summed per soil layer (all layers down to bedrock), snow water equivalent, surface water |
-| `1` | Single pre-aggregated TWS value |
-| `2` | Surface soil moisture (layer 1), root-zone moisture (layer 4), deep moisture (layer 13), snow water equivalent |
+| `state_setup` | Contents per gridcell                                                                                          |
+|:-------------:|----------------------------------------------------------------------------------------------------------------|
+|      `0`      | Liquid + ice summed per soil layer (all layers down to bedrock), snow water equivalent, surface water          |
+|      `1`      | Single pre-aggregated TWS value                                                                                |
+|      `2`      | Surface soil moisture (layer 1), root-zone moisture (layer 4), deep moisture (layer 13), snow water equivalent |
 
 ## Temporal Averaging ##
 
