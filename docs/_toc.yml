@@ -36,6 +36,8 @@ parts:
 
     - file: developers_guide/build_preprocessor_variables
 
+    - file: developers_guide/how_to_use_this_document
+
   - caption: Reference
     chapters:
     # - file: reference/history_fields
