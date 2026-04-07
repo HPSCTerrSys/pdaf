@@ -22,7 +22,6 @@ parts:
       - file: users_guide/running_tsmp_pdaf/input_enkfpf
       - file: users_guide/running_tsmp_pdaf/tsmp_pdaf_omi
       - file: users_guide/running_tsmp_pdaf/grace_tws_da
-      - file: users_guide/running_tsmp_pdaf/omi_developer_guide
 
     - file: users_guide/misc/README
       title: Misc
@@ -40,6 +39,8 @@ parts:
     - file: developers_guide/build_preprocessor_variables
 
     - file: developers_guide/how_to_use_this_document
+
+    - file: developers_guide/omi_developer_guide
 
   - caption: Reference
     chapters:
