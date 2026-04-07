@@ -205,7 +205,7 @@ void update_tsmp(){
     /* } */
     /* TODO: enkfpf.par input switch "CLM:print_inc" */
 #ifdef CLMFIVE
-    if ((clmupdate_tws != 0) || (clmupdate_swc != 0)){
+    if ((clmupdate_tws != 0) || (clmupdate_swc != 0 && clmprint_inc !=0)){
       print_inc_clm();
     }
 #endif
