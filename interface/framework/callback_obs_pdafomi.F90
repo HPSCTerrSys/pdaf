@@ -70,11 +70,6 @@
     !dim_obs_C = 0
 
 
-    assim_GRACE = (clmupdate_tws /= 0)
-    assim_SM = (clmupdate_swc /= 0)
-
-
-
     ! Call observation-specific routines
     ! The routines are independent, so it is not relevant
     ! in which order they are called

@@ -100,6 +100,9 @@ SUBROUTINE init_pdaf_parse()
   rms_obs_SM = rms_obs              ! backward compatibility
   handle = 'rms_obs_SM'             ! RMS error for SM observations
   CALL parse(handle, rms_obs_SM)
+  ! rms_obs_C = rms_obs              ! backward compatibility
+  ! handle = 'rms_obs_C'             ! RMS error for C observations
+  ! CALL parse(handle, rms_obs_C)
 #endif
 
   handle = 'dim_obs'                 ! Number of observations
