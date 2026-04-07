@@ -31,6 +31,8 @@ parts:
   - caption: Developer's Guide
     chapters:
 
+    - file: developers_guide/contributing
+
     - file: developers_guide/dev
 
     - file: developers_guide/debugging
