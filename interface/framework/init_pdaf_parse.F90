@@ -124,7 +124,11 @@ SUBROUTINE init_pdaf_parse()
   CALL parse(handle, incremental)
   handle = 'use_omi'                 ! Set whether to use OMI interface
   CALL parse(handle, use_omi)
+#if defined CLMSA
+#ifdef CLMFIVE
   use_omi_model = use_omi       ! Set variable for use in interface/model routines
+#endif
+#endif
 
   ! Filter-specific settings
   handle = 'type_trans'              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF
