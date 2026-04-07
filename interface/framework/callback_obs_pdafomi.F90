@@ -36,12 +36,15 @@
   SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
 
     use enkf_clm_mod, only: clmupdate_swc, clmupdate_tws
+    use enkf_clm_mod, only: clmupdate_T
 
     ! Include functions for different observations
     USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: init_dim_obs_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: init_dim_obs_SM
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: init_dim_obs_LST
     !USE obs_ST_pdafomi, ONLY: assim_C
     !USE obs_ST_pdafomi, ONLY: init_dim_obs_C
 
@@ -57,6 +60,7 @@
   ! *** Local variables ***
     INTEGER :: dim_obs_GRACE ! Observation dimensions
     INTEGER :: dim_obs_SM ! Observation dimensions
+    INTEGER :: dim_obs_LST ! Observation dimensions
     !INTEGER :: dim_obs_C ! Observation dimensions
 
 
@@ -67,6 +71,7 @@
     ! Initialize number of observations
     dim_obs_GRACE = 0
     dim_obs_SM = 0
+    dim_obs_LST = 0
     !dim_obs_C = 0
 
 
@@ -80,9 +85,10 @@
 
     IF (assim_GRACE) CALL init_dim_obs_GRACE(step, dim_obs_GRACE)
     IF (assim_SM) CALL init_dim_obs_SM(step, dim_obs_SM)
+    IF (assim_LST) CALL init_dim_obs_LST(step, dim_obs_LST)
     !IF (assim_C) CALL init_dim_obs_C(step, dim_obs_C)
 
-    dim_obs = dim_obs_GRACE + dim_obs_SM! + dim_obs_C
+    dim_obs = dim_obs_GRACE + dim_obs_SM + dim_obs_LST! + dim_obs_C
 
   END SUBROUTINE init_dim_obs_pdafomi
 
@@ -101,6 +107,8 @@
     USE obs_GRACE_pdafomi, ONLY: obs_op_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: obs_op_SM
+    USE obs_SM_pdafomi, ONLY: assim_LST
+    USE obs_SM_pdafomi, ONLY: obs_op_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: obs_op_C
 
@@ -131,6 +139,7 @@
 
     IF (assim_GRACE) CALL obs_op_GRACE(dim_p, dim_obs, state_p, ostate)
     IF (assim_SM) CALL obs_op_SM(dim_p, dim_obs, state_p, ostate)
+    IF (assim_LST) CALL obs_op_LST(dim_p, dim_obs, state_p, ostate)
     !IF (assim_C) CALL obs_op_C(dim_p, dim_obs, state_p, ostate)
 
   END SUBROUTINE obs_op_pdafomi
@@ -150,6 +159,8 @@
     USE obs_GRACE_pdafomi, ONLY: init_dim_obs_l_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: init_dim_obs_l_SM
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: init_dim_obs_l_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: init_dim_obs_l_C
 
@@ -170,6 +181,7 @@
 
     IF (assim_GRACE) CALL init_dim_obs_l_GRACE(domain_p, step, dim_obs, dim_obs_l)
     IF (assim_SM) CALL init_dim_obs_l_SM(domain_p, step, dim_obs, dim_obs_l)
+    IF (assim_LST) CALL init_dim_obs_l_LST(domain_p, step, dim_obs, dim_obs_l)
     !IF (assim_C) CALL init_dim_obs_l_C(domain_p, step, dim_obs, dim_obs_l)
 
   END SUBROUTINE init_dim_obs_l_pdafomi
@@ -190,6 +202,8 @@
     USE obs_GRACE_pdafomi, ONLY: localize_covar_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: localize_covar_SM
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: localize_covar_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: localize_covar_C
 
@@ -224,6 +238,7 @@
 
     IF (assim_GRACE) CALL localize_covar_GRACE(dim_p, dim_obs, HP_p, HPH, coords_p)
     IF (assim_SM) CALL localize_covar_SM(dim_p, dim_obs, HP_p, HPH, coords_p)
+    IF (assim_LST) CALL localize_covar_LST(dim_p, dim_obs, HP_p, HPH, coords_p)
     !IF (assim_C) CALL localize_covar_C(dim_p, dim_obs, HP_p, HPH, coords_p)
 
 
@@ -242,6 +257,8 @@
     USE obs_GRACE_pdafomi, ONLY: add_obs_err_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: add_obs_err_SM
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: add_obs_err_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: add_obs_err_C
 
@@ -257,6 +274,7 @@
     REAL :: variance_obs  ! variance of observations
     IF (assim_GRACE) CALL add_obs_err_GRACE(step, dim_obs, C)
     IF (assim_SM) CALL add_obs_err_SM(step, dim_obs, C)
+    IF (assim_LST) CALL add_obs_err_LST(step, dim_obs, C)
     !IF (assim_C) CALL add_obs_err_C(step, dim_obs, C)
 
   END SUBROUTINE add_obs_err_pdafomi
@@ -268,6 +286,8 @@
     USE obs_GRACE_pdafomi, ONLY: init_obscovar_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: init_obscovar_SM
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: init_obscovar_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: init_obscovar_C
     IMPLICIT NONE
@@ -285,6 +305,7 @@
 
     IF (assim_GRACE) CALL init_obscovar_GRACE(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
     IF (assim_SM) CALL init_obscovar_SM(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    IF (assim_LST) CALL init_obscovar_LST(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
     !IF (assim_C) CALL init_obscovar_C(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
 
   END SUBROUTINE init_obscovar_pdafomi
@@ -296,6 +317,8 @@
     use obs_GRACE_pdafomi, ONLY: prodRinvA_GRACE
     use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: prodRinvA_SM
+    use obs_LST_pdafomi, ONLY: assim_LST
+    use obs_LST_pdafomi, ONLY: prodRinvA_LST
     !use obs_C_pdafomi, ONLY: assim_C
     !use obs_C_pdafomi, ONLY: prodRinvA_C
 
@@ -309,6 +332,7 @@
 
     IF (assim_GRACE) CALL prodRinvA_GRACE(step, dim_obs_p, rank, obs_p, A_p, C_p)
     IF (assim_SM) CALL prodRinvA_SM(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    IF (assim_LST) CALL prodRinvA_LST(step, dim_obs_p, rank, obs_p, A_p, C_p)
     !IF (assim_C) CALL prodRinvA_C(step, dim_obs_p, rank, obs_p, A_p, C_p)
 
   END SUBROUTINE prodRinvA_pdafomi
@@ -320,6 +344,8 @@
     use obs_GRACE_pdafomi, ONLY: prodRinvA_l_GRACE
     use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: prodRinvA_l_SM
+    use obs_LST_pdafomi, ONLY: assim_LST
+    use obs_LST_pdafomi, ONLY: prodRinvA_l_LST
     !use obs_C_pdafomi, ONLY: assim_C
     !use obs_C_pdafomi, ONLY: prodRinvA_l_C
 
@@ -335,6 +361,7 @@
 
     IF (assim_GRACE) CALL prodRinvA_l_GRACE(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
     IF (assim_SM) CALL prodRinvA_l_SM(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    IF (assim_LST) CALL prodRinvA_l_LST(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
     !IF (assim_C) CALL prodRinvA_l_C(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 
   END SUBROUTINE prodRinvA_l_pdafomi
@@ -345,6 +372,8 @@
     use obs_GRACE_pdafomi, ONLY: deallocate_obs_GRACE
     use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: deallocate_obs_SM
+    use obs_LST_pdafomi, ONLY: assim_LST
+    use obs_LST_pdafomi, ONLY: deallocate_obs_LST
     !use obs_C_pdafomi, ONLY: assim_C
     !use obs_C_pdafomi, ONLY: deallocate_obs_C
 
@@ -352,6 +381,7 @@
 
     IF (assim_GRACE) CALL deallocate_obs_GRACE()
     IF (assim_SM) CALL deallocate_obs_SM()
+    IF (assim_LST) CALL deallocate_obs_LST()
     !IF (assim_C) CALL deallocate_obs_C()
 
   END SUBROUTINE deallocate_obs_pdafomi
