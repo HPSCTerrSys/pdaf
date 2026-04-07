@@ -56,6 +56,7 @@ update_texture  =
 update_T  =
 print_swc   =
 print_et   =
+print_inc   =
 statevec_allcol =
 statevec_colmean =
 statevec_only_active =
@@ -511,6 +512,18 @@ and include the specifier `update` in the file name.
 
 `CLM:print_et`: (integer) Invoke function `write_clm_statistics`. For
 further information, see source code. Default: `0`.
+
+### CLM:print_inc ###
+
+`CLM:print_inc`: (integer) If set to `1`, the analysis increment
+(post-analysis minus prior state) is printed after each SWC update
+step by invoking `print_inc_clm`. Has no effect when only TWS
+assimilation is active (`CLM:update_tws`), for which the increment is
+always printed. Default: `0`.
+
+-  0: Increment output disabled for SWC updates.
+
+-  1: Increment output enabled for SWC updates.
 
 ### CLM:statevec_allcol ###
 
@@ -1013,6 +1026,7 @@ Default: 0, output turned off.
  |           | `update_swc`            | 1             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
+ |           | `print_inc`             | 0             |
  |           | `statevec_allcol`       | 0             |
  |           | `statevec_colmean`      | 0             |
  |           | `statevec_only_active`  | 0             |
