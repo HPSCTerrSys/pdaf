@@ -63,6 +63,12 @@ SUBROUTINE init_pdaf_parse()
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM
 #endif
+#if defined CLMSA
+#ifdef CLMFIVE
+  use enkf_clm_mod, only: use_omi_model
+#endif
+#endif
+
 
   IMPLICIT NONE
 
@@ -121,6 +127,11 @@ SUBROUTINE init_pdaf_parse()
   CALL parse(handle, incremental)
   handle = 'use_omi'                 ! Set whether to use OMI interface
   CALL parse(handle, use_omi)
+#if defined CLMSA
+#ifdef CLMFIVE
+  use_omi_model = use_omi       ! Set variable for use in interface/model routines
+#endif
+#endif
 
   ! Filter-specific settings
   handle = 'type_trans'              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF
