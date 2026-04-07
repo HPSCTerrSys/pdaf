@@ -9,6 +9,26 @@ See also create observation script for details: https://icg4geo.icg.kfa-juelich.
 
 Both global and local filters can be used. To enable multi-scale data assimilation, different localization radii for different observation types can be passed. Note that the localization radius for SM is currently in km and for GRACE in #gridcells.
 
-The framework generates a state vector for each type individually before the assimilation, some things would need to be adapted when mutliple observation types are assimilated at the same timestep. Currently, one observation file only consists of one observation type. As SM observations are usually assimilated at noon and GRACE observations are assimilated at the end of the month at midnight, this should not provide any problems.
-
 If questions arise contact ewerdwalbesloh@geod.uni-bonn.de
+
+## Observation File Format
+
+The reader `read_obs_nc_type` expects the following variables in each
+observation file:
+
+| NetCDF name  | Type                           | Required?        |
+|--------------|--------------------------------|------------------|
+| `dim_obs`    | dimension                      | yes              |
+| `obs_clm`    | `REAL(dim_obs)`                | yes              |
+| `type_clm`   | `CHARACTER(20)(dim_obs)`       | yes              |
+| `lon`        | `REAL(dim_obs)`                | yes              |
+| `lat`        | `REAL(dim_obs)`                | yes              |
+| `layer`      | `INTEGER(dim_obs)`             | yes              |
+| `dr`         | `REAL(1)`                      | yes              |
+| `obserr_clm` | `REAL(dim_obs)`                | if `multierr=1`  |
+| `obscov_clm` | `REAL(dim_obs,dim_obs)`        | if `multierr=2`  |
+
+Files follow the naming convention `<obs_filename>.<NNNNN>` (five-digit
+zero-padded PDAF step). The `type_clm` field must be homogeneous within
+a file — a file containing GRACE observations cannot simultaneously
+contain SM or C observations.
