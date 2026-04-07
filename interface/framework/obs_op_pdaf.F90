@@ -176,6 +176,28 @@ if (clmupdate_T==3) then
   END DO
 
 endif
+
+if (clmupdate_T==4) then
+
+  lpointobs = .false.
+
+  DO i = 1, dim_obs_p
+    ! first implementation: simulated LST equals TSKIN
+    m_state_p(i) = state_p(obs_index_p(i))
+  END DO
+
+endif
+
+if (clmupdate_T==5) then
+
+  lpointobs = .false.
+
+  DO i = 1, dim_obs_p
+    ! first implementation: simulated LST equals TSKIN
+    m_state_p(i) = state_p(obs_index_p(i))
+  END DO
+
+endif
 #endif
 
 

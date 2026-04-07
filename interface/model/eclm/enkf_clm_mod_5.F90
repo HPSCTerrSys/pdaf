@@ -109,8 +109,9 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmT_mask_snow")            :: clmT_mask_snow
   integer(c_int),bind(C,name="clmincrement_type")            :: clmincrement_type
   real(c_double),bind(C,name="clmT_mask_T")            :: clmT_mask_T
-  real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
-  real(c_double),bind(C,name="clmT_max_increment")      :: clmT_max_increment
+  real(c_double),bind(C,name="clmT_mask_snow_depth")   :: clmT_mask_snow_depth
+  real(c_double),bind(C,name="clmcrns_bd")             :: clmcrns_bd
+  real(c_double),bind(C,name="clmT_max_increment")     :: clmT_max_increment
 
   integer  :: nstep     ! time step index
   real(r8) :: dtime     ! time step increment (sec)
@@ -256,7 +257,9 @@ module enkf_clm_mod
     ! values used in computing increments during updating the state
     ! vector in column-mean-mode (SWC) or gridcell-mean-mode (T).
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
-    if ( (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_tws/=0 ) then
+    if ((clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. clmupdate_T==2 &
+      .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5 &
+      .or. clmupdate_tws/=0 ) then
       allocate(clm_statevec_orig(clm_statevecsize))
     end if
 
@@ -482,6 +485,7 @@ module enkf_clm_mod
     integer :: lev
     integer :: p
     integer :: cc
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     integer :: begp, endp   ! per-proc beginning and ending pft indices
     integer :: begc, endc   ! per-proc beginning and ending column indices
@@ -490,6 +494,8 @@ module enkf_clm_mod
 
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
+
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
 #ifdef PDAF_DEBUG
     WRITE(*,"(a,i5,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a,i10,a)") &
@@ -555,13 +561,13 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(2+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(2+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
-      !                                      2:(1+nlevgrnd): TSOIL layers
-      !                                      (2+nlevgrnd): TVEG
-      do lev=1,(2+nlevgrnd)
+      !                                      2:(1+n_lev_T): TSOIL layers
+      !                                      (2+n_lev_T): TVEG
+      do lev=1,(2+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
@@ -576,18 +582,18 @@ module enkf_clm_mod
         ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = cc
 
-        ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
-        do lev=1,nlevgrnd
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
           state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
         end do
 
-        ! TVEG (variable index 2+nlevgrnd)
-        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
       end do
 
       ! 2) PATCH/GRC: STATEVECSIZE
       clm_varsize      =  endg-begg+1
-      clm_statevecsize =  (1 + nlevgrnd + 1)* (endg-begg+1)  !TSKIN, then nlevgrnd times TSOIL and TV
+      clm_statevecsize =  (2 + n_lev_T)* (endg-begg+1)  !TSKIN, then n_lev_T times TSOIL and TV
 
       ! 3) PATCH/GRC: PDAF->CLM
       !
@@ -599,8 +605,8 @@ module enkf_clm_mod
       !
       ! Variable index j layout (same as STATE_CLM2PDAF_P second dimension):
       !   j = 1:              TSKIN
-      !   j = 2:(1+nlevgrnd): TSOIL layers (CLM level = j - 1)
-      !   j = (2+nlevgrnd):   TVEG
+      !   j = 2:(1+n_lev_T): TSOIL layers (CLM level = j - 1)
+      !   j = (2+n_lev_T):   TVEG
       !
       ! NOTE: To get the CLM level from j for TSOIL, use: clm_level = j - 1
       !
@@ -629,15 +635,15 @@ module enkf_clm_mod
             state_pdaf2clm_p_p(cc) = p !TSKIN
             state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
             state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
-            do lev=1,nlevgrnd
-              ! variable index 2 to 1+nlevgrnd: TSOIL layers
+            do lev=1,n_lev_T
+              ! variable index 2 to 1+n_lev_T: TSOIL layers
               state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
               state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
               state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
             end do
-            state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
-            state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
-            state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 2 + nlevgrnd ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
             exit
           end if
         end do
@@ -655,14 +661,14 @@ module enkf_clm_mod
       ! layer index of CLM, but rather a variable index of the state
       ! vector, in order tomake the index mapping 1:1.
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(begp:endp,1:(3+nlevgrnd)))
+      allocate(state_clm2pdaf_p(begp:endp,1:(3+n_lev_T)))
       !                                      ^
       !                                      dimension layout:
       !                                      1: TSKIN
-      !                                      2:(1+nlevgrnd): TSOIL layers
-      !                                      (2+nlevgrnd): TVEG
-      !                                      (3+nlevgrnd): TGRND
-      do lev=1,(3+nlevgrnd)
+      !                                      2:(1+n_lev_T): TSOIL layers
+      !                                      (2+n_lev_T): TVEG
+      !                                      (3+n_lev_T): TGRND
+      do lev=1,(3+n_lev_T)
         do p=begp,endp
           ! Default: inactive
           state_clm2pdaf_p(p,lev) = ispval
@@ -677,21 +683,21 @@ module enkf_clm_mod
         ! TSKIN (variable index 1)
         state_clm2pdaf_p(p,1) = cc
 
-        ! TSOIL layers (variable indices 2 to 1+nlevgrnd)
-        do lev=1,nlevgrnd
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
           state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
         end do
 
-        ! TVEG (variable index 2+nlevgrnd)
-        state_clm2pdaf_p(p, 2+nlevgrnd) = cc + (1+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
 
-        ! TGRND (variable index 3+nlevgrnd)
-        state_clm2pdaf_p(p, 3+nlevgrnd) = cc + (2+nlevgrnd)*(clm_endg - clm_begg + 1)
+        ! TGRND (variable index 3+n_lev_T)
+        state_clm2pdaf_p(p, 3+n_lev_T) = cc + (2+n_lev_T)*(clm_endg - clm_begg + 1)
       end do
 
       ! 2) PATCH/GRC: STATEVECSIZE
       clm_varsize      =  endg-begg+1
-      clm_statevecsize =  (3 + nlevgrnd)* (endg-begg+1)  !TSKIN, then nlevgrnd times TSOIL, TV and TGRND
+      clm_statevecsize =  (3 + n_lev_T)* (endg-begg+1)  !TSKIN, then n_lev_T times TSOIL, TV and TGRND
 
       ! 3) PATCH/GRC: PDAF->CLM
       !
@@ -703,9 +709,9 @@ module enkf_clm_mod
       !
       ! Variable index j layout (same as STATE_CLM2PDAF_P second dimension):
       !   j = 1:              TSKIN
-      !   j = 2:(1+nlevgrnd): TSOIL layers (CLM level = j - 1)
-      !   j = (2+nlevgrnd):   TVEG
-      !   j = (3+nlevgrnd):   TGRND
+      !   j = 2:(1+n_lev_T): TSOIL layers (CLM level = j - 1)
+      !   j = (2+n_lev_T):   TVEG
+      !   j = (3+n_lev_T):   TGRND
       !
       ! NOTE: To get the CLM level from j for TSOIL, use: clm_level = j - 1
       !
@@ -734,18 +740,18 @@ module enkf_clm_mod
             state_pdaf2clm_p_p(cc) = p !TSKIN
             state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
             state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
-            do lev=1,nlevgrnd
-              ! variable index 2 to 1+nlevgrnd: TSOIL layers
+            do lev=1,n_lev_T
+              ! variable index 2 to 1+n_lev_T: TSOIL layers
               state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
               state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
               state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
             end do
-            state_pdaf2clm_p_p(cc+(1+nlevgrnd)*clm_varsize) = p !TV
-            state_pdaf2clm_c_p(cc+(1+nlevgrnd)*clm_varsize) = patch%column(p) !TV
-            state_pdaf2clm_j_p(cc+(1+nlevgrnd)*clm_varsize) = 2 + nlevgrnd ! variable index: TVEG
-            state_pdaf2clm_p_p(cc+(2+nlevgrnd)*clm_varsize) = p !TGRND
-            state_pdaf2clm_c_p(cc+(2+nlevgrnd)*clm_varsize) = patch%column(p) !TGRND
-            state_pdaf2clm_j_p(cc+(2+nlevgrnd)*clm_varsize) = 3 + nlevgrnd ! variable index: TGRND
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(2+n_lev_T)*clm_varsize) = p !TGRND
+            state_pdaf2clm_c_p(cc+(2+n_lev_T)*clm_varsize) = patch%column(p) !TGRND
+            state_pdaf2clm_j_p(cc+(2+n_lev_T)*clm_varsize) = 3 + n_lev_T ! variable index: TGRND
             exit
           end if
         end do
@@ -754,8 +760,166 @@ module enkf_clm_mod
 
     endif
 
-    if(clmupdate_T < 1 .or. clmupdate_T > 3) then
-      error stop "LST-DA only implemented for clmupdate_T==1 and clmupdate_T==2 and clmupdate_T==3."
+    if(clmupdate_T==4) then
+
+      ! clmupdate_T==4: like ==2 but with T_H2OSFC added to state vector.
+      ! State vector layout:
+      !   1: TSKIN
+      !   2:(1+n_lev_T): TSOIL layers
+      !   (2+n_lev_T): TVEG
+      !   (3+n_lev_T): T_H2OSFC
+
+      ! 1) PATCH/GRC: CLM->PDAF
+      IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
+      allocate(state_clm2pdaf_p(begp:endp,1:(3+n_lev_T)))
+      do lev=1,(3+n_lev_T)
+        do p=begp,endp
+          ! Default: inactive
+          state_clm2pdaf_p(p,lev) = ispval
+        end do
+      end do
+
+      do p=clm_begp,clm_endp
+        cc = (patch%gridcell(p) - clm_begg + 1)
+        ! TSKIN (variable index 1)
+        state_clm2pdaf_p(p,1) = cc
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
+          state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
+        end do
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
+        ! T_H2OSFC (variable index 3+n_lev_T)
+        state_clm2pdaf_p(p, 3+n_lev_T) = cc + (2+n_lev_T)*(clm_endg - clm_begg + 1)
+      end do
+
+      ! 2) PATCH/GRC: STATEVECSIZE
+      clm_varsize      =  endg-begg+1
+      clm_statevecsize =  (3 + n_lev_T)* (endg-begg+1)  !TSKIN, n_lev_T*TSOIL, TVEG, T_H2OSFC
+
+      ! 3) PATCH/GRC: PDAF->CLM
+      IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
+      allocate(state_pdaf2clm_p_p(clm_statevecsize))
+      IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
+      allocate(state_pdaf2clm_c_p(clm_statevecsize))
+      IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
+      allocate(state_pdaf2clm_j_p(clm_statevecsize))
+
+      ! Default: inactive
+      do cc=1,clm_statevecsize
+        state_pdaf2clm_p_p(cc) = ispval
+        state_pdaf2clm_c_p(cc) = ispval
+        state_pdaf2clm_j_p(cc) = ispval
+      end do
+
+      do cc=1,clm_statevecsize
+        do p=clm_begp,clm_endp
+          if(state_clm2pdaf_p(p, 1) == cc) then
+            state_pdaf2clm_p_p(cc) = p !TSKIN
+            state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
+            state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
+            do lev=1,n_lev_T
+              state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
+              state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
+              state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
+            end do
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(2+n_lev_T)*clm_varsize) = p !T_H2OSFC
+            state_pdaf2clm_c_p(cc+(2+n_lev_T)*clm_varsize) = patch%column(p) !T_H2OSFC
+            state_pdaf2clm_j_p(cc+(2+n_lev_T)*clm_varsize) = 3 + n_lev_T ! variable index: T_H2OSFC
+            exit
+          end if
+        end do
+      end do
+
+    endif
+
+    if(clmupdate_T==5) then
+
+      ! clmupdate_T==5: like ==3 but with T_H2OSFC added to state vector.
+      ! State vector layout:
+      !   1: TSKIN
+      !   2:(1+n_lev_T): TSOIL layers
+      !   (2+n_lev_T): TVEG
+      !   (3+n_lev_T): TGRND
+      !   (4+n_lev_T): T_H2OSFC
+
+      ! 1) PATCH/GRC: CLM->PDAF
+      IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
+      allocate(state_clm2pdaf_p(begp:endp,1:(4+n_lev_T)))
+      do lev=1,(4+n_lev_T)
+        do p=begp,endp
+          ! Default: inactive
+          state_clm2pdaf_p(p,lev) = ispval
+        end do
+      end do
+
+      do p=clm_begp,clm_endp
+        cc = (patch%gridcell(p) - clm_begg + 1)
+        ! TSKIN (variable index 1)
+        state_clm2pdaf_p(p,1) = cc
+        ! TSOIL layers (variable indices 2 to 1+n_lev_T)
+        do lev=1,n_lev_T
+          state_clm2pdaf_p(p, 1+lev) = cc + lev*(clm_endg - clm_begg + 1)
+        end do
+        ! TVEG (variable index 2+n_lev_T)
+        state_clm2pdaf_p(p, 2+n_lev_T) = cc + (1+n_lev_T)*(clm_endg - clm_begg + 1)
+        ! TGRND (variable index 3+n_lev_T)
+        state_clm2pdaf_p(p, 3+n_lev_T) = cc + (2+n_lev_T)*(clm_endg - clm_begg + 1)
+        ! T_H2OSFC (variable index 4+n_lev_T)
+        state_clm2pdaf_p(p, 4+n_lev_T) = cc + (3+n_lev_T)*(clm_endg - clm_begg + 1)
+      end do
+
+      ! 2) PATCH/GRC: STATEVECSIZE
+      clm_varsize      =  endg-begg+1
+      clm_statevecsize =  (4 + n_lev_T)* (endg-begg+1)  !TSKIN, n_lev_T*TSOIL, TVEG, TGRND, T_H2OSFC
+
+      ! 3) PATCH/GRC: PDAF->CLM
+      IF (allocated(state_pdaf2clm_p_p)) deallocate(state_pdaf2clm_p_p)
+      allocate(state_pdaf2clm_p_p(clm_statevecsize))
+      IF (allocated(state_pdaf2clm_c_p)) deallocate(state_pdaf2clm_c_p)
+      allocate(state_pdaf2clm_c_p(clm_statevecsize))
+      IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
+      allocate(state_pdaf2clm_j_p(clm_statevecsize))
+
+      ! Default: inactive
+      do cc=1,clm_statevecsize
+        state_pdaf2clm_p_p(cc) = ispval
+        state_pdaf2clm_c_p(cc) = ispval
+        state_pdaf2clm_j_p(cc) = ispval
+      end do
+
+      do cc=1,clm_statevecsize
+        do p=clm_begp,clm_endp
+          if(state_clm2pdaf_p(p, 1) == cc) then
+            state_pdaf2clm_p_p(cc) = p !TSKIN
+            state_pdaf2clm_c_p(cc) = patch%column(p) !TSKIN
+            state_pdaf2clm_j_p(cc) = 1 ! variable index 1: TSKIN
+            do lev=1,n_lev_T
+              state_pdaf2clm_p_p(cc + lev*clm_varsize) = p !TSOIL
+              state_pdaf2clm_c_p(cc + lev*clm_varsize) = patch%column(p) !TSOIL
+              state_pdaf2clm_j_p(cc + lev*clm_varsize) = 1 + lev ! variable index TSOIL
+            end do
+            state_pdaf2clm_p_p(cc+(1+n_lev_T)*clm_varsize) = p !TV
+            state_pdaf2clm_c_p(cc+(1+n_lev_T)*clm_varsize) = patch%column(p) !TV
+            state_pdaf2clm_j_p(cc+(1+n_lev_T)*clm_varsize) = 2 + n_lev_T ! variable index: TVEG
+            state_pdaf2clm_p_p(cc+(2+n_lev_T)*clm_varsize) = p !TGRND
+            state_pdaf2clm_c_p(cc+(2+n_lev_T)*clm_varsize) = patch%column(p) !TGRND
+            state_pdaf2clm_j_p(cc+(2+n_lev_T)*clm_varsize) = 3 + n_lev_T ! variable index: TGRND
+            state_pdaf2clm_p_p(cc+(3+n_lev_T)*clm_varsize) = p !T_H2OSFC
+            state_pdaf2clm_c_p(cc+(3+n_lev_T)*clm_varsize) = patch%column(p) !T_H2OSFC
+            state_pdaf2clm_j_p(cc+(3+n_lev_T)*clm_varsize) = 4 + n_lev_T ! variable index: T_H2OSFC
+            exit
+          end if
+        end do
+      end do
+
+    endif
+
+    if(clmupdate_T < 1 .or. clmupdate_T > 5) then
+      error stop "LST-DA only implemented for clmupdate_T==1 to clmupdate_T==5."
     end if
 
   end subroutine define_clm_statevec_T
@@ -1178,6 +1342,7 @@ module enkf_clm_mod
     integer,intent(in) :: mype
 
     real(r8), pointer :: t_grnd(:)
+    real(r8), pointer :: t_h2osfc(:)
     real(r8), pointer :: t_soisno(:,:)
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
@@ -1185,11 +1350,15 @@ module enkf_clm_mod
     integer :: j,g,cc,c,p
     integer :: n_c,n_p
     integer :: lev
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     character (len = 34) :: fn    !TSMP-PDAF: function name for swc output
 
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
+
     ! LST variables
     t_grnd => temperature_inst%t_grnd_col
+    t_h2osfc => temperature_inst%t_h2osfc_col
     t_veg  => temperature_inst%t_veg_patch
     t_skin => temperature_inst%t_skin_patch
     t_soisno => temperature_inst%t_soisno_col
@@ -1254,7 +1423,7 @@ module enkf_clm_mod
         end if
 
         ! --- TSOIL: average over columns in gridcell (per layer) ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           clm_statevec(cc+lev*clm_varsize) = 0.0
           n_c = 0
           do c=clm_begc,clm_endc
@@ -1272,19 +1441,38 @@ module enkf_clm_mod
         end do
 
         ! --- TVEG: average over patches in gridcell ---
-        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
-          if(patch%gridcell(p)==g) then
-            clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) + t_veg(p)
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
         end do
         if(n_p > 0) then
-          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
-          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
-          error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
+          ! No vegetated patches in this gridcell (bare ground, glacier, lake):
+          ! t_veg retains spval (~1e36) for all patches, so no meaningful TVEG
+          ! average can be formed. TSKIN is used as a fallback to keep the value
+          ! physically plausible within the DA step.
+          !
+          ! Note: this slot does not affect the model state. The distribution
+          ! step guards against writing back to patches where t_veg >= 1e20
+          ! (see update_clm_statevec_T), so the fallback value is never applied.
+          !
+          ! The fallback does, however, participate in ensemble covariance
+          ! estimation during DA, introducing an artificial TSKIN-TVEG
+          ! correlation for these cells. A conceptually cleaner solution would
+          ! be to exclude non-vegetated gridcells from the TVEG part of the
+          ! state vector entirely (detectable at initialisation: all patches in
+          ! the gridcell have t_veg >= 1e20). This would require a mask array
+          ! and non-uniform state vector layout, breaking the current assumption
+          ! that every gridcell contributes the same variable block. The mapping
+          ! arrays state_pdaf2clm_p_p / state_clm2pdaf_p already handle
+          ! non-trivial patch mappings and could serve as a template for this.
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
         end if
 
       end do
@@ -1325,7 +1513,7 @@ module enkf_clm_mod
         end if
 
         ! --- TSOIL: average over columns in gridcell (per layer) ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           clm_statevec(cc+lev*clm_varsize) = 0.0
           n_c = 0
           do c=clm_begc,clm_endc
@@ -1343,35 +1531,223 @@ module enkf_clm_mod
         end do
 
         ! --- TVEG: average over patches in gridcell ---
-        clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
         n_p = 0
         do p=clm_begp,clm_endp
-          if(patch%gridcell(p)==g) then
-            clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) + t_veg(p)
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
             n_p = n_p + 1
           end if
         end do
         if(n_p > 0) then
-          clm_statevec(cc+(1+nlevgrnd)*clm_varsize) = clm_statevec(cc+(1+nlevgrnd)*clm_varsize) / real(n_p, r8)
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
         else
-          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TVEG averaging"
-          error stop "Gridcell without patches in set_clm_statevec_T (TVEG)"
+          ! No vegetated patches: reuse TSKIN mean as safe fallback.
+          ! See the analogous block in clmupdate_T==2 for a detailed discussion.
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
         end if
 
         ! --- TGRND: average over columns in gridcell ---
-        clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = 0.0
+        clm_statevec(cc+(2+n_lev_T)*clm_varsize) = 0.0
         n_c = 0
         do c=clm_begc,clm_endc
           if(col%gridcell(c)==g) then
-            clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = clm_statevec(cc+(2+nlevgrnd)*clm_varsize) + t_grnd(c)
+            clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) + t_grnd(c)
             n_c = n_c + 1
           end if
         end do
         if(n_c > 0) then
-          clm_statevec(cc+(2+nlevgrnd)*clm_varsize) = clm_statevec(cc+(2+nlevgrnd)*clm_varsize) / real(n_c, r8)
+          clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) / real(n_c, r8)
         else
           write(*,*) "ERROR: Gridcell g=", g, " has no columns for TGRND averaging"
           error stop "Gridcell without columns in set_clm_statevec_T (TGRND)"
+        end if
+
+      end do
+
+      ! Save prior gridcell mean state vector for computing
+      ! increment in updating the state vector
+      do cc = 1, clm_statevecsize
+        clm_statevec_orig(cc) = clm_statevec(cc)
+      end do
+
+    endif
+
+    ! clmupdate_T==4: like ==2 but with T_H2OSFC added.
+    if(clmupdate_T==4) then
+
+      do cc = 1, clm_varsize
+
+        g = patch%gridcell(state_pdaf2clm_p_p(cc))
+
+        ! --- TSKIN: average over patches in gridcell ---
+        clm_statevec(cc) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          if(patch%gridcell(p)==g) then
+            clm_statevec(cc) = clm_statevec(cc) + t_skin(p)
+            n_p = n_p + 1
+          end if
+        end do
+        if(n_p > 0) then
+          clm_statevec(cc) = clm_statevec(cc) / real(n_p, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TSKIN averaging"
+          error stop "Gridcell without patches in set_clm_statevec_T (TSKIN)"
+        end if
+
+        ! --- TSOIL: average over columns in gridcell (per layer) ---
+        do lev=1,n_lev_T
+          clm_statevec(cc+lev*clm_varsize) = 0.0
+          n_c = 0
+          do c=clm_begc,clm_endc
+            if(col%gridcell(c)==g) then
+              clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) + t_soisno(c,lev)
+              n_c = n_c + 1
+            end if
+          end do
+          if(n_c > 0) then
+            clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) / real(n_c, r8)
+          else
+            write(*,*) "ERROR: Gridcell g=", g, " layer=", lev, " has no columns for TSOIL averaging"
+            error stop "Gridcell without columns in set_clm_statevec_T (TSOIL)"
+          end if
+        end do
+
+        ! --- TVEG: average over patches in gridcell ---
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
+            n_p = n_p + 1
+          end if
+        end do
+        if(n_p > 0) then
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
+        else
+          ! No vegetated patches: reuse TSKIN mean as safe fallback.
+          ! See the analogous block in clmupdate_T==2 for a detailed discussion.
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
+        end if
+
+        ! --- T_H2OSFC: average over columns in gridcell ---
+        clm_statevec(cc+(2+n_lev_T)*clm_varsize) = 0.0
+        n_c = 0
+        do c=clm_begc,clm_endc
+          if(col%gridcell(c)==g) then
+            clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) + t_h2osfc(c)
+            n_c = n_c + 1
+          end if
+        end do
+        if(n_c > 0) then
+          clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) / real(n_c, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no columns for T_H2OSFC averaging"
+          error stop "Gridcell without columns in set_clm_statevec_T (T_H2OSFC)"
+        end if
+
+      end do
+
+      ! Save prior gridcell mean state vector for computing
+      ! increment in updating the state vector
+      do cc = 1, clm_statevecsize
+        clm_statevec_orig(cc) = clm_statevec(cc)
+      end do
+
+    endif
+
+    ! clmupdate_T==5: like ==3 but with T_H2OSFC added.
+    if(clmupdate_T==5) then
+
+      do cc = 1, clm_varsize
+
+        g = patch%gridcell(state_pdaf2clm_p_p(cc))
+
+        ! --- TSKIN: average over patches in gridcell ---
+        clm_statevec(cc) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          if(patch%gridcell(p)==g) then
+            clm_statevec(cc) = clm_statevec(cc) + t_skin(p)
+            n_p = n_p + 1
+          end if
+        end do
+        if(n_p > 0) then
+          clm_statevec(cc) = clm_statevec(cc) / real(n_p, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no patches for TSKIN averaging"
+          error stop "Gridcell without patches in set_clm_statevec_T (TSKIN)"
+        end if
+
+        ! --- TSOIL: average over columns in gridcell (per layer) ---
+        do lev=1,n_lev_T
+          clm_statevec(cc+lev*clm_varsize) = 0.0
+          n_c = 0
+          do c=clm_begc,clm_endc
+            if(col%gridcell(c)==g) then
+              clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) + t_soisno(c,lev)
+              n_c = n_c + 1
+            end if
+          end do
+          if(n_c > 0) then
+            clm_statevec(cc+lev*clm_varsize) = clm_statevec(cc+lev*clm_varsize) / real(n_c, r8)
+          else
+            write(*,*) "ERROR: Gridcell g=", g, " layer=", lev, " has no columns for TSOIL averaging"
+            error stop "Gridcell without columns in set_clm_statevec_T (TSOIL)"
+          end if
+        end do
+
+        ! --- TVEG: average over patches in gridcell ---
+        clm_statevec(cc+(1+n_lev_T)*clm_varsize) = 0.0
+        n_p = 0
+        do p=clm_begp,clm_endp
+          ! Skip bare-ground/lake patches where t_veg retains spval (1e36).
+          if(patch%gridcell(p)==g .and. t_veg(p) < 1.0e20_r8) then
+            clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) + t_veg(p)
+            n_p = n_p + 1
+          end if
+        end do
+        if(n_p > 0) then
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc+(1+n_lev_T)*clm_varsize) / real(n_p, r8)
+        else
+          ! No vegetated patches: reuse TSKIN mean as safe fallback.
+          ! See the analogous block in clmupdate_T==2 for a detailed discussion.
+          clm_statevec(cc+(1+n_lev_T)*clm_varsize) = clm_statevec(cc)
+        end if
+
+        ! --- TGRND: average over columns in gridcell ---
+        clm_statevec(cc+(2+n_lev_T)*clm_varsize) = 0.0
+        n_c = 0
+        do c=clm_begc,clm_endc
+          if(col%gridcell(c)==g) then
+            clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) + t_grnd(c)
+            n_c = n_c + 1
+          end if
+        end do
+        if(n_c > 0) then
+          clm_statevec(cc+(2+n_lev_T)*clm_varsize) = clm_statevec(cc+(2+n_lev_T)*clm_varsize) / real(n_c, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no columns for TGRND averaging"
+          error stop "Gridcell without columns in set_clm_statevec_T (TGRND)"
+        end if
+
+        ! --- T_H2OSFC: average over columns in gridcell ---
+        clm_statevec(cc+(3+n_lev_T)*clm_varsize) = 0.0
+        n_c = 0
+        do c=clm_begc,clm_endc
+          if(col%gridcell(c)==g) then
+            clm_statevec(cc+(3+n_lev_T)*clm_varsize) = clm_statevec(cc+(3+n_lev_T)*clm_varsize) + t_h2osfc(c)
+            n_c = n_c + 1
+          end if
+        end do
+        if(n_c > 0) then
+          clm_statevec(cc+(3+n_lev_T)*clm_varsize) = clm_statevec(cc+(3+n_lev_T)*clm_varsize) / real(n_c, r8)
+        else
+          write(*,*) "ERROR: Gridcell g=", g, " has no columns for T_H2OSFC averaging"
+          error stop "Gridcell without columns in set_clm_statevec_T (T_H2OSFC)"
         end if
 
       end do
@@ -1986,8 +2362,10 @@ module enkf_clm_mod
     integer :: p
     integer :: cc
     integer :: lev
+    integer :: n_lev_T   ! effective number of soil layers in T state vector
 
     real(r8), pointer :: t_grnd(:)
+    real(r8), pointer :: t_h2osfc(:)
     real(r8), pointer :: t_soisno(:,:)
     real(r8), pointer :: t_veg(:)
     real(r8), pointer :: t_skin(:)
@@ -2000,10 +2378,15 @@ module enkf_clm_mod
     character (len = 31) :: fn    !TSMP-PDAF: function name for swc output
 
     integer :: incr_warn_count_skin, incr_warn_count_soisno, &
-               incr_warn_count_veg, incr_warn_count_grnd
+               incr_warn_count_veg, incr_warn_count_grnd, incr_warn_count_h2osfc
+
+    ! Guard against applying t_soisno increment multiple times to the same
+    ! column when several patches share a column (T==2 loop is over patches).
+    logical, allocatable :: col_updated(:)
 
     ! LST
     t_grnd => temperature_inst%t_grnd_col
+    t_h2osfc => temperature_inst%t_h2osfc_col
     t_soisno => temperature_inst%t_soisno_col
     t_veg  => temperature_inst%t_veg_patch
     t_skin => temperature_inst%t_skin_patch
@@ -2015,6 +2398,12 @@ module enkf_clm_mod
     incr_warn_count_soisno  = 0
     incr_warn_count_veg     = 0
     incr_warn_count_grnd    = 0
+    incr_warn_count_h2osfc  = 0
+
+    allocate(col_updated(clm_begc:clm_endc))
+    col_updated = .false.
+
+    n_lev_T = min(nlevgrnd, clmstatevec_max_layer)
 
     !hcp: TG, TV
     if(clmupdate_T==1) then
@@ -2035,7 +2424,7 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow_1: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_1: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
         ! No update for (near-to) freezing soil temperatures
         mask_freeze_1: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
@@ -2048,7 +2437,10 @@ module enkf_clm_mod
             t_update = t_skin(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
@@ -2058,12 +2450,14 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
-            t_skin(p) = t_update
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
@@ -2072,7 +2466,10 @@ module enkf_clm_mod
               t_update = t_soisno(c,lev) * increment_factor
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-              if (abs(increment_factor) < clmT_max_increment) then
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
@@ -2082,21 +2479,27 @@ module enkf_clm_mod
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
-              t_soisno(c,lev) = t_update
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
             end if
           end if
         end do
 
+        col_updated(c) = .true.
+        end if ! col_updated
+
         ! --- TVEG: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 2+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
-        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_veg(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
@@ -2106,7 +2509,7 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else
-            t_veg(p) = t_update
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
@@ -2120,6 +2523,7 @@ module enkf_clm_mod
         incr_warn_count_soisno
       if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
         incr_warn_count_veg
+      deallocate(col_updated)
     endif
 
     ! Skin temperature updating skin, soil, vegetation and ground temperature.
@@ -2131,7 +2535,7 @@ module enkf_clm_mod
         c = patch%column(p)
 
         ! If snow is masked, update only, when snow depth is less than 1mm
-        mask_snow_2: if( (clmT_mask_snow == 0) .or. snow_depth(c) < 0.001 ) then
+        mask_snow_2: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
         ! No update for (near-to) freezing soil temperatures
         mask_freeze_2: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
 
@@ -2144,7 +2548,10 @@ module enkf_clm_mod
             t_update = t_skin(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_skin(p) + increment_factor
             else
               t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
@@ -2154,12 +2561,14 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_skin update is NaN at p=", p
           else
-            t_skin(p) = t_update
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TSOIL: update with increment factor for each layer ---
-        do lev=1,nlevgrnd
+        do lev=1,n_lev_T
           cc = state_clm2pdaf_p(p, 1+lev)
           ! Skip if no significant change in gridcell mean
           if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
@@ -2168,7 +2577,10 @@ module enkf_clm_mod
               t_update = t_soisno(c,lev) * increment_factor
             else
               increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-              if (abs(increment_factor) < clmT_max_increment) then
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
                 t_update = t_soisno(c,lev) + increment_factor
               else
                 t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
@@ -2178,21 +2590,25 @@ module enkf_clm_mod
             if (ieee_is_nan(t_update)) then
               print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
             else
-              t_soisno(c,lev) = t_update
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
             end if
           end if
         end do
+        end if ! col_updated
 
         ! --- TVEG: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 2+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
         ! Skip if no significant change in gridcell mean
-        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
           if( (clmincrement_type == 0)) then
             increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
             t_update = t_veg(p) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_veg(p) + increment_factor
             else
               t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
@@ -2202,12 +2618,14 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_veg update is NaN at p=", p
           else
-            t_veg(p) = t_update
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
 
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
         ! --- TGRND: update with increment factor ---
-        cc = state_clm2pdaf_p(p, 3+nlevgrnd)
+        cc = state_clm2pdaf_p(p, 3+n_lev_T)
         ! Skip if no significant change in gridcell mean
         if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
           if( (clmincrement_type == 0)) then
@@ -2215,7 +2633,10 @@ module enkf_clm_mod
             t_update = t_grnd(c) * increment_factor
           else
             increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
-            if (abs(increment_factor) < clmT_max_increment) then
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_grnd increment_factor is NaN at c=", c, " - leaving t_grnd unchanged"
+              t_update = t_grnd(c)
+            else if (abs(increment_factor) < clmT_max_increment) then
               t_update = t_grnd(c) + increment_factor
             else
               t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
@@ -2225,9 +2646,12 @@ module enkf_clm_mod
           if (ieee_is_nan(t_update)) then
             print *, "WARNING: t_grnd update is NaN at c=", c
           else
-            t_grnd(c) = t_update
+            t_grnd(c) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
           end if
         end if
+
+        col_updated(c) = .true.
+        end if ! col_updated
 
         end if mask_freeze_2
         end if mask_snow_2
@@ -2241,6 +2665,313 @@ module enkf_clm_mod
         incr_warn_count_veg
       if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
         incr_warn_count_grnd
+      deallocate(col_updated)
+    endif
+
+    ! clmupdate_T==4: like ==2 but also updating T_H2OSFC.
+    if(clmupdate_T==4) then
+
+      do p = clm_begp, clm_endp
+        c = patch%column(p)
+
+        ! If snow is masked, update only, when snow depth is less than 1mm
+        mask_snow_3: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
+        ! No update for (near-to) freezing soil temperatures
+        mask_freeze_3: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
+
+        ! --- TSKIN: update with increment factor ---
+        cc = state_clm2pdaf_p(p,1)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_skin(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_skin(p) + increment_factor
+            else
+              t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_skin = incr_warn_count_skin + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_skin update is NaN at p=", p
+          else
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
+        ! --- TSOIL: update with increment factor for each layer ---
+        do lev=1,n_lev_T
+          cc = state_clm2pdaf_p(p, 1+lev)
+          ! Skip if no significant change in gridcell mean
+          if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+            if( (clmincrement_type == 0)) then
+              increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+              t_update = t_soisno(c,lev) * increment_factor
+            else
+              increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
+                t_update = t_soisno(c,lev) + increment_factor
+              else
+                t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
+                incr_warn_count_soisno = incr_warn_count_soisno + 1
+              end if
+            end if
+            if (ieee_is_nan(t_update)) then
+              print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
+            else
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+            end if
+          end if
+        end do
+        end if ! col_updated
+
+        ! --- TVEG: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_veg(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_veg(p) + increment_factor
+            else
+              t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_veg = incr_warn_count_veg + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_veg update is NaN at p=", p
+          else
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
+        ! --- T_H2OSFC: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 3+n_lev_T)
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_h2osfc(c) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_h2osfc increment_factor is NaN at c=", c, " - leaving t_h2osfc unchanged"
+              t_update = t_h2osfc(c)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_h2osfc(c) + increment_factor
+            else
+              t_update = t_h2osfc(c) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_h2osfc = incr_warn_count_h2osfc + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_h2osfc update is NaN at c=", c
+          else
+            t_h2osfc(c) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        col_updated(c) = .true.
+        end if ! col_updated
+
+        end if mask_freeze_3
+        end if mask_snow_3
+
+      end do
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", &
+        incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", &
+        incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
+        incr_warn_count_veg
+      if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", &
+        incr_warn_count_h2osfc
+      deallocate(col_updated)
+    endif
+
+    ! clmupdate_T==5: like ==3 but also updating T_H2OSFC.
+    if(clmupdate_T==5) then
+
+      do p = clm_begp, clm_endp
+        c = patch%column(p)
+
+        ! If snow is masked, update only, when snow depth is less than 1mm
+        mask_snow_4: if( (clmT_mask_snow == 0) .or. snow_depth(c) < clmT_mask_snow_depth ) then
+        ! No update for (near-to) freezing soil temperatures
+        mask_freeze_4: if( t_soisno(c,1) > SHR_CONST_TKFRZ + clmT_mask_T ) then
+
+        ! --- TSKIN: update with increment factor ---
+        cc = state_clm2pdaf_p(p,1)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_skin(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_skin increment_factor is NaN at p=", p, " - leaving t_skin unchanged"
+              t_update = t_skin(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_skin(p) + increment_factor
+            else
+              t_update = t_skin(p) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_skin = incr_warn_count_skin + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_skin update is NaN at p=", p
+          else
+            t_skin(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
+        ! --- TSOIL: update with increment factor for each layer ---
+        do lev=1,n_lev_T
+          cc = state_clm2pdaf_p(p, 1+lev)
+          ! Skip if no significant change in gridcell mean
+          if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+            if( (clmincrement_type == 0)) then
+              increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+              t_update = t_soisno(c,lev) * increment_factor
+            else
+              increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+              if (ieee_is_nan(increment_factor)) then
+                print *, "WARNING: t_soisno increment_factor is NaN at c=", c, " lev=", lev, " - leaving t_soisno unchanged"
+                t_update = t_soisno(c,lev)
+              else if (abs(increment_factor) < clmT_max_increment) then
+                t_update = t_soisno(c,lev) + increment_factor
+              else
+                t_update = t_soisno(c,lev) + sign(clmT_max_increment, increment_factor)
+                incr_warn_count_soisno = incr_warn_count_soisno + 1
+              end if
+            end if
+            if (ieee_is_nan(t_update)) then
+              print *, "WARNING: t_soisno update is NaN at c=", c, " lev=", lev
+            else
+              t_soisno(c,lev) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+            end if
+          end if
+        end do
+        end if ! col_updated
+
+        ! --- TVEG: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 2+n_lev_T)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7 .and. t_veg(p) < 1.0e20_r8) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_veg(p) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_veg increment_factor is NaN at p=", p, " - leaving t_veg unchanged"
+              t_update = t_veg(p)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_veg(p) + increment_factor
+            else
+              t_update = t_veg(p) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_veg = incr_warn_count_veg + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_veg update is NaN at p=", p
+          else
+            t_veg(p) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        ! Guard: only update each column once even if multiple patches share it.
+        if (.not. col_updated(c)) then
+        ! --- TGRND: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 3+n_lev_T)
+        ! Skip if no significant change in gridcell mean
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_grnd(c) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_grnd increment_factor is NaN at c=", c, " - leaving t_grnd unchanged"
+              t_update = t_grnd(c)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_grnd(c) + increment_factor
+            else
+              t_update = t_grnd(c) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_grnd = incr_warn_count_grnd + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_grnd update is NaN at c=", c
+          else
+            t_grnd(c) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        ! --- T_H2OSFC: update with increment factor ---
+        cc = state_clm2pdaf_p(p, 4+n_lev_T)
+        if(abs(clm_statevec(cc) - clm_statevec_orig(cc)) > 1.0e-7) then
+          if( (clmincrement_type == 0)) then
+            increment_factor = clm_statevec(cc) / clm_statevec_orig(cc)
+            t_update = t_h2osfc(c) * increment_factor
+          else
+            increment_factor = clm_statevec(cc) - clm_statevec_orig(cc)
+            if (ieee_is_nan(increment_factor)) then
+              print *, "WARNING: t_h2osfc increment_factor is NaN at c=", c, " - leaving t_h2osfc unchanged"
+              t_update = t_h2osfc(c)
+            else if (abs(increment_factor) < clmT_max_increment) then
+              t_update = t_h2osfc(c) + increment_factor
+            else
+              t_update = t_h2osfc(c) + sign(clmT_max_increment, increment_factor)
+              incr_warn_count_h2osfc = incr_warn_count_h2osfc + 1
+            end if
+          end if
+          if (ieee_is_nan(t_update)) then
+            print *, "WARNING: t_h2osfc update is NaN at c=", c
+          else
+            t_h2osfc(c) = max(SHR_CONST_TKFRZ - 130.0_r8, min(SHR_CONST_TKFRZ + 100.0_r8, t_update))
+          end if
+        end if
+
+        col_updated(c) = .true.
+        end if ! col_updated
+
+        end if mask_freeze_4
+        end if mask_snow_4
+
+      end do
+      if (incr_warn_count_skin   > 0) print *, "WARNING: t_skin total increments exceeding T_max_increment:", &
+        incr_warn_count_skin
+      if (incr_warn_count_soisno > 0) print *, "WARNING: t_soisno total increments exceeding T_max_increment:", &
+        incr_warn_count_soisno
+      if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
+        incr_warn_count_veg
+      if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
+        incr_warn_count_grnd
+      if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", &
+        incr_warn_count_h2osfc
+      deallocate(col_updated)
     endif
 
 #ifdef PDAF_DEBUG
@@ -3308,13 +4039,23 @@ module enkf_clm_mod
     endif
 
     if(clmupdate_T==2) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV
-      dim_l = 1 + nlevgrnd + 1
+      ! TSKIN + TSOIL(n_lev_T layers) + TV
+      dim_l = 2 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
     if(clmupdate_T==3) then
-      ! TSKIN + TSOIL(nlevgrnd layers) + TV + TGRND
-      dim_l = 3 + nlevgrnd
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND
+      dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
+    endif
+
+    if(clmupdate_T==4) then
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + T_H2OSFC
+      dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
+    endif
+
+    if(clmupdate_T==5) then
+      ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND + T_H2OSFC
+      dim_l = 4 + min(nlevgrnd, clmstatevec_max_layer)
     endif
 
     if (clmupdate_tws==1) then
@@ -3408,7 +4149,7 @@ module enkf_clm_mod
     END DO
     end if
 
-    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3) then
+    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
     DO i = 1, dim_l
       ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
       ! Variable index: i
@@ -3541,7 +4282,7 @@ module enkf_clm_mod
     END DO
     end if
 
-    if(clmupdate_T==1 .or. clmupdate_T==2  .or. clmupdate_T==3) then
+    if(clmupdate_T==1 .or. clmupdate_T==2 .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5) then
     DO i = 1, dim_l
       ! Patch index from DOMAIN_P via STATE_LOC2CLM_P_P
       ! Variable index: i

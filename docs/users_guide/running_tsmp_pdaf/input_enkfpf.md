@@ -65,6 +65,7 @@ t_printensemble =
 watmin_switch =
 swc_mask_snow =
 T_mask_snow =
+T_mask_snow_depth =
 increment_type =
 T_mask_T =
 T_max_increment =
@@ -509,17 +510,28 @@ State vector variables updated for each option:
    Eq. 7) with LAI.
 
 -  2: Gridcell-mean update of skin temperature (`t_skin`, not
-   prognostic), soil/snow temperatures (`t_soisno`, all `nlevgrnd`
-   layers), and vegetation temperature (`t_veg`). Each patch/column is
-   updated based on gridcell-mean increments and according to selected
+   prognostic), soil/snow temperatures (`t_soisno`,
+   `min(nlevgrnd, CLM:statevec_max_layer)` layers), and vegetation
+   temperature (`t_veg`). Each patch/column is updated based on
+   gridcell-mean increments and according to selected
    [increment type](enkfpf:clm:increment_type). The observation
    operator uses the skin temperature (TSKIN) as the simulated LST
    equivalent.
 
 -  3: Like `2`, but additionally updates ground temperature
-   (`t_grnd`).  State vector: `t_skin`, `t_soisno` (`nlevgrnd`
-   layers), `t_veg`, `t_grnd`.
+   (`t_grnd`).  State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_grnd`.
 
+-  4: Like `2`, but additionally updates surface water temperature
+   (`t_h2osfc`). State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_h2osfc`.
+
+-  5: Like `3`, but additionally updates surface water temperature
+   (`t_h2osfc`). State vector: `t_skin`, `t_soisno`
+   (`min(nlevgrnd, CLM:statevec_max_layer)` layers), `t_veg`,
+   `t_grnd`, `t_h2osfc`.
 
 See [Land Surface Temperature Data Assimilation](lstda) for a detailed
 description.
@@ -592,24 +604,35 @@ If `0` (default): Use all columns and all layers.
 If `1`: Use only hydrologically active columns and only layers until
 bedrock.
 
+(enkfpf:clm:statevec_max_layer)=
 ### CLM:statevec_max_layer ###
 
 **Not yet in main branch**
 
-`CLM:statevec_max_layer`: (integer) Number of layers to add in the
-state vector.
+`CLM:statevec_max_layer`: (integer) Maximum number of soil layers
+included in the state vector.
 
-Only used, when `CLM:statevec_allcol` and `CLM:statevec_only_active`
-are switched on.
+Used in two contexts:
 
-If `25` (default): All layers are in state vector.
+- **SWC state vector**: when `CLM:statevec_allcol` and
+  `CLM:statevec_only_active` are both switched on, limits the number
+  of soil layers included per column.
+- **T state vector**: when `CLM:update_T` is `2`, `3`, `4`, or `5`,
+  limits the number of `t_soisno` layers included. The effective number
+  of layers is `min(nlevgrnd, CLM:statevec_max_layer)`.
 
-If `9`: Only the first nine layers in state vector (corresponds to 1.2
-meter).
+If `25` (default): All layers are in the state vector (CLM5 has 25
+soil layers by default, so this effectively means no restriction).
+
+If `9`: Only the first nine layers are included (corresponds to
+approximately 1.2 m depth).
 
 For a depth profile of CLM layers, see [CLM Technical Note: 2.2.2.1
 Soil
 Layers](https://escomp.github.io/ctsm-docs/versions/master/html/tech_note/Ecosystem/CLM50_Tech_Note_Ecosystem.html#soil-layers).
+
+See [Land Surface Temperature Data Assimilation](lstda) for context on
+the T state vector use.
 
 ### CLM:t_printensemble ###
 
@@ -653,11 +676,25 @@ Default setting is `0`: No masking of columns with snow cover.
 `CLM:T_mask_snow`: (integer) Switch for masking columns with snow
 cover from T updates.
 
-Snow covers larger than 1mm are switched off for the update.
+When set to `1`, columns with a snow depth exceeding
+`CLM:T_mask_snow_depth` are excluded from the temperature update.
 
 Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0`: No masking of columns with snow cover.
+
+(enkfpf:clm:T_mask_snow_depth)=
+### CLM:T_mask_snow_depth ###
+
+`CLM:T_mask_snow_depth`: (double) Snow depth threshold (m) used by
+the snow masking condition. Columns with `snow_depth >=
+CLM:T_mask_snow_depth` are excluded from the temperature update when
+`CLM:T_mask_snow = 1`.
+
+Only takes effect if `CLM:update_T` and `CLM:T_mask_snow` are both
+switched on.
+
+Default setting is `0.001` (1 mm).
 
 (enkfpf:clm:increment_type)=
 ### CLM:increment_type ###
@@ -1111,6 +1148,7 @@ Default: 0, output turned off.
  |           | `t_printensemble`       | -2            |
  |           | `watmin_switch`         | 0             |
  |           | `T_mask_snow`           | 0             |
+ |           | `T_mask_snow_depth`     | 0.001         |
  |           | `increment_type`        | 0             |
  |           | `T_max_increment`       | 5.0           |
  |           | `T_mask_T`              | 0.0           |
