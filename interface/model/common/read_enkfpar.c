@@ -81,6 +81,7 @@ void read_enkfpar(char *parname)
   clmupdate_texture     = iniparser_getint(pardict,"CLM:update_texture",0);
   clmprint_swc          = iniparser_getint(pardict,"CLM:print_swc",0);
   clmprint_et           = iniparser_getint(pardict,"CLM:print_et",0);
+  clmprint_inc           = iniparser_getint(pardict,"CLM:print_inc",0);
   clmstatevec_allcol    = iniparser_getint(pardict,"CLM:statevec_allcol",0);
   clmstatevec_colmean   = iniparser_getint(pardict,"CLM:statevec_colmean",0);
   clmstatevec_only_active = iniparser_getint(pardict,"CLM:statevec_only_active",0);

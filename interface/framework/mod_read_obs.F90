@@ -799,11 +799,8 @@ contains
 
 
     integer :: ncid, varid, status !,dimid
-    character (len = nf90_max_name) :: varname
+    character (len = *), parameter :: varname = "da_interval"
     real(r8) :: dtime ! land model time step (sec)
-
-    varname = "da_interval         "
-
 
     !character (len = *), parameter :: dim_name = "dim_obs"
     !character(len = nf90_max_name) :: recorddimname

@@ -52,17 +52,23 @@ SUBROUTINE init_pdaf_parse()
        rms_obs, model_error, model_err_amp, incremental, type_forget, &
        forget, rank_analysis_enkf, locweight, cradius, &
        sradius, filename, type_trans, dim_obs, &
-       type_sqrt, obs_filename, dim_lag, temp_mean_filename
+       type_sqrt, obs_filename, dim_lag
+  USE mod_assimilation, ONLY: temp_mean_filename
   USE mod_assimilation, ONLY: use_omi
 
   use mod_assimilation,&
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
-
 #ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM
 #endif
+#if defined CLMSA
+#ifdef CLMFIVE
+  use enkf_clm_mod, only: use_omi_model
+#endif
+#endif
+
 
   IMPLICIT NONE
 
@@ -100,6 +106,9 @@ SUBROUTINE init_pdaf_parse()
   rms_obs_SM = rms_obs              ! backward compatibility
   handle = 'rms_obs_SM'             ! RMS error for SM observations
   CALL parse(handle, rms_obs_SM)
+  ! rms_obs_C = rms_obs              ! backward compatibility
+  ! handle = 'rms_obs_C'             ! RMS error for C observations
+  ! CALL parse(handle, rms_obs_C)
 #endif
 
   handle = 'dim_obs'                 ! Number of observations
@@ -118,6 +127,11 @@ SUBROUTINE init_pdaf_parse()
   CALL parse(handle, incremental)
   handle = 'use_omi'                 ! Set whether to use OMI interface
   CALL parse(handle, use_omi)
+#if defined CLMSA
+#ifdef CLMFIVE
+  use_omi_model = use_omi       ! Set variable for use in interface/model routines
+#endif
+#endif
 
   ! Filter-specific settings
   handle = 'type_trans'              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF

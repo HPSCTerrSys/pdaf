@@ -206,6 +206,7 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use enkf_clm_mod, only : cleanup_clm_statevec
   use enkf_clm_mod, only : define_clm_statevec
   use enkf_clm_mod, only : set_clm_statevec
+  use enkf_clm_mod, only : use_omi_model
   use, intrinsic :: iso_C_binding, only : c_int
 
   implicit none
@@ -220,10 +221,11 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   call cime_run(ntstep)
 
 #if defined CLMSA
-  ! TODO: Get the use_omi information here as IF-condition
-  call cleanup_clm_statevec() ! cleanup before defining statevec
-  call define_clm_statevec(mype) ! call define statevec not in the beginning
-  ! but here as we can define the statevec for each obs type
+  if (use_omi_model) then
+    call cleanup_clm_statevec() ! cleanup before defining statevec
+    call define_clm_statevec(mype) ! call define statevec not in the beginning
+    ! but here as we can define the statevec for each obs type
+  end if
 
   ! Calling PDAF Function to set state vector before assimiliation
   call set_clm_statevec(tstartcycle, mype)

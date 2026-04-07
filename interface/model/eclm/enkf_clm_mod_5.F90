@@ -76,6 +76,7 @@ module enkf_clm_mod
   integer, allocatable :: gridcell_state(:)
 
   logical :: first_cycle = .TRUE.
+  logical :: use_omi_model = .FALSE.
 
 
   ! OMI --> I want to update the observation type after each observation comes in.
@@ -97,6 +98,7 @@ module enkf_clm_mod
 
 #endif
   integer(c_int),bind(C,name="clmprint_et")       :: clmprint_et
+  integer(c_int),bind(C,name="clmprint_inc")       :: clmprint_inc
   integer(c_int),bind(C,name="clmstatevec_allcol")       :: clmstatevec_allcol
   integer(c_int),bind(C,name="clmstatevec_colmean")       :: clmstatevec_colmean
   integer(c_int),bind(C,name="clmstatevec_only_active")  :: clmstatevec_only_active
@@ -213,6 +215,7 @@ module enkf_clm_mod
     !
 
     ! reset PDAF dimensions for multivariate assimilation, only not for first call as PDAF did not initalize yet
+    ! non-first-cycle is only called in OMI simulations from clm_advance
     if (.not. first_cycle) then
         call PDAF_reset_dim_p(clm_statevecsize,ierror)
     end if
@@ -313,7 +316,7 @@ module enkf_clm_mod
 
       ! 1) COL/GRC: CLM->PDAF
       IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
-      allocate(state_clm2pdaf_p(clm_begc:clm_endc,nlevsoi))
+      allocate(state_clm2pdaf_p(begc:endc,nlevsoi))
       do i=1,nlevsoi
         do c=clm_begc,clm_endc
           ! Default: inactive
@@ -3126,7 +3129,7 @@ module enkf_clm_mod
       ! -> DIM_L: number of temperature variables (each with gridcell
       ! -> averages)
       n_domains_p = endg - begg + 1
-    elseif (clmupdate_tws/=1) then
+    else
       ! Process-local number of gridcells Default, possibly not tested
       ! for other updates except SWC
       n_domains_p = endg - begg + 1

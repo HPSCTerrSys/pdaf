@@ -98,6 +98,16 @@ SUBROUTINE init_pdaf()
   USE spmdMod      , only : masterproc
 #endif
   use enkf_clm_mod, only: clm_statevecsize
+
+#ifdef CLMFIVE
+  USE obs_GRACE_pdafomi, ONLY: assim_GRACE
+  USE obs_SM_pdafomi, ONLY: assim_SM
+  !USE obs_ST_pdafomi, ONLY: assim_C
+
+  USE enkf_clm_mod, ONLY: clmupdate_tws
+  USE enkf_clm_mod, ONLY: clmupdate_swc
+!  use enkf_clm_mod, only: clmupdate_C
+#endif
 #endif
   ! kuw end
 
@@ -207,8 +217,7 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: local state dimension array
-  if (mype_model == 0) WRITE(*, '(a,x,a,i5,x,a,x)', advance="no") &
-    "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  if (mype_model == 0) WRITE(*, '(a,x,a,i5,x,a,x)', advance="no") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: dim_state_p_count in modified:"
   if (mype_model == 0) WRITE(*, *) dim_state_p_count
 #endif
@@ -227,6 +236,20 @@ SUBROUTINE init_pdaf()
 #endif
 
   call MPI_Barrier(MPI_COMM_WORLD, ierror)
+
+! **********************************************************
+! ***   OMI observation types in assimilation            ***
+! **********************************************************
+! Inputs parsed from enkfpf.par are set to OMI switches assim_*
+!
+! Only applies to eCLM simulations
+#if defined CLMSA
+#ifdef CLMFIVE
+  assim_GRACE = (clmupdate_tws /= 0)
+  assim_SM = (clmupdate_swc /= 0)
+  ! assim_C = (clmupdate_C /= 0)
+#endif
+#endif
 
 ! **********************************************************
 ! ***   CONTROL OF PDAF - used in call to PDAF_init      ***

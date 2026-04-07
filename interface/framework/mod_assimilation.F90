@@ -104,9 +104,6 @@ MODULE mod_assimilation
 
   ! Yorck
 
-  ! interval until next observation, used by next_observation_pdaf.F90,
-  ! better solution for next assimilation time step
-  REAL :: da_interval_variable
   ! has to be read from observation file --> no empty observation files have to be written
   REAL, ALLOCATABLE :: obscov(:,:) ! observation covariance matrix
   REAL, ALLOCATABLE :: obscov_inv(:,:) ! inverse of the observation covariance matrix
@@ -152,9 +149,6 @@ MODULE mod_assimilation
 ! ! Settings for observations - available as command line options
   INTEGER :: delt_obs      ! time step interval between assimilation steps
   REAL    :: rms_obs       ! RMS error size for observation generation
-
-  REAL    :: rms_obs_GRACE
-  REAL    :: rms_obs_SM
 
   INTEGER :: dim_obs       ! Number of observations
 

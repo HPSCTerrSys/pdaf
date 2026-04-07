@@ -93,6 +93,7 @@ GLOBAL int clmupdate_texture;
 GLOBAL int clmupdate_tws;
 GLOBAL int clmprint_swc;
 GLOBAL int clmprint_et;
+GLOBAL int clmprint_inc;
 GLOBAL int clmstatevec_allcol;
 GLOBAL int clmstatevec_colmean;
 GLOBAL int clmstatevec_only_active;
