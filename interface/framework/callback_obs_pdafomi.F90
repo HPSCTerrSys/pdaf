@@ -107,8 +107,8 @@
     USE obs_GRACE_pdafomi, ONLY: obs_op_GRACE
     USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: obs_op_SM
-    USE obs_SM_pdafomi, ONLY: assim_LST
-    USE obs_SM_pdafomi, ONLY: obs_op_LST
+    USE obs_LST_pdafomi, ONLY: assim_LST
+    USE obs_LST_pdafomi, ONLY: obs_op_LST
     !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: obs_op_C
 
