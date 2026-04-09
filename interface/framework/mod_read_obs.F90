@@ -979,6 +979,13 @@ contains
             clmupdate_T       = 4
             clmupdate_texture = 0
 
+        ! case ('C')
+        !     clmupdate_tws     = 0
+        !     clmupdate_swc     = 0
+        !     clmupdate_T       = 0
+        !     clmupdate_texture = 0
+        !     clmupdate_C       = 1
+
         case default
             write(*,*) 'ERROR: Unknown obs_type_str in update_obs_type:', trim(obs_type_str)
             call abort_parallel()

@@ -33,11 +33,12 @@ between modules is through the central routing file and the shared
 
 ## Files Involved
 
-To add a new observation type `C`, touch exactly **seven** things:
+To add a new observation type `C`, touch exactly **eight** things:
 
 | File                                           | Action                                                                |
 |------------------------------------------------|-----------------------------------------------------------------------|
 | `interface/framework/obs_C_pdafomi.F90`        | **Create** (new file, modelled on the template)                       |
+| `interface/framework/Makefile`                 | Add `obs_C_pdafomi.o` to `MOD_USER_PDAFOMI`                          |
 | `interface/framework/callback_obs_pdafomi.F90` | Add calls for C to every callback routine                             |
 | `interface/framework/mod_assimilation.F90`     | Declare `cradius_C`, `sradius_C`, and any other C-specific parameters |
 | `interface/framework/mod_read_obs.F90`         | Add `'C'` case to `update_obs_type`                                   |
