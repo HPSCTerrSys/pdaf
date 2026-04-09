@@ -65,9 +65,9 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   USE mod_assimilation, ONLY: use_omi
   use mod_read_obs, &
        only: check_n_observationfile, check_n_observationfile_da_interval
+#ifdef CLMFIVE
   use mod_read_obs, only: check_n_observationfile_set_zero
   use mod_read_obs, only: check_n_observationfile_next_type
-#ifdef CLMFIVE
   use mod_read_obs, only: update_obs_type
   use clm_time_manager, only: get_nstep
   use clm_varcon, only: set_averaging_to_zero

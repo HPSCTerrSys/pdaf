@@ -200,11 +200,13 @@ void update_tsmp(){
 #if defined CLMSA
   if((model == tag_model_clm) && ((clmupdate_swc != 0) || (clmupdate_T != 0) || (clmupdate_tws != 0))){
     update_clm(&tstartcycle, &mype_world);
-    /* if(clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2){ */
-    /*  print_update_clm(&tcycle, &total_steps); */
-    /* } */
-    /* TODO: enkfpf.par input switch "CLM:print_inc" */
+
+    if(clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2){
+      print_update_clm(&tcycle, &total_steps);
+    }
+
 #ifdef CLMFIVE
+    /* SWC: enkfpf.par input switch "CLM:print_inc" */
     if ((clmupdate_tws != 0) || (clmupdate_swc != 0 && clmprint_inc !=0)){
       print_inc_clm();
     }
