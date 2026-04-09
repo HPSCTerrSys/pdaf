@@ -59,7 +59,7 @@ SUBROUTINE init_pdaf_parse()
   use mod_assimilation,&
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
-  use mod_assimilation, only: cradius LST
+  use mod_assimilation, only: cradius_LST
   use mod_assimilation, only: sradius_LST
 #ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
