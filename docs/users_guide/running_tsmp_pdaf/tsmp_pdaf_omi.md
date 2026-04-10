@@ -7,6 +7,9 @@ Additional to current observation files, the observation type has to be included
 
 See also create observation script for details: https://icg4geo.icg.kfa-juelich.de/ExternalRepos/tsmp-pdaf/tsmp-pdaf-observation-scripts/-/tree/main/omi_obs_data?ref_type=heads
 
+PDAF-OMI can be switched on by the command line option
+[use_omi](cmd:use_omi).
+
 Both global and local filters can be used. To enable multi-scale data assimilation, different localization radii for different observation types can be passed. Note that the localization radius for SM is currently in km and for GRACE in #gridcells.
 
 If questions arise contact ewerdwalbesloh@geod.uni-bonn.de
@@ -28,14 +31,9 @@ observation file:
 | `obserr_clm` | `REAL(dim_obs)`                | if `multierr=1`  |
 | `obscov_clm` | `REAL(dim_obs,dim_obs)`        | if `multierr=2`  |
 
-Files follow the naming convention `<obs_filename>.<NNNNN>` (five-digit
-zero-padded PDAF step). The `type_clm` field must be homogeneous within
-a file — a file containing GRACE observations cannot simultaneously
-contain SM or C observations.
+Files follow the naming convention `<obs_filename>.<NNNNN>`
+(five-digit zero-padded PDAF step).
 
-**Note**: Each entry `type_clm` should have the length `20`. This
-means the actual types should be padded with whitespaces (before or
-after). So, currently possible entries would be
-- `"GRACE               "`
-- `"SM                  "`
-- `"LST                 "`
+The [`type_clm`](obs:files:clm:typeclm) field must be homogeneous
+within a file - a file containing GRACE observations cannot
+simultaneously contain SM or C observations.
