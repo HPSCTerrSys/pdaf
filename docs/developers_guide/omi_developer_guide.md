@@ -33,15 +33,18 @@ between modules is through the central routing file and the shared
 
 ## Files Involved
 
-To add a new observation type `C`, touch exactly **five** things:
+To add a new observation type `C`, touch exactly **eight** things:
 
 | File                                           | Action                                                                |
 |------------------------------------------------|-----------------------------------------------------------------------|
 | `interface/framework/obs_C_pdafomi.F90`        | **Create** (new file, modelled on the template)                       |
+| `interface/framework/Makefile`                 | Add `obs_C_pdafomi.o` to `MOD_USER_PDAFOMI`                          |
 | `interface/framework/callback_obs_pdafomi.F90` | Add calls for C to every callback routine                             |
 | `interface/framework/mod_assimilation.F90`     | Declare `cradius_C`, `sradius_C`, and any other C-specific parameters |
 | `interface/framework/mod_read_obs.F90`         | Add `'C'` case to `update_obs_type`                                   |
 | `interface/model/eclm/enkf_clm_mod_5.F90`      | Add `clmupdate_C` flag (parallel to `clmupdate_tws`, `clmupdate_swc`) |
+| `interface/framework/init_pdaf.F90`            | Import `assim_C` and set it from `clmupdate_C`                        |
+| `interface/framework/init_pdaf_parse.F90`      | Import `rms_obs_C` and add a `parse` call for it                      |
 
 The template at `templates/omi/obs_OBSTYPE_pdafomi_TEMPLATE.F90` is a
 good starting skeleton. The existing SM and GRACE modules show how the
@@ -58,6 +61,15 @@ At minimum, declare `assim_C` (a logical switch controlled by
 standard deviation), and the PDAFomi types `thisobs` (of type `obs_f`,
 thread-safe) and `thisobs_l` (of type `obs_l`, declared
 `THREADPRIVATE`).
+
+`assim_C` and `rms_obs_C` are wired up externally:
+- **`init_pdaf.F90`** imports `assim_C` and sets it from `clmupdate_C`
+  (i.e. `assim_C = (clmupdate_C /= 0)`), so the observation type is
+  enabled automatically when the corresponding model-state update flag
+  is active. Commented-out placeholders mark the insertion point.
+- **`init_pdaf_parse.F90`** imports `rms_obs_C` and populates it via a
+  `parse` call that reads `rms_obs_C` from `enkfpf.par`. Commented-out
+  placeholders mark the insertion point here as well.
 
 Additional module-level allocatable arrays — e.g. a cached
 climatological mean needed for an anomaly operator — follow the same
