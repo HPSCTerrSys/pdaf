@@ -32,3 +32,9 @@ Files follow the naming convention `<obs_filename>.<NNNNN>` (five-digit
 zero-padded PDAF step). The `type_clm` field must be homogeneous within
 a file — a file containing GRACE observations cannot simultaneously
 contain SM or C observations.
+
+**Note**: Each entry `type_clm` should have the length `20`. This
+means the actual types should be padded with whitespaces (before or
+after). So, currently possible entries would be
+- `"GRACE               "`
+- `"SM                  "`
