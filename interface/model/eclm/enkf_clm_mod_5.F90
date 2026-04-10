@@ -767,6 +767,14 @@ module enkf_clm_mod
         CLOSE(71)
       END IF
 
+      IF(clmupdate_lai/=0) THEN
+        ! TSMP-PDAF: For debug runs, output the state vector in files
+        WRITE(fn5, "(a,i5.5,a,i5.5,a)") "leafc", mype, ".bef_up.", tstartcycle, ".txt"
+        OPEN(unit=71, file=fn5, action="write")
+        WRITE (71,"(es22.15)") leafc(:)
+        CLOSE(71)
+      END IF
+
     END IF
 #endif
 
@@ -878,6 +886,17 @@ module enkf_clm_mod
 
         cc = cc + 1
       enddo
+
+#ifdef PDAF_DEBUG
+        IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble < 0) THEN
+          ! TSMP-PDAF: For debug runs, output the state vector in files
+          WRITE(fn7, "(a,i5.5,a,i5.5,a)") "leafc_", mype, ".update.", tstartcycle, ".txt"
+          OPEN(unit=71, file=fn7, action="write")
+          WRITE (71,"(es22.15)") leafc(:)
+          CLOSE(71)
+        END IF
+#endif
+
     endif
 
     if (clmupdate_lai_params==1) then
