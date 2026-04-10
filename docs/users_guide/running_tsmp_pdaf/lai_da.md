@@ -33,13 +33,16 @@ $$
 \end{cases}
 $$
 
-where $C_\ell$ is `leafc` (leaf carbon, kg C m$^{-2}$),
-$s_{\text{top}}$ is `slatop` (specific leaf area at the canopy top,
-m$^2$ kg C$^{-1}$) and $s'$ is `dsladlai` (slope of specific leaf
-area with respect to LAI, m$^2$ kg C$^{-1}$ LAI$^{-1}$).  Both
-$s_{\text{top}}$ and $s'$ are PFT constants read from the CLM surface
-dataset. The formula follows Eq. 3 of Thornton and Zimmermann (2007,
-J. Clim., 20, 3902–3923).
+where
+- $C_\ell$ is `leafc` (leaf carbon, gC m$^{-2}$)
+- $s_{\text{top}}$ is `slatop` (specific leaf area at the canopy top,
+m$^2$ gC$^{-1}$)
+- $s'$ is `dsladlai` (slope of specific leaf
+area with respect to LAI, m$^2$ gC$^{-1}$)
+
+Both $s_{\text{top}}$ and $s'$ are PFT constants read from the CLM
+surface dataset. The formula follows Eq. 3 of Thornton and Zimmermann
+(2007, J. Clim., 20, 3902–3923).
 
 Because LAI is not a direct model state, assimilation updates `leafc`
 (and, consistently, `leafn = leafc / leafcn`) rather than LAI
