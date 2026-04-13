@@ -220,16 +220,16 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! *** Read PE-local observations ***
   ! **********************************
 
-
-  ! now call function to get observations
-
   if(mype_filter==0 .and. screen > 2) then
     write(*,*)'PDAF-OMI: load observations from type LST'
   end if
+
+  ! Set name of current NetCDF observation file
   write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
 
-
+  !  if I'm root in filter, read the nc file
   if (mype_filter == 0) then
+    ! Read current NetCDF observation file
     call read_obs_nc_type(current_observation_filename, obs_type_name, &
       dim_obs, obs_g, lon_obs, lat_obs, layer_obs, &
       dr_obs, obserr, obscov)
