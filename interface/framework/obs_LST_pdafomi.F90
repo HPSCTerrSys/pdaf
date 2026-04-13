@@ -382,11 +382,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
       ": init_dim_obs_LST: dim_obs_p=", dim_obs_p
   end if
 
-  ! Initialize OMI arrays
-  IF (ALLOCATED(ivar_obs_p)) DEALLOCATE(ivar_obs_p)
-  ALLOCATE(ivar_obs_p(dim_obs_p))
-  IF (ALLOCATED(ocoord_p)) DEALLOCATE(ocoord_p)
-  ALLOCATE(ocoord_p(2, dim_obs_p))
   ! Dimension of full observation vector
   ! ------------------------------------
 
@@ -504,6 +499,12 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ALLOCATE(obs_index_p_LST(dim_obs_p))
   IF (ALLOCATED(obs_p)) DEALLOCATE(obs_p)
   ALLOCATE(obs_p(dim_obs_p))
+
+  ! Initialize OMI arrays
+  IF (ALLOCATED(ivar_obs_p)) DEALLOCATE(ivar_obs_p)
+  ALLOCATE(ivar_obs_p(dim_obs_p))
+  IF (ALLOCATED(ocoord_p)) DEALLOCATE(ocoord_p)
+  ALLOCATE(ocoord_p(2, dim_obs_p))
 
   cnt = 1
 
