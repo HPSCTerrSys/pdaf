@@ -146,8 +146,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   use enkf_clm_mod, only: get_interp_idx
 
-  use mod_tsmp, only: point_obs
-
   use mod_tsmp, only: da_print_obs_index
 
   IMPLICIT NONE
@@ -410,53 +408,51 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   allocate(obs_nc2pdaf(dim_obs))
   obs_nc2pdaf = 0
 
-  if(point_obs==1) then
-    cnt = 1
-    do i = 1, dim_obs
-      obs_snapped = .true.
-      do g = begg,endg
-        newgridcell = .true.
-        do p = begp,endp
-          pg = patch%gridcell(p)
-          if(pg == g) then
-            if(newgridcell) then
+  cnt = 1
+  do i = 1, dim_obs
+    obs_snapped = .true.
+    do g = begg,endg
+      newgridcell = .true.
+      do p = begp,endp
+        pg = patch%gridcell(p)
+        if(pg == g) then
+          if(newgridcell) then
 
-              if(is_use_dr) then
-                if(lon(g)>180) then
-                  deltax = abs(lon(g)-lon_obs(i)-360)
-                else
-                  deltax = abs(lon(g)-lon_obs(i))
-                end if
-                deltay = abs(lat(g)-lat_obs(i))
+            if(is_use_dr) then
+              if(lon(g)>180) then
+                deltax = abs(lon(g)-lon_obs(i)-360)
+              else
+                deltax = abs(lon(g)-lon_obs(i))
               end if
-
-              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
-                ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
-                if(state_clm2pdaf_p(p,1)==ispval) then
-                  obs_snapped = .false.
-                  cycle
-                end if
-                obs_pdaf2nc(local_disp_obs(mype_filter+1)+cnt) = i
-                obs_nc2pdaf(i) = local_disp_obs(mype_filter+1)+cnt
-                cnt = cnt + 1
-                obs_snapped = .true.
-              end if
-
-              newgridcell = .false.
-
+              deltay = abs(lat(g)-lat_obs(i))
             end if
-          end if
-        end do
-      end do
 
-      if(.not. obs_snapped) then
-        print *, "TSMP-PDAF mype(w)=", mype_world, &
-          ": ERROR observations exist at non-active gridcells."
-        print *, "Observation-index in NetCDF-file: i=", i
-        call abort_parallel()
-      end if
+            if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+              ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+              if(state_clm2pdaf_p(p,1)==ispval) then
+                obs_snapped = .false.
+                cycle
+              end if
+              obs_pdaf2nc(local_disp_obs(mype_filter+1)+cnt) = i
+              obs_nc2pdaf(i) = local_disp_obs(mype_filter+1)+cnt
+              cnt = cnt + 1
+              obs_snapped = .true.
+            end if
+
+            newgridcell = .false.
+
+          end if
+        end if
+      end do
     end do
-  end if
+
+    if(.not. obs_snapped) then
+      print *, "TSMP-PDAF mype(w)=", mype_world, &
+        ": ERROR observations exist at non-active gridcells."
+      print *, "Observation-index in NetCDF-file: i=", i
+      call abort_parallel()
+    end if
+  end do
 
   call mpi_allreduce(MPI_IN_PLACE,obs_pdaf2nc,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
   call mpi_allreduce(MPI_IN_PLACE,obs_nc2pdaf,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
