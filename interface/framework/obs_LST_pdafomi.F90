@@ -592,7 +592,9 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! ********************
 
   DEALLOCATE(obs_g)
-  DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
+  DEALLOCATE(obs_p)
+  DEALLOCATE(ocoord_p)
+  DEALLOCATE(ivar_obs_p)
 
 END SUBROUTINE init_dim_obs_LST
 
