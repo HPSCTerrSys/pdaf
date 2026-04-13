@@ -302,7 +302,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   call mpi_bcast(dr_obs,  dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   call mpi_bcast(layer_obs, dim_obs, MPI_INTEGER, 0, comm_filter, ierror)
 
-
+  thisobs%infile = 1
 
   if (mype_filter==0 .and. screen > 2) then
     write(*,*)'PDAF-OMI: Done: load observations from type LST'
@@ -313,7 +313,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! longxy/latixy index arrays are used for grid cell matching
   ! when is_use_dr is .false. (index-based instead of distance-based snapping).
 
-  thisobs%infile = 1
   ! Generate CLM index arrays from lon/lat values
   call domain_def_clm(lon_obs, lat_obs, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
