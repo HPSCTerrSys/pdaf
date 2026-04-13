@@ -168,7 +168,6 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
   INTEGER :: g                ! CLM Gridcell index
   INTEGER :: cg
   INTEGER :: pg
-  INTEGER :: pc
   INTEGER :: i,j,k        ! Counters
   INTEGER :: cnt          ! Counters
   INTEGER :: cnt_interp   ! Counter for interpolation grid cells
@@ -1018,7 +1017,6 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
            do p = begp,endp
 
              pg = patch%gridcell(p)
-             pc = patch%column(p)
 
              if(pg == g) then
                if(newgridcell) then
