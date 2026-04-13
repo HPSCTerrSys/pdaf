@@ -206,7 +206,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! *********************************************
 
   IF (mype_filter==0) &
-    WRITE (*,*) 'Assimilate observations - obs type LST'
+    WRITE (*,*) 'PDAF-OMI: Assimilate observations - obs type LST'
 
   IF (assim_LST) thisobs%doassim = 1
 
@@ -225,7 +225,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! now call function to get observations
 
   if(mype_filter==0 .and. screen > 2) then
-    write(*,*)'load observations from type LST'
+    write(*,*)'PDAF-OMI: load observations from type LST'
   end if
   write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
 
