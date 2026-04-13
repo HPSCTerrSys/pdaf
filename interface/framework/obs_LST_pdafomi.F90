@@ -214,13 +214,12 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   thisobs%disttype = 3
   thisobs%ncoord = 2
 
+  obs_type_name = 'LST'
 
   ! **********************************
   ! *** Read PE-local observations ***
   ! **********************************
 
-
-  obs_type_name = 'LST'
 
   ! now call function to get observations
 
