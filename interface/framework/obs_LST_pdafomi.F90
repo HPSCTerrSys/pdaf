@@ -193,7 +193,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   real :: deltax, deltay
 
-  logical :: is_use_dr
   logical :: obs_snapped     !Switch for checking multiple observation counts
   logical :: newgridcell
 
@@ -312,9 +311,10 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! --------------------
   ! longxy/latixy index arrays are used for grid cell matching
   ! when is_use_dr is .false. (index-based instead of distance-based snapping).
+  ! This is currently turned off for LSTDA.
 
-  ! Generate CLM index arrays from lon/lat values
-  call domain_def_clm(lon_obs, lat_obs, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
+  ! ! Generate CLM index arrays from lon/lat values
+  ! call domain_def_clm(lon_obs, lat_obs, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
   ! Obtain CLM lon/lat information
   lon => grc%londeg
@@ -327,7 +327,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! Number of observations in process-local domain
   ! ----------------------------------------------
   dim_obs_p = 0
-  is_use_dr = .true.
 
   ! id_obs_p: placeholder to satisfy PDAFomi internal check;
   ! actual obs-to-state mapping is in obs_index_p_LST
@@ -347,16 +346,13 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
         if(pg == g) then
           if(newgridcell) then
 
-            if(is_use_dr) then
-              deltax = abs(lon(g)-lon_obs(i))
-              if (deltax > 180.0) then
-                deltax = 360.0 - deltax
-              end if
-              deltay = abs(lat(g)-lat_obs(i))
+            deltax = abs(lon(g)-lon_obs(i))
+            if (deltax > 180.0) then
+              deltax = 360.0 - deltax
             end if
+            deltay = abs(lat(g)-lat_obs(i))
 
-            if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
-              ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
               dim_obs_p = dim_obs_p + 1
 
               if(obs_snapped) then
@@ -442,16 +438,13 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
         if(pg == g) then
           if(newgridcell) then
 
-            if(is_use_dr) then
-              deltax = abs(lon(g)-lon_obs(i))
-              if (deltax > 180.0) then
-                deltax = 360.0 - deltax
-              end if
-              deltay = abs(lat(g)-lat_obs(i))
+            deltax = abs(lon(g)-lon_obs(i))
+            if (deltax > 180.0) then
+              deltax = 360.0 - deltax
             end if
+            deltay = abs(lat(g)-lat_obs(i))
 
-            if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
-              ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
               if(state_clm2pdaf_p(p,1)==ispval) then
                 obs_snapped = .false.
                 cycle
@@ -522,16 +515,13 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
             ! patch / column information part of the observation
             ! file
 
-            if(is_use_dr) then
-              deltax = abs(lon(g)-lon_obs(i))
-              if (deltax > 180.0) then
-                deltax = 360.0 - deltax
-              end if
-              deltay = abs(lat(g)-lat_obs(i))
+            deltax = abs(lon(g)-lon_obs(i))
+            if (deltax > 180.0) then
+              deltax = 360.0 - deltax
             end if
+            deltay = abs(lat(g)-lat_obs(i))
 
-            if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
-              ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. (latixy_obs(i) == latixy(g-begg+1)))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
 
               ! Convert observation coordinates to radians for haversine distance
               if(thisobs%disttype==3) then
