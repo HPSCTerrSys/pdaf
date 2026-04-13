@@ -167,6 +167,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   character(len=20) :: obs_type_name ! name of observation type (e.g. GRACE, SM, ST, ...)
 
+  ! clm-observation arrays are local (as opposed to non-OMI, where
+  ! they are found in module mod_read_obs)
   REAL, ALLOCATABLE :: lon_obs(:)
   REAL, ALLOCATABLE :: lat_obs(:)
   INTEGER, ALLOCATABLE :: layer_obs(:)
@@ -235,10 +237,16 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
       dr_obs, obserr, obscov)
   end if
 
+  ! Broadcast first variables
+  ! -------------------------
+  ! Dimension of observation vector
   call mpi_bcast(dim_obs, 1, MPI_INTEGER, 0, comm_filter, ierror)
 
-  ! check if file contains observations of type LST
+  ! Handle case if observation file contains no observations of type
+  ! LST
 
+  ! Used in joint DA for handling the zero-size observation vector,
+  ! when this observation is not present.
   if (dim_obs == 0) then
     if (mype_filter==0 .and. screen > 2) then
       write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
@@ -263,6 +271,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     return
   end if
 
+  ! Switch for vector of observation errors or observation covariances
   call mpi_bcast(multierr, 1, MPI_INTEGER, 0, comm_filter, ierror)
 
   ! Allocate observation arrays for non-root procs
@@ -284,6 +293,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     end if
   end if
 
+  ! Broadcast the global observation arrays
+  ! ---------------------------------------
   call mpi_bcast(obs_g, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   if(multierr==1) call mpi_bcast(obserr, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   call mpi_bcast(lon_obs, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
@@ -294,20 +305,28 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
 
   if (mype_filter==0 .and. screen > 2) then
-    write(*,*)'Done: load observations from type LST'
+    write(*,*)'PDAF-OMI: Done: load observations from type LST'
   end if
 
+  ! CLM grid information
+  ! --------------------
+  ! longxy/latixy index arrays are used for grid cell matching
+  ! when is_use_dr is .false. (index-based instead of distance-based snapping).
 
   thisobs%infile = 1
+  ! Generate CLM index arrays from lon/lat values
   call domain_def_clm(lon_obs, lat_obs, dim_obs, longxy, latixy, longxy_obs, latixy_obs)
 
   ! Obtain CLM lon/lat information
   lon => grc%londeg
   lat => grc%latdeg
 
+  ! Obtain CLM index information
   call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
   call get_proc_global(numg, numl, numc, nump)
 
+  ! Number of observations in process-local domain
+  ! ----------------------------------------------
   dim_obs_p = 0
   is_use_dr = .true.
 
@@ -369,11 +388,15 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ALLOCATE(ivar_obs_p(dim_obs_p))
   IF (ALLOCATED(ocoord_p)) DEALLOCATE(ocoord_p)
   ALLOCATE(ocoord_p(2, dim_obs_p))
+  ! Dimension of full observation vector
+  ! ------------------------------------
 
   ! Gather and check PE-local observation dimensions
   call mpi_allreduce(dim_obs_p, sum_dim_obs_p, 1, MPI_INTEGER, MPI_SUM, &
     comm_filter, ierror)
 
+  ! Check sum of dimensions of PE-local observation vectors against
+  ! dimension of full observation vector
   if(.not. sum_dim_obs_p == dim_obs) then
     print *, "TSMP-PDAF mype(w)=", mype_world, &
       ": ERROR Sum of PE-local observation dimensions"
@@ -382,13 +405,22 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     call abort_parallel()
   end if
 
+  !  Gather PE-local observation dimensions and displacements in arrays
+  ! ----------------------------------------------------------------
+
+  ! Allocate array of PE-local observation dimensions
   IF (ALLOCATED(local_dims_obs)) DEALLOCATE(local_dims_obs)
   ALLOCATE(local_dims_obs(npes_filter))
+
+  ! Gather array of PE-local observation dimensions
   call mpi_allgather(dim_obs_p, 1, MPI_INTEGER, local_dims_obs, 1, MPI_INTEGER, &
     comm_filter, ierror)
 
+  ! Allocate observation displacement array local_disp_obs
   IF (ALLOCATED(local_disp_obs)) DEALLOCATE(local_disp_obs)
   ALLOCATE(local_disp_obs(npes_filter))
+
+  ! Set observation displacement array local_disp_obs
   local_disp_obs(1) = 0
   do i = 2, npes_filter
     local_disp_obs(i) = local_disp_obs(i-1) + local_dims_obs(i-1)
@@ -453,6 +485,10 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     end if
   end do
 
+  ! Gather obs_pdaf2nc / obs_nc2pdaf across all PEs via summation.
+  ! Each PE only wrote to its own slice (indices local_disp_obs(mype+1)+1 ..
+  ! local_disp_obs(mype+1)+dim_obs_p), leaving all other entries zero, so
+  ! MPI_SUM is equivalent to a gather without a dedicated gather buffer.
   call mpi_allreduce(MPI_IN_PLACE,obs_pdaf2nc,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
   call mpi_allreduce(MPI_IN_PLACE,obs_nc2pdaf,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
 
@@ -462,6 +498,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   end if
 
   ! Write process-local observation arrays
+  ! --------------------------------------
+
   ! Use module-local obs_index_p_LST to avoid conflict with global obs_index_p
   IF (ALLOCATED(obs_index_p_LST)) DEALLOCATE(obs_index_p_LST)
   ALLOCATE(obs_index_p_LST(dim_obs_p))
@@ -482,6 +520,9 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
         if(pg == g) then
 
           if(newgridcell) then
+            ! Sets first patch/column in a gridcell. TODO: Make
+            ! patch / column information part of the observation
+            ! file
 
             if(is_use_dr) then
               if(lon(g)>180) then
@@ -504,8 +545,10 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
                 ocoord_p(2,cnt) = lat_obs(i)
               end if
 
-              ! Set state vector index for this patch.
-              ! LST uses patch (not column), layer 1 = surface temperature.
+              ! Set state vector index for this patch and save it in
+              ! the observation index array.
+              !
+              ! LST uses patch (not column), variable 1 = TSKIN.
               obs_index_p_LST(cnt) = state_clm2pdaf_p(p,1)
 
               obs_p(cnt) = obs_g(i)
