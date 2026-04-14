@@ -102,6 +102,7 @@ SUBROUTINE init_pdaf()
 #ifdef CLMFIVE
   USE obs_GRACE_pdafomi, ONLY: assim_GRACE
   USE obs_SM_pdafomi, ONLY: assim_SM
+  USE obs_LST_pdafomi, ONLY: assim_LST
   !USE obs_ST_pdafomi, ONLY: assim_C
 
   USE enkf_clm_mod, ONLY: clmupdate_tws
@@ -247,6 +248,7 @@ SUBROUTINE init_pdaf()
 #ifdef CLMFIVE
   assim_GRACE = (clmupdate_tws /= 0)
   assim_SM = (clmupdate_swc /= 0)
+  assim_LST = (clmupdate_T /= 0)
   ! assim_C = (clmupdate_C /= 0)
 #endif
 #endif
