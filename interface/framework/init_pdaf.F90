@@ -107,6 +107,7 @@ SUBROUTINE init_pdaf()
 
   USE enkf_clm_mod, ONLY: clmupdate_tws
   USE enkf_clm_mod, ONLY: clmupdate_swc
+  USE enkf_clm_mod, ONLY: clmupdate_T
 !  use enkf_clm_mod, only: clmupdate_C
 #endif
 #endif
