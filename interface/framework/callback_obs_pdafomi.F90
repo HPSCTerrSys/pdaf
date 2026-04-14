@@ -78,6 +78,14 @@
       write(*,*)'Call dimension initialization'
     end if
 
+#ifdef PDAF_DEBUG
+    if (mype_world==0) then
+      write(*,*)'PDAF-OMI-DEBUG: assim_GRACE=', assim_GRACE
+      write(*,*)'PDAF-OMI-DEBUG: assim_SM=', assim_SM
+      ! write(*,*)'PDAF-OMI assim_C=', assim_C
+    end if
+#endif
+
     IF (assim_GRACE) CALL init_dim_obs_GRACE(step, dim_obs_GRACE)
     IF (assim_SM) CALL init_dim_obs_SM(step, dim_obs_SM)
     !IF (assim_C) CALL init_dim_obs_C(step, dim_obs_C)
