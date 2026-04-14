@@ -87,6 +87,7 @@
     if (mype_world==0) then
       write(*,*)'PDAF-OMI-DEBUG: assim_GRACE=', assim_GRACE
       write(*,*)'PDAF-OMI-DEBUG: assim_SM=', assim_SM
+      write(*,*)'PDAF-OMI-DEBUG: assim_LST=', assim_LST
       ! write(*,*)'PDAF-OMI assim_C=', assim_C
     end if
 #endif
