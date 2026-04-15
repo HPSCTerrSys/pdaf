@@ -1,65 +1,64 @@
-!$Id: parser_mpi.F90 831 2021-11-06 16:16:30Z lnerger $
-!BOP
-!
-! !MODULE:
+!> Command line parser
+!!
+!! This module provides routine to parse command line
+!! arguments of different types. This version is for 
+!! use with MPI parallelization.
+!!
+!! By default, this routine uses the intrinsics 
+!! 'get_command_count' and 'get_command_argument' 
+!! that are defined by the Fortran 2003 standard.
+!! If a compiler does not support these functions, you
+!! can use '-DF77' as a definition for the preprocessor.
+!! In this case the Fortran77 standard 'iargc()' and
+!! 'getarg()' are used.
+!!
+!! The module provides a generic subroutine to parse
+!! variables of type INTEGER, REAL, or CHARACTER
+!! (with length up to 100) from the command line.
+!!
+!! Usage: 
+!! SUBROUTINE PARSE(char(len=32) handle, variable)
+!!   The string 'handle' determines the name of    
+!!   the parsed variable.                          
+!!   Example: handle='iters' parses a variable     
+!!            specified on the command line by     
+!!            '-iters value'
+!!                                                 
+!!    Usage:                                       
+!!    CALL PARSE(handle, int_variable)             
+!!         Parses a variable of type integer       
+!!         whose name is given by the string       
+!!         handle.                                 
+!!                                                 
+!!    CALL PARSE(handle, real_variable)            
+!!         Parses a variable of type real          
+!!         whose name is given by the string       
+!!         handle.                                 
+!!                                                 
+!!    CALL PARSE(handle, character_variable)       
+!!         Parses a string variable of maxmimal    
+!!         length of 100 characters whose name is  
+!!         given by the string handle.             
+!!                                                 
+!!    CALL PARSE(handle, logical_variable)         
+!!         Parses a variable of type logical       
+!!         whose name is given by the string       
+!!         handle. In the command line it has      
+!!         to be specified as 'T' or 'F'.          
+!!
+!! __Revision history:__
+!! * 2003-02 - Stephan Frickenhaus, Lars Nerger - Initial code
+!! * Later revisions - see repository log
+!!
 MODULE parser
 
-! !DESCRIPTION:
-! This module provides routine to parse command line
-! arguments of different types. This version is for 
-! use with MPI parallelization.
-! By default, this routine uses the intrinsics 
-! 'get\_command\_count' and 'get\_command\_argument' 
-! that are define by the Fortran 2003 standard.
-! If a compiler does not support these functions, you
-! can use '-DF77' as a definition for the preprocessor.
-! In this case the Fortran77 standard 'iargc()' and
-! 'getarg()' are used.
-!
-! The module provides a generic subroutine to parse
-! variables of type INTEGER, REAL, or CHARACTER
-! (with length up to 100) from the command line.
-!
-! Usage:                      \begin{verbatim}
-! SUBROUTINE PARSE(char(len=32) handle, variable)
-!   The string 'handle' determines the name of    
-!   the parsed variable.                          
-!   Example: handle='iters' parses a variable     
-!            specified on the command line by     
-!            '-iters value'
-!                                                 
-!    Usage:                                       
-!    CALL PARSE(handle, int_variable)             
-!         Parses a variable of type integer       
-!         whose name is given by the string       
-!         handle.                                 
-!                                                 
-!    CALL PARSE(handle, real_variable)            
-!         Parses a variable of type real          
-!         whose name is given by the string       
-!         handle.                                 
-!                                                 
-!    CALL PARSE(handle, character_variable)       
-!         Parses a string variable of maxmimal    
-!         length of 100 characters whose name is  
-!         given by the string handle.             
-!                                                 
-!    CALL PARSE(handle, logical_variable)         
-!         Parses a variable of type logical       
-!         whose name is given by the string       
-!         handle. In the command line it has      
-!         to be specified as 'T' or 'F'.          
-!                               \end{verbatim}
-!
-! !REVISION HISTORY:
-! 2003-02 - Stephan Frickenhaus, Lars Nerger - Initial code
-! Later revisions - see svn log
-!
-! !USES:
-  USE mpi
+  use mpi 
+  USE mod_parallel_model, &
+    ONLY: abort_parallel
+
   IMPLICIT NONE
   SAVE
-
+  
 ! !PUBLIC MEMBER FUNCTIONS:
   PUBLIC :: parse
   CHARACTER(len=32), PUBLIC :: handle  ! handle for command line parser
@@ -190,6 +189,8 @@ CONTAINS
 ! *** local variables ***
     CHARACTER(len=100) :: string
     CHARACTER(len=100) :: parsed_string
+    CHARACTER(len=110) :: str1_check
+    CHARACTER(len=110) :: str2_check
     LOGICAL :: modified
 
 ! *** Initialize ***
@@ -209,9 +210,27 @@ CONTAINS
        DO i = 1, command_argument_count() - 1 
           CALL get_command_argument(i, str1)
           CALL get_command_argument(i+1, str2)
+
+          ! Add check for inadmissible strings longer than 100
+          ! characters
+          CALL get_command_argument(i, str1_check)
+          CALL get_command_argument(i+1, str2_check)
+          IF (mype == 0) THEN
+             IF (.NOT. TRIM(str2_check) == TRIM(str2)) THEN
+                WRITE (*,'(2x, a)') "PARSER: ERROR, command line input too long."
+                WRITE (*,'(2x, a, 1x, a)') "called handle=", TRIM(string)
+                WRITE (*,'(2x, a, 1x, a)') "parsed handle=", TRIM(str1)
+                WRITE (*,'(2x, a, 1x, a)') "parsed input(cut)=", TRIM(str2)
+                call abort_parallel()
+             END IF
+          END IF
+
+
 #endif
           IF (str1 == TRIM(string)) THEN
-             READ(str2, *) parsed_string
+             ! Format specifier is needed for reading paths.  Using
+             ! `*` as format specifier, reading stops at a `/`
+             READ(str2, '(a)') parsed_string
              modified = .TRUE.
           END IF
        ENDDO
