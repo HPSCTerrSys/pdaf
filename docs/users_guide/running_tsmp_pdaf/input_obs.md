@@ -269,20 +269,26 @@ located.
 
 `dr`: (real, `dim=(2)`) Snapping distance for the observation.
 
-**Attention** This variable should have a length of `2` (one snapping
-distance in longitude direction and another snapping distance in
-latitude direction).
-
 Each of the CLM observations is snapped to the nearest CLM grid cell
 based on the given `lon`, `lat` and the snapping distance `dr` which
 should be smaller than the minimum grid cell size.
+
+**Attention (non-OMI)** This variable should have a length of `2` (one
+snapping distance in longitude direction and another snapping distance
+in latitude direction).
+
+**Attention (OMI)** in OMI `dr` is currently read as `dim=dim_obs` and
+used as length `1` (only the first element, used for both longitude
+direction and latitude direction). See [PDAF with
+OMI](omi:tsmp-pdaf-with-pdaf-omi).
 
 (obs:files:clm:typeclm)=
 #### type_clm ####
 
 `type_clm`: (character(20), `dim=(dim_obs)`) .
 
-Needed specifically for [PDAF with OMI](omi:tsmp-pdaf-with-pdaf-omi).
+Needed specifically for [TSMP-PDAF with
+OMI](omi:tsmp-pdaf-with-pdaf-omi).
 
 Each entry `type_clm` should have the length `20`. This
 means the actual types should be padded with whitespaces (before or
