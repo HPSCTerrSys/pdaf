@@ -349,7 +349,7 @@ MODULE obs_SM_pdafomi
         if(allocated(lat_obs)) deallocate(lat_obs)
         allocate(lat_obs(dim_obs))
         if(allocated(dr_obs)) deallocate(dr_obs)
-        allocate(dr_obs(dim_obs))
+        allocate(dr_obs(2))
         if(allocated(layer_obs)) deallocate(layer_obs)
         allocate(layer_obs(dim_obs))
         if(multierr==1) then
@@ -362,7 +362,7 @@ MODULE obs_SM_pdafomi
       if(multierr==1) call mpi_bcast(obserr, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
       call mpi_bcast(lon_obs, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
       call mpi_bcast(lat_obs, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
-      call mpi_bcast(dr_obs,  dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
+      call mpi_bcast(dr_obs,  2      , MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
       call mpi_bcast(layer_obs, dim_obs, MPI_INTEGER, 0, comm_filter, ierror)
 
 
@@ -434,7 +434,7 @@ MODULE obs_SM_pdafomi
 
               ! Assigning observations to grid cells according to
               ! snapping distance or index arrays
-              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))).or. &
                  ((.not. is_use_dr).and.(longxy_obs(i) == longxy(cnt)) .and. &
                   (latixy_obs(i) == latixy(cnt)))) then
 
@@ -619,7 +619,7 @@ MODULE obs_SM_pdafomi
                   deltay = abs(lat(g)-lat_obs(i))
                 end if
 
-                if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+                if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))).or. &
                    ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. &
                     (latixy_obs(i) == latixy(g-begg+1)))) then
 #ifdef CLMFIVE
@@ -712,7 +712,7 @@ MODULE obs_SM_pdafomi
                 deltay = abs(lat(g)-lat_obs(i))
               end if
 
-              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))).or. &
+              if(((is_use_dr).and.(deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))).or. &
                  ((.not. is_use_dr).and.(longxy_obs(i) == longxy(g-begg+1)) .and. &
                   (latixy_obs(i) == latixy(g-begg+1)))) then
                 ! if haversine formula in distance calculation, the coordinates have to be converted to radians

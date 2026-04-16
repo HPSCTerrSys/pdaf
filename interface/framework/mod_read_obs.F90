@@ -180,7 +180,7 @@ contains
             allocate(layer_obs_g(dim_obs))
 
             if(allocated(dr_obs_g))   deallocate(dr_obs_g)
-            allocate(dr_obs_g(dim_obs))
+            allocate(dr_obs_g(2))
 
             call check(nf90_get_var(ncid, clmobs_varid, obs_g))
 
