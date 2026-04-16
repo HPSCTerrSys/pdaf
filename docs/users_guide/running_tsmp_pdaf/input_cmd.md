@@ -51,12 +51,13 @@ Details: <https://pdaf.awi.de/trac/wiki/WhichFiltertouse>
 `subtype` (integer) Parameter subtype, different options for each
 filter. See [](cmd:command-line-examples).
 
+(cmd:use_omi)=
 ## use_omi ##
 
 `use_omi` (logical) Controls whether to use OMI interface.
 
 - `.true.`: OMI interface is used
-- `.false.`: OMI interface is not used
+- `.false.`: OMI interface is not used (default)
 
 See [](omi:tsmp-pdaf-with-pdaf-omi).
 
@@ -334,6 +335,11 @@ With this command, the TSMP-PDAF executable `tsmp-pdaf` will be run with
 64 realisations (8 processors for each realisation) and Lestkf analysis
 will be performed every assimilation cycle with an observation error of
 0.1 and observations read from the files `myobs.xxxxx`.
+
+
+Using LESTKF analysis with PDAF-OMI:
+
+        mpiexec -np 512 ./tsmp-pdaf -n_modeltasks 64 -filtertype 7 -cradius 3 -locweight 0 -subtype 0 -delt_obs 1 -rms_obs 0.1 -obs_filename myobs -use_omi .true.
 
 #### LESTKF: subtype ####
 
