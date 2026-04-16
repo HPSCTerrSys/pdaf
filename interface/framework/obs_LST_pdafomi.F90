@@ -283,7 +283,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     if(allocated(lat_obs)) deallocate(lat_obs)
     allocate(lat_obs(dim_obs))
     if(allocated(dr_obs)) deallocate(dr_obs)
-    allocate(dr_obs(dim_obs))
+    allocate(dr_obs(2))
     if(allocated(layer_obs)) deallocate(layer_obs)
     allocate(layer_obs(dim_obs))
     if(multierr==1) then
@@ -298,7 +298,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   if(multierr==1) call mpi_bcast(obserr, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   call mpi_bcast(lon_obs, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   call mpi_bcast(lat_obs, dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
-  call mpi_bcast(dr_obs,  dim_obs, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
+  call mpi_bcast(dr_obs,  2, MPI_DOUBLE_PRECISION, 0, comm_filter, ierror)
   call mpi_bcast(layer_obs, dim_obs, MPI_INTEGER, 0, comm_filter, ierror)
 
   thisobs%infile = 1
@@ -352,7 +352,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
             end if
             deltay = abs(lat(g)-lat_obs(i))
 
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
               dim_obs_p = dim_obs_p + 1
 
               if(obs_snapped) then
@@ -444,7 +444,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
             end if
             deltay = abs(lat(g)-lat_obs(i))
 
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
               if(state_clm2pdaf_p(p,1)==ispval) then
                 obs_snapped = .false.
                 cycle
@@ -521,7 +521,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
             end if
             deltay = abs(lat(g)-lat_obs(i))
 
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(1))) then
+            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
 
               ! Convert observation coordinates to radians for haversine distance
               if(thisobs%disttype==3) then
