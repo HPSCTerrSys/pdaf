@@ -145,6 +145,7 @@ contains
         call check(nf90_get_var(ncid, obstype_varid, obs_type))
 
         if (trim(obs_type(1)) /= trim(current_observation_type)) then
+          ! Handling of currently unused observation type in joint DA
 
             dim_obs_g = 0
 
@@ -164,6 +165,7 @@ contains
             allocate(dr_obs_g(dim_obs_g))
 
         else
+          ! Reading data for current observation type
 
             if(allocated(obs_g))   deallocate(obs_g)
             allocate(obs_g(dim_obs))
@@ -971,6 +973,13 @@ contains
             clmupdate_swc     = 1
             clmupdate_T       = 0
             clmupdate_texture = 0
+
+        ! case ('C')
+        !     clmupdate_tws     = 0
+        !     clmupdate_swc     = 0
+        !     clmupdate_T       = 0
+        !     clmupdate_texture = 0
+        !     clmupdate_C       = 1
 
         case default
             write(*,*) 'ERROR: Unknown obs_type_str in update_obs_type:', trim(obs_type_str)

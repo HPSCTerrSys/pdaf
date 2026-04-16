@@ -38,9 +38,12 @@
     use enkf_clm_mod, only: clmupdate_swc, clmupdate_tws
 
     ! Include functions for different observations
-    USE obs_GRACE_pdafomi, ONLY: assim_GRACE, init_dim_obs_GRACE
-    USE obs_SM_pdafomi, ONLY: assim_SM, init_dim_obs_SM
-    !USE obs_ST_pdafomi, ONLY: assim_C, init_dim_obs_C
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
+    USE obs_GRACE_pdafomi, ONLY: init_dim_obs_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
+    USE obs_SM_pdafomi, ONLY: init_dim_obs_SM
+    !USE obs_ST_pdafomi, ONLY: assim_C
+    !USE obs_ST_pdafomi, ONLY: init_dim_obs_C
 
     use mod_assimilation, only: screen
     USE mod_parallel_pdaf, only: mype_world
@@ -67,11 +70,6 @@
     !dim_obs_C = 0
 
 
-    assim_SM = .true.
-    assim_GRACE = .true.
-
-
-
     ! Call observation-specific routines
     ! The routines are independent, so it is not relevant
     ! in which order they are called
@@ -79,6 +77,14 @@
     if (mype_world==0 .and. screen > 2) then
       write(*,*)'Call dimension initialization'
     end if
+
+#ifdef PDAF_DEBUG
+    if (mype_world==0) then
+      write(*,*)'PDAF-OMI-DEBUG: assim_GRACE=', assim_GRACE
+      write(*,*)'PDAF-OMI-DEBUG: assim_SM=', assim_SM
+      ! write(*,*)'PDAF-OMI assim_C=', assim_C
+    end if
+#endif
 
     IF (assim_GRACE) CALL init_dim_obs_GRACE(step, dim_obs_GRACE)
     IF (assim_SM) CALL init_dim_obs_SM(step, dim_obs_SM)
@@ -99,8 +105,11 @@
   SUBROUTINE obs_op_pdafomi(step, dim_p, dim_obs, state_p, ostate)
 
     ! Include functions for different observations
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: obs_op_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: obs_op_SM
+    !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: obs_op_C
 
     use mod_assimilation, only: screen
@@ -128,9 +137,9 @@
       write(*,*)'Call observation operators'
     end if
 
-    CALL obs_op_GRACE(dim_p, dim_obs, state_p, ostate)
-    CALL obs_op_SM(dim_p, dim_obs, state_p, ostate)
-    !CALL obs_op_C(dim_p, dim_obs, state_p, ostate)
+    IF (assim_GRACE) CALL obs_op_GRACE(dim_p, dim_obs, state_p, ostate)
+    IF (assim_SM) CALL obs_op_SM(dim_p, dim_obs, state_p, ostate)
+    !IF (assim_C) CALL obs_op_C(dim_p, dim_obs, state_p, ostate)
 
   END SUBROUTINE obs_op_pdafomi
 
@@ -145,8 +154,11 @@
   SUBROUTINE init_dim_obs_l_pdafomi(domain_p, step, dim_obs, dim_obs_l)
 
     ! Include functions for different observations
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: init_dim_obs_l_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: init_dim_obs_l_SM
+    !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: init_dim_obs_l_C
 
     IMPLICIT NONE
@@ -164,9 +176,9 @@
 
     ! Call init_dim_obs_l specific for each observation
 
-    CALL init_dim_obs_l_GRACE(domain_p, step, dim_obs, dim_obs_l)
-    CALL init_dim_obs_l_SM(domain_p, step, dim_obs, dim_obs_l)
-    !CALL init_dim_obs_l_C(domain_p, step, dim_obs, dim_obs_l)
+    IF (assim_GRACE) CALL init_dim_obs_l_GRACE(domain_p, step, dim_obs, dim_obs_l)
+    IF (assim_SM) CALL init_dim_obs_l_SM(domain_p, step, dim_obs, dim_obs_l)
+    !IF (assim_C) CALL init_dim_obs_l_C(domain_p, step, dim_obs, dim_obs_l)
 
   END SUBROUTINE init_dim_obs_l_pdafomi
 
@@ -182,8 +194,11 @@
   SUBROUTINE localize_covar_pdafomi(dim_p, dim_obs, HP_p, HPH)
 
     ! Include functions for different observations
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: localize_covar_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: localize_covar_SM
+    !USE obs_C_pdafomi, ONLY: assim_C
     !USE obs_C_pdafomi, ONLY: localize_covar_C
 
     ! Include information on model grid
@@ -215,9 +230,9 @@
 
     ! Call localize_covar specific for each observation
 
-    CALL localize_covar_GRACE(dim_p, dim_obs, HP_p, HPH, coords_p)
-    CALL localize_covar_SM(dim_p, dim_obs, HP_p, HPH, coords_p)
-    !CALL localize_covar_C(dim_p, dim_obs, HP_p, HPH, coords_p)
+    IF (assim_GRACE) CALL localize_covar_GRACE(dim_p, dim_obs, HP_p, HPH, coords_p)
+    IF (assim_SM) CALL localize_covar_SM(dim_p, dim_obs, HP_p, HPH, coords_p)
+    !IF (assim_C) CALL localize_covar_C(dim_p, dim_obs, HP_p, HPH, coords_p)
 
 
   ! ****************
@@ -231,8 +246,12 @@
 
   SUBROUTINE add_obs_err_pdafomi(step, dim_obs, C)
 
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: add_obs_err_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: add_obs_err_SM
+    !USE obs_C_pdafomi, ONLY: assim_C
+    !USE obs_C_pdafomi, ONLY: add_obs_err_C
 
     IMPLICIT NONE
 
@@ -244,17 +263,21 @@
 
     INTEGER :: i          ! index of observation component
     REAL :: variance_obs  ! variance of observations
-    CALL add_obs_err_GRACE(step, dim_obs, C)
-    CALL add_obs_err_SM(step, dim_obs, C)
-    !CALL add_obs_err_C(step, dim_obs, C)
+    IF (assim_GRACE) CALL add_obs_err_GRACE(step, dim_obs, C)
+    IF (assim_SM) CALL add_obs_err_SM(step, dim_obs, C)
+    !IF (assim_C) CALL add_obs_err_C(step, dim_obs, C)
 
   END SUBROUTINE add_obs_err_pdafomi
 
 
   SUBROUTINE init_obscovar_pdafomi(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
 
+    USE obs_GRACE_pdafomi, ONLY: assim_GRACE
     USE obs_GRACE_pdafomi, ONLY: init_obscovar_GRACE
+    USE obs_SM_pdafomi, ONLY: assim_SM
     USE obs_SM_pdafomi, ONLY: init_obscovar_SM
+    !USE obs_C_pdafomi, ONLY: assim_C
+    !USE obs_C_pdafomi, ONLY: init_obscovar_C
     IMPLICIT NONE
 
     INTEGER, INTENT(in) :: step                ! Current time step
@@ -268,17 +291,21 @@
     REAL :: variance_obs
 
 
-    CALL init_obscovar_GRACE(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
-    CALL init_obscovar_SM(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
-    !CALL init_obscovar_C(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    IF (assim_GRACE) CALL init_obscovar_GRACE(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    IF (assim_SM) CALL init_obscovar_SM(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
+    !IF (assim_C) CALL init_obscovar_C(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
 
   END SUBROUTINE init_obscovar_pdafomi
 
 
   SUBROUTINE prodRinvA_pdafomi(step, dim_obs_p, rank, obs_p, A_p, C_p)
 
+    use obs_GRACE_pdafomi, ONLY: assim_GRACE
     use obs_GRACE_pdafomi, ONLY: prodRinvA_GRACE
+    use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: prodRinvA_SM
+    !use obs_C_pdafomi, ONLY: assim_C
+    !use obs_C_pdafomi, ONLY: prodRinvA_C
 
     implicit none
     INTEGER, INTENT(in) :: step                ! Current time step
@@ -288,17 +315,21 @@
     REAL, INTENT(in)    :: A_p(dim_obs_p,rank) ! Input matrix from analysis routine
     REAL, INTENT(out)   :: C_p(dim_obs_p,rank) ! Output matrix
 
-    CALL prodRinvA_GRACE(step, dim_obs_p, rank, obs_p, A_p, C_p)
-    CALL prodRinvA_SM(step, dim_obs_p, rank, obs_p, A_p, C_p)
-    !CALL prodRinvA_C(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    IF (assim_GRACE) CALL prodRinvA_GRACE(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    IF (assim_SM) CALL prodRinvA_SM(step, dim_obs_p, rank, obs_p, A_p, C_p)
+    !IF (assim_C) CALL prodRinvA_C(step, dim_obs_p, rank, obs_p, A_p, C_p)
 
   END SUBROUTINE prodRinvA_pdafomi
 
 
   SUBROUTINE prodRinvA_l_pdafomi(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 
+    use obs_GRACE_pdafomi, ONLY: assim_GRACE
     use obs_GRACE_pdafomi, ONLY: prodRinvA_l_GRACE
+    use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: prodRinvA_l_SM
+    !use obs_C_pdafomi, ONLY: assim_C
+    !use obs_C_pdafomi, ONLY: prodRinvA_l_C
 
     implicit none
 
@@ -310,22 +341,26 @@
     REAL, INTENT(inout) :: A_l(dim_obs_l, rank) ! Input matrix from analysis routine
     REAL, INTENT(out)   :: C_l(dim_obs_l, rank) ! Output matrix
 
-    CALL prodRinvA_l_GRACE(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
-    CALL prodRinvA_l_SM(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
-    !CALL prodRinvA_l_C(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    IF (assim_GRACE) CALL prodRinvA_l_GRACE(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    IF (assim_SM) CALL prodRinvA_l_SM(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
+    !IF (assim_C) CALL prodRinvA_l_C(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 
   END SUBROUTINE prodRinvA_l_pdafomi
 
   SUBROUTINE deallocate_obs_pdafomi()
 
+    use obs_GRACE_pdafomi, ONLY: assim_GRACE
     use obs_GRACE_pdafomi, ONLY: deallocate_obs_GRACE
+    use obs_SM_pdafomi, ONLY: assim_SM
     use obs_SM_pdafomi, ONLY: deallocate_obs_SM
+    !use obs_C_pdafomi, ONLY: assim_C
+    !use obs_C_pdafomi, ONLY: deallocate_obs_C
 
     implicit none
 
-    CALL deallocate_obs_GRACE()
-    CALL deallocate_obs_SM()
-    !CALL deallocate_obs_C()
+    IF (assim_GRACE) CALL deallocate_obs_GRACE()
+    IF (assim_SM) CALL deallocate_obs_SM()
+    !IF (assim_C) CALL deallocate_obs_C()
 
   END SUBROUTINE deallocate_obs_pdafomi
 
