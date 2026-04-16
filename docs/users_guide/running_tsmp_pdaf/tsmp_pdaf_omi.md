@@ -19,24 +19,20 @@ If questions arise contact ewerdwalbesloh@geod.uni-bonn.de
 The reader `read_obs_nc_type` expects the following variables in each
 observation file:
 
-| NetCDF name  | Type                                               | Required?       |
-|--------------|----------------------------------------------------|-----------------|
-| `dim_obs`    | dimension                                          | yes             |
-| `obs_clm`    | `REAL(dim_obs)`                                    | yes             |
-| `type_clm`   | `CHARACTER(20)(dim_obs)`                           | yes             |
-| `lon`        | `REAL(dim_obs)`                                    | yes             |
-| `lat`        | `REAL(dim_obs)`                                    | yes             |
-| `layer`      | `INTEGER(dim_obs)`                                 | yes             |
-| `dr`         | read from netCDF: `REAL(dim_obs)`, used: `REAL(1)` | yes             |
-| `obserr_clm` | `REAL(dim_obs)`                                    | if `multierr=1` |
-| `obscov_clm` | `REAL(dim_obs,dim_obs)`                            | if `multierr=2` |
+| NetCDF name  | Type                     | Required?       |
+|--------------|--------------------------|-----------------|
+| `dim_obs`    | dimension                | yes             |
+| `obs_clm`    | `REAL(dim_obs)`          | yes             |
+| `type_clm`   | `CHARACTER(20)(dim_obs)` | yes             |
+| `lon`        | `REAL(dim_obs)`          | yes             |
+| `lat`        | `REAL(dim_obs)`          | yes             |
+| `layer`      | `INTEGER(dim_obs)`       | yes             |
+| `dr`         | `REAL(2)`                | yes             |
+| `obserr_clm` | `REAL(dim_obs)`          | if `multierr=1` |
+| `obscov_clm` | `REAL(dim_obs,dim_obs)`  | if `multierr=2` |
 
 Files follow the naming convention `<obs_filename>.<NNNNN>`
 (five-digit zero-padded PDAF step).
-
-**Note** on `dr`: For non-OMI, this array has length `2`, but in OMI
-it is read in `mod_read_obs` as length `dim_obs` and then only the
-first element is used.
 
 The [`type_clm`](obs:files:clm:typeclm) field must be homogeneous
 within a file - a file containing GRACE observations cannot
