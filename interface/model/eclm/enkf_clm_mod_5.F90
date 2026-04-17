@@ -220,7 +220,7 @@ module enkf_clm_mod
       do i=1,nlevsoi
         do c=clm_begc,clm_endc
           ! Default: inactive
-          state_clm2pdaf_p = ispval
+          state_clm2pdaf_p(c,i) = ispval
         end do
       end do
 
