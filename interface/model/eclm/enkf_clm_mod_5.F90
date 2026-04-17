@@ -125,6 +125,11 @@ module enkf_clm_mod
     clm_begp     = begp
     clm_endp     = endp
 
+#ifdef PDAF_DEBUG
+    WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, &
+      "define_clm_statevec entry: clm_statevecsize=", clm_statevecsize
+#endif
+
     ! soil water content observations - case 1
     if(clmupdate_swc==1) then
       call define_clm_statevec_swc(mype)
@@ -2939,6 +2944,15 @@ module enkf_clm_mod
 
     end if
 
+
+#ifdef PDAF_DEBUG
+    WRITE(*, '(a,x,a,i10,x,a,i10)') "TSMP-PDAF-debug", "begc=", begc, &
+      "init_n_domains_clm: n_domains_p=", n_domains_p
+    if (allocated(state_loc2clm_c_p)) then
+      WRITE(*, '(a,x,a,i10,x,a,*(i10))') "TSMP-PDAF-debug", "begc=", begc, &
+        "init_n_domains_clm: state_loc2clm_c_p=", state_loc2clm_c_p
+    end if
+#endif
 
   end subroutine init_n_domains_clm
 
