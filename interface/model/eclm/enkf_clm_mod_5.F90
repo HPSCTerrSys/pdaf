@@ -65,6 +65,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmt_printensemble")       :: clmt_printensemble
   integer(c_int),bind(C,name="clmwatmin_switch")         :: clmwatmin_switch
   integer(c_int),bind(C,name="clmswc_mask_snow")            :: clmswc_mask_snow
+  integer(c_int),bind(C,name="clmswc_mask_snow_ens")        :: clmswc_mask_snow_ens
   real(c_double),bind(C,name="clmcrns_bd")      :: clmcrns_bd
 
   integer  :: nstep     ! time step index
@@ -631,6 +632,10 @@ module enkf_clm_mod
     use clm_varcon      , only : denh2o, denice, watmin
     use clm_varcon      , only : ispval
     use clm_varcon      , only : spval
+    use mpi, only: MPI_Allreduce
+    use mpi, only: MPI_IN_PLACE
+    use mpi, only: MPI_INTEGER
+    use mpi, only: MPI_MAX
 
     implicit none
 
@@ -649,6 +654,9 @@ module enkf_clm_mod
     real(r8)  :: watmin_set        ! minimum soil moisture for setting swc (mm)
     real(r8)  :: swc_update        ! updated SWC in loop
 
+    integer, allocatable :: snow_mask(:)  ! 1 = snow in any ensemble member, 0 = clear
+    integer :: MPIerr_swc
+
     integer :: i,j,cc
     character (len = 31) :: fn2    !TSMP-PDAF: function name for state vector outpu
     character (len = 32) :: fn3    !TSMP-PDAF: function name for state vector outpu
@@ -666,6 +674,24 @@ module enkf_clm_mod
     h2osoi_ice    => waterstate_inst%h2osoi_ice_col
 
     snow_depth => waterstate_inst%snow_depth_col ! snow height of snow covered area (m)
+
+    ! Build ensemble-consistent snow mask: if clmswc_mask_snow_ens==1,
+    ! reduce the per-column snow flag across all ensemble members via
+    ! COMM_couple_clm so that a column is masked whenever ANY member
+    ! has snow depth >= 1 mm.
+    allocate(snow_mask(clm_begc:clm_endc))
+    do j = clm_begc, clm_endc
+      if (snow_depth(j) >= 0.001_r8) then
+        snow_mask(j) = 1
+      else
+        snow_mask(j) = 0
+      end if
+    end do
+    if (clmswc_mask_snow == 1 .and. clmswc_mask_snow_ens == 1) then
+      call MPI_Allreduce(MPI_IN_PLACE, snow_mask(clm_begc), &
+                         clm_endc - clm_begc + 1, MPI_INTEGER, MPI_MAX, &
+                         COMM_couple_clm, MPIerr_swc)
+    end if
 
         ! Set minimum soil moisture for checking the state vector and
         ! for setting minimum swc for CLM
@@ -690,8 +716,11 @@ module enkf_clm_mod
           ! do j=clm_begg,clm_endg
             do j=clm_begc,clm_endc
 
-              ! If snow is masked, update only, when snow depth is less than 1mm
-              if( (clmswc_mask_snow == 0) .or. snow_depth(j) < 0.001 ) then
+              ! If snow is masked, update only when no snow is present.
+              ! snow_mask reflects either the local member's snow state
+              ! (clmswc_mask_snow_ens=0, default) or the ensemble-wide
+              ! maximum (clmswc_mask_snow_ens=1).
+              if( (clmswc_mask_snow == 0) .or. snow_mask(j) == 0 ) then
               ! Update only those SWCs that are not excluded by ispval
               if(state_clm2pdaf_p(j,i) /= ispval) then
 
@@ -796,6 +825,8 @@ module enkf_clm_mod
 
         END IF
 #endif
+
+    deallocate(snow_mask)
 
   end subroutine update_clm_swc
 

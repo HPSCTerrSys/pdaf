@@ -88,6 +88,7 @@ void read_enkfpar(char *parname)
   clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-2);
   clmwatmin_switch      = iniparser_getint(pardict,"CLM:watmin_switch",0);
   clmswc_mask_snow      = iniparser_getint(pardict,"CLM:swc_mask_snow",0);
+  clmswc_mask_snow_ens  = iniparser_getint(pardict,"CLM:swc_mask_snow_ens",0);
 
   /* get settings for COSMO */
   nproccosmo      = iniparser_getint(pardict,"COSMO:nprocs",0);
