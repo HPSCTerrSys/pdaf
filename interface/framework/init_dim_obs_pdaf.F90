@@ -141,6 +141,7 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
   USE enkf_clm_mod, only: domain_def_clm
   USE enkf_clm_mod, only: get_interp_idx
   use enkf_clm_mod, only: clmstatevec_allcol
+  use enkf_clm_mod, only: clmupdate_snow
   !hcp end
 #endif
 #endif
@@ -980,7 +981,12 @@ SUBROUTINE init_dim_obs_pdaf(step, dim_obs_p)
                    if(clmstatevec_only_active==1) then
                      obs_index_p(cnt) = state_clm2pdaf_p(c,clmobs_layer(i))
                    else
-                     obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
+                     if(clmupdate_snow/=0) then
+                       ! Snow-DA: no layer in state vector variables
+                       obs_index_p(cnt) = g-begg+1
+                     else
+                       obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
+                     end if
                    end if
 #else
                    obs_index_p(cnt) = g-begg+1 + ((endg-begg+1) * (clmobs_layer(i)-1))
