@@ -110,6 +110,7 @@ MODULE PDAFomi_obs_f
      INTEGER :: off_obs_f                 !< Offset of this observation in overall full obs. vector
      INTEGER :: off_obs_g                 !< Offset of this observation in overall global obs. vector
      INTEGER :: obsid                     !< Index of observation over all assimilated observations
+     INTEGER :: infile                    !< Yorck addition for mutliple observations
      REAL, ALLOCATABLE :: obs_f(:)        !< Full observed field
      REAL, ALLOCATABLE :: ocoord_f(:,:)   !< Coordinates of full observation vector
      REAL, ALLOCATABLE :: ivar_obs_f(:)   !< Inverse variance of full observations
