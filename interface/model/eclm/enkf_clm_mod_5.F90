@@ -74,6 +74,7 @@ module enkf_clm_mod
   integer, allocatable :: gridcell_state(:)
 
   logical :: first_cycle = .TRUE.
+  logical :: use_omi_model = .FALSE.
 
 
   ! OMI --> I want to update the observation type after each observation comes in.
