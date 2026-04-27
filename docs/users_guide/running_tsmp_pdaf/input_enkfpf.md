@@ -504,6 +504,17 @@ and include the specifier `update` in the file name.
 `CLM:print_et`: (integer) Invoke function `write_clm_statistics`. For
 further information, see source code. Default: `0`.
 
+### CLM:print_da_hist_file ###
+
+`CLM:print_da_hist_file`: (integer) If set to `1`, CLM history file
+snapshots of all fields registered on tape 1 (h0) are written before
+and after each DA update using the standard CLM history file
+infrastructure. One file per DA cycle is produced for each phase,
+written to the run directory and named
+`caseid.clm2<inst_suffix>.da_bef.YYYY-MM-DD-SSSSS.nc` and
+`caseid.clm2<inst_suffix>.da_aft.YYYY-MM-DD-SSSSS.nc`, where the
+timestamp is the model time of the DA update. Default: `0`.
+
 ### CLM:statevec_allcol ###
 
 `CLM:statevec_allcol`: (integer) Switch for using all SWC columns of a
@@ -894,6 +905,7 @@ Default: 0, output turned off.
  |           | `update_swc`            | 1             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
+|           | `print_da_hist_file`    | 0             |
  |           | `statevec_allcol`       | 0             |
  |           | `statevec_colmean`      | 0             |
  |           | `statevec_only_active`  | 0             |
