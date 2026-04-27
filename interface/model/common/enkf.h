@@ -43,8 +43,10 @@ extern void clm_advance(int *ntstep, int *tstartcycle, int *mype);
 extern void update_clm(int *tstartcycle, int *mype);
 #if defined CLMSA
 extern void print_update_clm(int *ts, int *ttot);
+#if defined CLMFIVE
 extern void clm_hist_write_da_before();
 extern void clm_hist_write_da_after();
+#endif
 #endif
 extern void write_clm_statistics(int *ts, int *ttot);
 extern void clm_finalize();

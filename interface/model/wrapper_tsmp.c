@@ -199,13 +199,17 @@ void update_tsmp(){
 
 #if defined CLMSA
   if((model == tag_model_clm) && ((clmupdate_swc != 0) || (clmupdate_T != 0))){
+#if defined CLMFIVE
     if(clmprint_da_hist_file == 1){
       clm_hist_write_da_before();   /* CLM history snapshot before DA update */
     }
+#endif
     update_clm(&tstartcycle, &mype_world);
+#if defined CLMFIVE
     if(clmprint_da_hist_file == 1){
       clm_hist_write_da_after();    /* CLM history snapshot after DA update */
     }
+#endif
     if(clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2){
       print_update_clm(&tcycle, &total_steps);
     }
