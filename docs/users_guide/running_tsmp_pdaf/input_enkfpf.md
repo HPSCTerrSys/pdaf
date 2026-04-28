@@ -56,6 +56,7 @@ update_texture  =
 update_T  =
 print_swc   =
 print_et   =
+print_inc   =
 statevec_allcol =
 statevec_colmean =
 statevec_only_active =
@@ -68,6 +69,7 @@ T_mask_snow_depth =
 increment_type =
 T_mask_T =
 T_max_increment =
+update_tws =
 
 [COSMO]
 nprocs      =
@@ -84,6 +86,13 @@ da_interval_final =
 flexible_da_interval =
 stat_dumpoffset   =
 point_obs =
+max_inc =
+TWS_smoother =
+state_setup =
+update_snow =
+remove_mean =
+exclude_greenland =
+set_zero_start =
 crns_flag =
 da_crns_depth_tol =
 print_obs_index =
@@ -541,6 +550,18 @@ and include the specifier `update` in the file name.
 `CLM:print_et`: (integer) Invoke function `write_clm_statistics`. For
 further information, see source code. Default: `0`.
 
+### CLM:print_inc ###
+
+`CLM:print_inc`: (integer) If set to `1`, the analysis increment
+(post-analysis minus prior state) is printed after each SWC update
+step by invoking `print_inc_clm`. Has no effect when only TWS
+assimilation is active (`CLM:update_tws`), for which the increment is
+always printed. Default: `0`.
+
+-  0: Increment output disabled for SWC updates.
+
+-  1: Increment output enabled for SWC updates.
+
 ### CLM:statevec_allcol ###
 
 `CLM:statevec_allcol`: (integer) Switch for using all SWC columns of a
@@ -712,6 +733,21 @@ t_soisno(:,1) < 273.15 K + CLM:T_mask_T.
 Only takes effect if `CLM:update_T` is switched on.
 
 Default setting is `0.`: Masking updates below freezing temperatures.
+
+(enkfpf:clm:update_tws)=
+### CLM:update_tws ###
+
+`CLM:update_tws`: (integer) Switch for enabling Terrestrial Water
+Storage (TWS) data assimilation with GRACE observations. Only available
+for eCLM/CLM5; not implemented for CLM3.5.
+
+Default: `0` (TWS DA disabled).
+
+- `1`: Enable TWS DA. Hydrologically active gridcells are collected
+  into a TWS state vector. The state vector composition is governed by
+  [`DA:state_setup`](enkfpf:da:state_setup).
+
+For details see [GRACE/TWS Data Assimilation](gracetws).
 
 (enkfpf:cosmo)=
 ## [COSMO] ##
@@ -919,6 +955,102 @@ Effect of `obs_interp_switch=1`:
   measurements from the value at the surrounding grid points in the
   x-y-plane.
 
+(enkfpf:da:max_inc)=
+### DA:max_inc ###
+
+`DA:max_inc`: (real) Maximum analysis increment expressed as a
+fraction of the current state value, applied during GRACE/TWS DA.
+If the computed increment for a water-storage component would exceed
+`max_inc * current_value`, it is capped to
+`sign(max_inc * current_value, increment)`.
+
+Default: `1.0` (increment capped at 100 % of the current state value).
+
+Only takes effect when `CLM:update_tws=1`.
+
+(enkfpf:da:tws_smoother)=
+### DA:TWS_smoother ###
+
+`DA:TWS_smoother`: (integer) Controls whether instantaneous or
+time-averaged CLM water-storage fields are used to fill the TWS state
+vector for GRACE DA.
+
+Default: `0` (instantaneous values).
+
+- `0`: Use instantaneous CLM fields (`h2osoi_liq_col`,
+  `h2osoi_ice_col`, `h2osno_col`, …).
+- `1`: Use monthly running-mean CLM fields (`h2osoi_liq_col_mean`,
+  `h2osoi_ice_col_mean`, `h2osno_col_mean`, …).
+
+Only takes effect when `CLM:update_tws=1`.  See
+[GRACE/TWS Data Assimilation](gracetws).
+
+(enkfpf:da:state_setup)=
+### DA:state_setup ###
+
+`DA:state_setup`: (integer) Controls the composition of the CLM TWS
+state vector for GRACE DA.
+
+Default: `0`.
+
+- `0`: Subdivided state vector. For each hydrologically active
+  gridcell, liquid water and ice are summed per soil layer; snow water
+  equivalent and surface water are appended as separate components.
+- `1`: Pre-aggregated TWS. A single total TWS value per gridcell is
+  stored.
+- `2`: Aggregated depth-zone state. Soil moisture is aggregated into
+  surface, root-zone and deep-soil compartments; snow water equivalent
+  is appended.
+
+Only takes effect when `CLM:update_tws=1`.  See
+[GRACE/TWS Data Assimilation](gracetws).
+
+(enkfpf:da:update_snow)=
+### DA:update_snow ###
+
+`DA:update_snow`: (integer) Reserved for future use. Intended to
+control whether the snow component is updated during GRACE/TWS DA.
+
+Default: `0`.
+
+(enkfpf:da:remove_mean)=
+### DA:remove_mean ###
+
+`DA:remove_mean`: (integer) Reserved for future use. Intended to
+control subtraction of a temporal climatological mean from TWS before
+assimilation (anomaly assimilation mode).
+
+Default: `0`.
+
+(enkfpf:da:exclude_greenland)=
+### DA:exclude_greenland ###
+
+`DA:exclude_greenland`: (integer) Switch for excluding Greenland from
+the TWS state vector for GRACE DA.  Gridcells with longitude in
+[180°, 330°] and latitude > 55° N are considered part of Greenland.
+
+Default: `0` (Greenland included).
+
+- `1`: Greenland gridcells are excluded from the state vector.
+
+Only takes effect when `CLM:update_tws=1`.
+
+(enkfpf:da:set_zero_start)=
+### DA:set_zero_start ###
+
+`DA:set_zero_start`: (integer) Time step at which the running temporal
+average in CLM is reset to zero before the first GRACE observation is
+assimilated.  Set this to the model time step one averaging period
+(typically one month) prior to the first planned GRACE observation so
+that the running average has a meaningful length at the first
+assimilation time.  After the first assimilation, the reset schedule
+is read from the observation file itself.
+
+Default: `0` (no start-up reset; averaging accumulates from the very
+first CLM time step).
+
+Only takes effect when `CLM:update_tws=1`.
+
 ### DA:crns_flag ###
 
 `DA:crns_flag`: (int) Flag for using CRNS-observations
@@ -1008,6 +1140,7 @@ Default: 0, output turned off.
  |           | `update_T`              | 0             |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
+ |           | `print_inc`             | 0             |
  |           | `statevec_allcol`       | 0             |
  |           | `statevec_colmean`      | 0             |
  |           | `statevec_only_active`  | 0             |
@@ -1019,6 +1152,7 @@ Default: 0, output turned off.
  |           | `increment_type`        | 0             |
  |           | `T_max_increment`       | 5.0           |
  |           | `T_mask_T`              | 0.0           |
+ |           | `update_tws`            | 0             |
  | `[COSMO]` |                         |               |
  |           | `nprocs`                | 0             |
  |           | `dtmult`                | 0             |
@@ -1032,6 +1166,13 @@ Default: 0, output turned off.
  |           | `screen_wrapper`        | 1             |
  |           | `point_obs`             | 1             |
  |           | `obs_interp_switch`     | 0             |
+ |           | `max_inc`               | 1.0           |
+ |           | `TWS_smoother`          | 0             |
+ |           | `state_setup`           | 0             |
+ |           | `update_snow`           | 0             |
+ |           | `remove_mean`           | 0             |
+ |           | `exclude_greenland`     | 0             |
+ |           | `set_zero_start`        | 0             |
  |           | `crns_flag`             | 1             |
  |           | `da_crns_depth_tol`     | 0.01          |
  |           | `print_obs_index`       | 0             |

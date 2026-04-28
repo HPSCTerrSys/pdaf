@@ -22,7 +22,7 @@ The prefix is chosen with the [command line option](cmd)
 Example: If the chosen prefix is `myobs`, the observation files are
 named `myobs.00001, myobs.00002, myobs.00003`, etc.
 
-(obs:files:gen)
+(obs:files:gen)=
 ### General observation file variables ###
 
 All observation files contain the following variable:
@@ -269,13 +269,28 @@ located.
 
 `dr`: (real, `dim=(2)`) Snapping distance for the observation.
 
-**Attention** This variable should have a length of `2` (one snapping
-distance in longitude direction and another snapping distance in
-latitude direction).
-
 Each of the CLM observations is snapped to the nearest CLM grid cell
 based on the given `lon`, `lat` and the snapping distance `dr` which
 should be smaller than the minimum grid cell size.
+
+This variable should have a length of `2` (one snapping distance in
+longitude direction and another snapping distance in latitude
+direction).
+
+(obs:files:clm:typeclm)=
+#### type_clm ####
+
+`type_clm`: (character(20), `dim=(dim_obs)`) .
+
+Needed specifically for [TSMP-PDAF with
+OMI](omi:tsmp-pdaf-with-pdaf-omi).
+
+Each entry `type_clm` should have the length `20`. This
+means the actual types should be padded with whitespaces (before or
+after). So, currently possible entries would be
+- `"GRACE               "`
+- `"SM                  "`
+
 
 (obs:files:clm:multi-scale-da)=
 ### Multi-Scale Data Assimilation observation file variables ###
