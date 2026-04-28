@@ -155,4 +155,3 @@ GLOBAL double clmT_mask_T;
 GLOBAL double max_inc;
 GLOBAL double clmT_mask_snow_depth;
 GLOBAL double clmT_max_increment;
-GLOBAL double max_inc;

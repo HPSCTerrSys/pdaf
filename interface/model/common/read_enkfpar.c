@@ -95,7 +95,6 @@ void read_enkfpar(char *parname)
   clmupdate_tws         = iniparser_getint(pardict,"CLM:update_tws",0);
   clmT_mask_snow_depth   = iniparser_getdouble(pardict,"CLM:T_mask_snow_depth",0.001);
   clmT_max_increment     = iniparser_getdouble(pardict,"CLM:T_max_increment",5.0);
-  clmupdate_tws         = iniparser_getint(pardict,"CLM:update_tws",0);
 
   /* get settings for COSMO */
   nproccosmo      = iniparser_getint(pardict,"COSMO:nprocs",0);
