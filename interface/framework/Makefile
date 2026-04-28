@@ -77,7 +77,8 @@ MOD_ASSIM = 	mod_parallel_pdaf.o \
 
 # Routines of observation handling (PDAF-OMI)
 MOD_USER_PDAFOMI = obs_GRACE_pdafomi.o \
-		obs_SM_pdafomi.o
+		obs_SM_pdafomi.o \
+		obs_LST_pdafomi.o
 
 # Model routines used with PDAF
 OBJ_MODEL_PDAF =pdaf_terrsysmp.o\

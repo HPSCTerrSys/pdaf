@@ -263,7 +263,8 @@ module enkf_clm_mod
     ! vector in column-mean-mode (SWC) or gridcell-mean-mode (T).
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
     if ((clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. clmupdate_T==2 &
-      .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5 .or. clmupdate_tws/=0 ) then
+      .or. clmupdate_T==3 .or. clmupdate_T==4 .or. clmupdate_T==5 &
+      .or. clmupdate_tws/=0 ) then
       allocate(clm_statevec_orig(clm_statevecsize))
     end if
 
@@ -1157,6 +1158,7 @@ module enkf_clm_mod
     end select
 
   end subroutine define_clm_statevec_tws
+
 
   subroutine cleanup_clm_statevec()
 
@@ -2118,7 +2120,7 @@ module enkf_clm_mod
     endif
 
     !hcp: TG, TV
-    if(obs_type_update_T==1) then
+    if(obs_type_update_T/=0) then
       call update_clm_T(tstartcycle, mype)
     endif
     ! end hcp TG, TV
@@ -4303,6 +4305,7 @@ module enkf_clm_mod
     end if
 
     else NOGRACE
+
       if (clm_varsize_tws(5)/=0) then
         sub=3
       else

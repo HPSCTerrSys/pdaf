@@ -274,6 +274,10 @@ MODULE mod_assimilation
   REAL    :: sradius_GRACE
   REAL    :: cradius_SM
   REAL    :: sradius_SM
+  REAL    :: cradius_LST
+  REAL    :: sradius_LST
+  ! REAL    :: cradius_C
+  ! REAL    :: sradius_C
 !    ! SEIK-subtype4/LSEIK-subtype4/ESTKF/LESTKF
   INTEGER :: type_sqrt     ! Type of the transform matrix square-root
                            !   (0) symmetric square root
