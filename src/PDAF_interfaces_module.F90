@@ -923,6 +923,13 @@ MODULE PDAF_interfaces_module
      END SUBROUTINE PDAF_get_ensstats
   END INTERFACE
 
+  INTERFACE
+     SUBROUTINE PDAF_reset_dim_p(dim_p_in, outflag)
+       INTEGER, INTENT(in) :: dim_p_in       ! Sub-type of filter
+       INTEGER, INTENT(inout):: outflag      ! Status flag
+     END SUBROUTINE PDAF_reset_dim_p
+  END INTERFACE
+
   INTERFACE 
      SUBROUTINE PDAF_reset_forget(forget_in)
        REAL, INTENT(in) :: forget_in    ! New value of forgetting factor

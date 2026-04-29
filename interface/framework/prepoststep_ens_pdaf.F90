@@ -75,8 +75,15 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     use mod_tsmp, &
         only: tag_model_parflow, pf_statevecsize, nprocclm, model
 
+#ifdef CLMFIVE
+    USE mod_assimilation, ONLY: use_omi
+#endif
 
     IMPLICIT NONE
+
+#ifdef CLMFIVE
+    external :: deallocate_obs_pdafomi
+#endif
 
     ! !ARGUMENTS:
     INTEGER, INTENT(in) :: step        ! Current time step (negative for call after forecast)
@@ -103,6 +110,9 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     INTEGER, SAVE :: allocflag = 0      ! Flag for memory counting
     LOGICAL, SAVE :: firstio = .TRUE.   ! File output is peformed for first time?
     LOGICAL, SAVE :: firsttime = .TRUE. ! Routine is called for first time?
+    LOGICAL, SAVE :: firsttime_omi = .TRUE. ! Routine is called for first time?
+                                            ! --> for PDAF OMI, for backward compatibility
+                                            ! if the statement in 1==2 should be used at one point
     REAL :: invdim_ens                  ! Inverse ensemble size
     REAL :: invdim_ensm1                ! Inverse of ensemble size minus 1
     REAL :: rmserror_est                ! estimated RMS error
@@ -264,4 +274,15 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
 
     firsttime = .FALSE.
     end if
+
+#ifdef CLMFIVE
+    OMI: IF (use_omi) THEN ! deallocate observation arrays for second call of prepoststep
+        if (firsttime_omi) then
+            firsttime_omi = .FALSE.
+        else
+            CALL deallocate_obs_pdafomi()
+            firsttime_omi = .TRUE.
+        end if
+    end if OMI
+#endif
 END SUBROUTINE prepoststep_ens_pdaf

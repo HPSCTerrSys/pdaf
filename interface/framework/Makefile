@@ -75,9 +75,16 @@ MOD_ASSIM = 	mod_parallel_pdaf.o \
 		parser_mpi.o \
 		mod_read_obs.o
 
+# Routines of observation handling (PDAF-OMI)
+MOD_USER_PDAFOMI = obs_GRACE_pdafomi.o \
+		obs_SM_pdafomi.o
+
 # Model routines used with PDAF
 OBJ_MODEL_PDAF =pdaf_terrsysmp.o\
 		integrate_pdaf.o
+
+# Routines of observation handling (PDAF-OMI)
+OBJ_USER_PDAFOMI = callback_obs_pdafomi.o
 
 # Interface to PDAF - model sided
 OBJ_PDAF_INT =  init_parallel_pdaf.o \
@@ -121,7 +128,7 @@ OBJ_USER_LOCAL = init_n_domains_pdaf.o \
 		localize_covar_pdaf.o
 
 # Full list of user-supplied routines for online modes
-OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL)
+OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL) $(OBJ_USER_PDAFOMI)
 
 ######################################################
 
@@ -143,10 +150,12 @@ info:
 
 
 $(PROG) : $(LIBMODEL) libpdaf-d.a \
-	$(MODULES) $(MOD_ASSIM) $(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER) 
+	$(MODULES) $(MOD_ASSIM) $(MOD_USER_PDAFOMI) \
+	$(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER)
 	$(PREP_C) $(LD)  $(OPT_LNK)  -o $@ \
-	$(MODULES) $(MOD_ASSIM) $(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER) \
-	-L$(BASEDIR)/lib -lpdaf-d $(LIBMODEL) $(LIBS) $(LINK_LIBS)
+	$(MODULES) $(MOD_ASSIM) $(MOD_USER_PDAFOMI) \
+	$(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER) \
+	-L$(BASEDIR)/lib $(LIBMODEL) -lpdaf-d $(LIBS) $(LINK_LIBS)
 
 ######################################################
 
