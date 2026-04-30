@@ -85,17 +85,24 @@ SUBROUTINE PDAF_set_forget(step, filterstr, dim_obs_p, dim_ens, mens_p, &
   REAL :: var_resid_p, var_resid   ! Variance of residual
   REAL :: var_obs                  ! Variance of observation errors
   REAL :: forget_neg, forget_max, forget_min ! Limiting values of forgetting factor
+  REAL :: var_target
+  REAL :: spread_fac
 
 
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
 
+  ! spread_fac defines the minimum ensemble std relative to obs std:
+  ! sqrt(var_ens_target) = spread_fac * sqrt(var_obs)
+  ! hence: var_target = spread_fac^2 * var_obs
+  spread_fac = 1.0
+
   ! Define limiting values of forgetting factor
-  ! These are set very arbitrarily for now
+  ! The input 'forget' is used as obs-type dependent lower bound
   forget_neg = forget_in
   forget_max = 1.0
-  forget_min = 0.95
+  forget_min = forget_in
 
   IF (mype == 0) THEN
      WRITE (*, '(a, 5x, a)') &
@@ -180,8 +187,19 @@ SUBROUTINE PDAF_set_forget(step, filterstr, dim_obs_p, dim_ens, mens_p, &
 
      CALL PDAF_timeit(51, 'new')
 
+     ! Define target ensemble variance in observation space
+     var_target = spread_fac * spread_fac * var_obs
+
      ! *** Compute optimal forgetting factor ***
-     forget_out = var_ens / (var_resid - var_obs)
+     IF (var_target > 0.0) THEN
+         IF (var_ens < var_target) THEN
+            forget_out = var_ens / var_target
+         ELSE
+            forget_out = 1.0
+         ENDIF
+      ELSE
+         forget_out = 1.0
+      ENDIF
 
      ! Apply special condition if observation variance is larger than residual variance
      IF (forget_out < 0.0) forget_out = forget_neg
@@ -198,6 +216,14 @@ SUBROUTINE PDAF_set_forget(step, filterstr, dim_obs_p, dim_ens, mens_p, &
 ! ********************
 
      IF (mype == 0) THEN
+#ifdef PDAF_DEBUG
+        WRITE (*, '(a, 9x, a, es10.2)') &
+             'PDAF', 'Variance of ensemble', var_ens
+        WRITE (*, '(a, 9x, a, es10.2)') &
+             'PDAF', 'Variance of observation errors', var_obs
+        WRITE (*, '(a, 9x, a, es10.2)') &
+             'PDAF', 'Target variance of ensemble', var_target
+#endif
         WRITE (*, '(a, 9x, a, es10.2)') &
              'PDAF', '--> Computed forgetting factor', forget_out
      ENDIF
