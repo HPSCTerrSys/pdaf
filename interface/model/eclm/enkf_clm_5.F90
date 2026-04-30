@@ -70,7 +70,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
   use, intrinsic :: iso_C_binding, only: c_char, c_int
   use enkf_clm_mod, only: COMM_model_clm
 #if defined CLMSA
-  use enkf_clm_mod, only: define_clm_statevec
+  use enkf_clm_mod, only: define_clm_statevec, clmprint_da_hist_file
   use histFileMod,  only: hist_init_da_tape
 #endif
   use clm_varcon, only: averaging_var
@@ -189,7 +189,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 #if defined CLMSA
   averaging_var=0
   call define_clm_statevec(mype)
-  call hist_init_da_tape()
+  if (clmprint_da_hist_file == 1) call hist_init_da_tape()
 #endif
 
 
