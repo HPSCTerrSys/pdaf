@@ -94,8 +94,8 @@ SUBROUTINE PDAF_set_forget(step, filterstr, dim_obs_p, dim_ens, mens_p, &
   ! Define limiting values of forgetting factor
   ! These are set very arbitrarily for now
   forget_neg = forget_in
-  forget_max = 100.0
-  forget_min = 0.01
+  forget_max = 1.0
+  forget_min = 0.95
 
   IF (mype == 0) THEN
      WRITE (*, '(a, 5x, a)') &
