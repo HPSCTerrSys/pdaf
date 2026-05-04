@@ -424,10 +424,9 @@ MODULE obs_SM_pdafomi
             if(newgridcell) then
 
               if(is_use_dr) then
-                  if (lon(g)>180) then
-                    deltax = abs(lon(g)-lon_obs(i)-360)
-                  else
-                    deltax = abs(lon(g)-lon_obs(i))
+                  deltax = abs(lon(g)-lon_obs(i))
+                  if (deltax > 180.0) then
+                    deltax = 360.0 - deltax
                   end if
                   deltay = abs(lat(g)-lat_obs(i))
               end if
@@ -611,10 +610,9 @@ MODULE obs_SM_pdafomi
               if(newgridcell) then
 
                 if(is_use_dr) then
-                  if (lon(g)>180) then
-                    deltax = abs(lon(g)-lon_obs(i)-360)
-                  else
-                    deltax = abs(lon(g)-lon_obs(i))
+                  deltax = abs(lon(g)-lon_obs(i))
+                  if (deltax > 180.0) then
+                    deltax = 360.0 - deltax
                   end if
                   deltay = abs(lat(g)-lat_obs(i))
                 end if
@@ -704,10 +702,9 @@ MODULE obs_SM_pdafomi
             if(newgridcell) then
 
               if(is_use_dr) then
-                if (lon(g)>180) then
-                  deltax = abs(lon(g)-lon_obs(i)-360)
-                else
-                  deltax = abs(lon(g)-lon_obs(i))
+                deltax = abs(lon(g)-lon_obs(i))
+                if (deltax > 180.0) then
+                  deltax = 360.0 - deltax
                 end if
                 deltay = abs(lat(g)-lat_obs(i))
               end if
