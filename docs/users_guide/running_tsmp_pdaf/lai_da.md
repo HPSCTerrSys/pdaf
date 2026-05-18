@@ -10,12 +10,14 @@ Not available for CLM3.5 or CLM5.0 without BGC.
 
 ## Configuration ##
 
-LAI DA is controlled by two parameters in `enkfpf.par`:
+LAI DA is controlled by three parameters in `enkfpf.par`:
 
 - [`CLM:update_lai`](enkfpf:clm:update_lai) — selects the state vector
   layout and the location of the forward observation operator.
 - [`CLM:update_lai_params`](enkfpf:clm:update_lai_params) — enables
   joint estimation of specific leaf area parameters alongside LAI.
+- [`CLM:update_lai_incr_w`](enkfpf:clm:update_lai_incr_w) — blend between
+  additive and multiplicative patch LAI increments.
 
 ## Background ##
 
@@ -74,16 +76,17 @@ cell (a weighted average over all patches in that cell):
 2. The gridcell LAI is the patch-weight-averaged sum:
    $\text{LAI}_g = \sum_p w_p\,\text{LAI}(p)$, where $w_p$ is
    `patch%wtgcell`.
-3. The relative contribution of each patch is stored as
-   $f_p = w_p\,\text{LAI}(p)\,/\,\text{LAI}_g$, which is used in the
-   update phase.
+3. Per-patch forecast LAI $\text{LAI}_\text{f}(p)$ is stored for the
+   update phase;
 
 **PDAF update**: PDAF operates on the gridcell-level LAI values.
 
 **Update phase** (`update_clm`):
 
-1. The updated gridcell LAI from the state vector is distributed back
-   to patches: $\text{LAI}'(p) = \text{LAI}'_g\,f_p\,/\,w_p$.
+1. The gridcell analysis LAI $\text{LAI}'_g$ is mapped to patches using
+   a blend of additive and multiplicative increments controlled by
+   [`CLM:update_lai_incr_w`](enkfpf:clm:update_lai_incr_w)
+   (default `1.0` = purely additive).
 2. The updated per-patch LAI is inverted to obtain the new `leafc`:
 
 $$
@@ -125,8 +128,10 @@ where $g_i$ is the grid cell corresponding to observation $i$.
 
 After the PDAF update:
 
-- `leafc` is read back from block 1 and clipped to zero;
-  `leafn` is updated consistently.
+- Patch LAI is updated with the same additive/multiplicative blend as in
+  option 1 (using weighted gridcell-mean LAI for the ratio and increment).
+- `leafc` is obtained by inverting the blended patch LAI and clipped to
+  zero; `leafn` is updated consistently.
 - If `CLM:update_lai_params=2`, `slatop` and `dsladlai` are also
   read back from blocks 2 and 3 and written to the PFT constants.
   The diagnostic LAI update is then left to eCLM's own phenology
@@ -140,6 +145,7 @@ After the PDAF update:
 [CLM]
 update_lai        = 1
 update_lai_params = 0
+update_lai_incr_w = 1.0
 ```
 
 **Example 2** — gridcell LAI assimilation with joint `slatop` estimation:
