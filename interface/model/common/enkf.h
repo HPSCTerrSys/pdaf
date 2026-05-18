@@ -90,6 +90,7 @@ GLOBAL int clmupdate_T;
 GLOBAL int clmupdate_texture;
 GLOBAL int clmupdate_lai;
 GLOBAL int clmupdate_lai_params;
+GLOBAL double clmupdate_lai_incr_w;
 GLOBAL int clmprint_swc;
 GLOBAL int clmprint_et;
 GLOBAL int clmstatevec_allcol;

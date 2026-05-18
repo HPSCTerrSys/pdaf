@@ -60,6 +60,7 @@ module enkf_clm_mod
   integer(c_int),bind(C,name="clmprint_swc")      :: clmprint_swc
   integer(c_int),bind(C,name="clmupdate_lai")    :: clmupdate_lai
   integer(c_int),bind(C,name="clmupdate_lai_params") :: clmupdate_lai_params
+  real(c_double),bind(C,name="clmupdate_lai_incr_w") :: clmupdate_lai_incr_w
 #endif
   integer(c_int),bind(C,name="clmprint_et")       :: clmprint_et
   integer(c_int),bind(C,name="clmstatevec_allcol")       :: clmstatevec_allcol
@@ -92,6 +93,7 @@ module enkf_clm_mod
 
   ! Arrays for LAI Assimilation
   real(r8),allocatable :: tlai(:)
+  real(r8),allocatable :: tlai_orig(:)
   real(r8),allocatable :: lai_wtsum2_gc(:)
 
   contains
@@ -151,7 +153,8 @@ module enkf_clm_mod
         ! Allocate array to store total leaf area index per patch
         if (allocated(tlai)) deallocate(tlai)
         allocate(tlai(clm_begp:clm_endp))
-        ! Allocate array to store fraction of LAI the patch represents.
+        if (allocated(tlai_orig)) deallocate(tlai_orig)
+        allocate(tlai_orig(clm_begp:clm_endp))
         if (allocated(lai_wtsum2_gc)) deallocate(lai_wtsum2_gc)
         allocate(lai_wtsum2_gc(clm_begg:clm_endg))
 
@@ -208,11 +211,10 @@ module enkf_clm_mod
     end if
 
 
-    ! Allocate statevector-duplicate for saving original column mean
-    ! values used in computing increments during updating the state
-    ! vector in column-mean-mode.
+    ! Allocate statevector-duplicate for saving the forecast state used when
+    ! mapping analysis increments back to CLM (SWC DA column-mean mode or LAI DA mode).
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
-    if (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) then
+    if ((clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. (clmupdate_lai/=0)) then
       allocate(clm_statevec_orig(clm_statevecsize))
     end if
 
@@ -431,6 +433,7 @@ module enkf_clm_mod
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
     IF (allocated(lai_wtsum2_gc)) deallocate(lai_wtsum2_gc)
     IF (allocated(tlai)) deallocate(tlai)
+    IF (allocated(tlai_orig)) deallocate(tlai_orig)
 
   end subroutine cleanup_clm_statevec
 
@@ -516,6 +519,7 @@ module enkf_clm_mod
              tlai(i) = pftcon%slatop(patch%itype(i)) * leafc(i)
            end if
            tlai(i) = max(0._r8, tlai(i)) ! don't allow negative LAI
+           tlai_orig(i) = tlai(i)
            ! Map CLM gridcell index (begg:endg) to PE-local state index (1:clm_statevecsize)
            igc = patch%gridcell(i) - clm_begg + 1
            if (igc >= 1 .and. igc <= clm_statevecsize) then
@@ -530,6 +534,11 @@ module enkf_clm_mod
                ' valid range: 1-', clm_statevecsize, ' i=', i
            end if
        end do
+       if (allocated(clm_statevec_orig)) then
+         do igc = 1, min(clm_endg - clm_begg + 1, clm_statevecsize)
+           clm_statevec_orig(igc) = clm_statevec(igc)
+         end do
+       end if
 
 #ifdef PDAF_DEBUG
       IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble == -1) THEN
@@ -691,6 +700,35 @@ module enkf_clm_mod
   end subroutine set_clm_statevec_swc
 
 
+  subroutine lai_patch_tlai_blend(tlai_fc, lai_gc_fc, lai_gc_an, tlai_out)
+    use shr_kind_mod , only : r8 => shr_kind_r8
+
+    implicit none
+
+    real(r8), intent(in) :: tlai_fc
+    real(r8), intent(in) :: lai_gc_fc
+    real(r8), intent(in) :: lai_gc_an
+    real(r8), intent(out) :: tlai_out
+
+    real(r8) :: incr_lai_gc
+    real(r8) :: tlai_add
+    real(r8) :: tlai_mult
+    real(r8) :: w_add
+
+    incr_lai_gc = lai_gc_an - lai_gc_fc
+    tlai_add = tlai_fc + incr_lai_gc
+    if (abs(lai_gc_fc) > 1.0e-12_r8) then
+      tlai_mult = tlai_fc * (lai_gc_an / lai_gc_fc)
+    else
+      tlai_mult = tlai_add
+    end if
+    w_add = real(clmupdate_lai_incr_w, r8)
+    tlai_out = w_add * tlai_add + (1._r8 - w_add) * tlai_mult
+    tlai_out = max(0._r8, tlai_out)
+
+  end subroutine lai_patch_tlai_blend
+
+
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
     use clm_time_manager  , only : update_DA_nstep
     use shr_kind_mod , only : r8 => shr_kind_r8
@@ -710,8 +748,8 @@ module enkf_clm_mod
     real(r8), pointer :: leafc(:)         ! leaf carbon of patch
     real(r8), pointer :: leafn(:)         ! leaf nitrogen of patch
 
-!    real(r8) :: tlai(clm_begp:clm_endp)
-    real(r8) :: incr_lai
+    real(r8) :: lai_gc_an
+    real(r8) :: lai_gc_fc
 
     integer :: i
     integer :: cc
@@ -805,18 +843,15 @@ module enkf_clm_mod
     endif
 
     ! LAI assimilation:
-    ! Case 1:
+    ! Case 1: gridcell-mean LAI state; map analysis back to patches via
+    ! additive/multiplicative blend (CLM:update_lai_incr_w).
     if(clmupdate_lai==1) then
-      ! Distribute post-DA grid-cell LAI (clm_statevec(g)) to patches using patch weights.
-      ! Conservation: sum_p wtgcell(p)*tlai(p) = L_an  if
-      !   tlai(p) = L_an * wtgcell(p) / sum_k wtgcell(k)^2  (sum over patches k in grid cell g).
       do i=clm_begp,clm_endp
-        ! Map CLM gridcell index to PE-local clm_statevec index (same as SWC: col%gridcell - begg + 1)
         igc = patch%gridcell(i) - clm_begg + 1
-        if (igc >= 1 .and. igc <= clm_statevecsize .and. patch%wtgcell(i) > 0._r8 &
-            .and. lai_wtsum2_gc(patch%gridcell(i)) > 0._r8) then
-          tlai(i) = clm_statevec(igc) * patch%wtgcell(i) &
-            / lai_wtsum2_gc(patch%gridcell(i))
+        if (igc >= 1 .and. igc <= clm_statevecsize .and. allocated(clm_statevec_orig)) then
+          lai_gc_fc = clm_statevec_orig(igc)
+          lai_gc_an = clm_statevec(igc)
+          call lai_patch_tlai_blend(tlai_orig(i), lai_gc_fc, lai_gc_an, tlai(i))
         else
           tlai(i) = 0._r8
         endif

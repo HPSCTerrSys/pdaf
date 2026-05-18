@@ -56,6 +56,7 @@ update_texture  =
 update_T  =
 update_lai  =
 update_lai_params =
+update_lai_incr_w =
 print_swc   =
 print_et   =
 statevec_allcol =
@@ -536,6 +537,26 @@ LAI. Only takes effect if `CLM:update_lai` is non-zero. Default: `0`.
    updated `slatop` and `dsladlai` values from the state vector back to
    the eCLM plant functional type constants.
 
+(enkfpf:clm:update_lai_incr_w)=
+### CLM:update_lai_incr_w ###
+
+`CLM:update_lai_incr_w`: (real) Weight of the **additive** LAI increment when mapping the gridcell analysis back to patches. Only used if `CLM:update_lai` is non-zero. Default: `1.0`. 
+
+After the EnKF update, the gridcell-mean LAI increment is applied to each patch in two ways and then blended:
+
+- **Additive** (weight `w`): each patch receives the same increment
+  $\Delta = \text{LAI}_\text{a} - \text{LAI}_\text{f}$:
+  $\text{LAI}'(p) = \text{LAI}_\text{f}(p) + \Delta$.
+
+- **Multiplicative** (weight $1-w$): each patch is scaled by the gridcell analysis-to-forecast ratio:
+  $\text{LAI}'(p) = \text{LAI}_\text{f}(p)\,\text{LAI}_\text{a} / \text{LAI}_\text{f}$.
+
+The final patch LAI is
+$\text{LAI}'(p) = w\,\text{LAI}'_\text{add}(p) + (1-w)\,\text{LAI}'_\text{mult}(p)$.
+
+-  `1.0`: purely additive.
+-  `0.0`: purely multiplicative.
+
 ### CLM:print_swc ###
 
 `CLM:print_swc`: (integer) If set to `1`, the updated soil moisture
@@ -940,6 +961,7 @@ Default: 0, output turned off.
  |           | `update_swc`            | 1             |
  |           | `update_lai`            | 0             |
  |           | `update_lai_params`     | 0             |
+ |           | `update_lai_incr_w`     | 1.0           |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `statevec_allcol`       | 0             |
