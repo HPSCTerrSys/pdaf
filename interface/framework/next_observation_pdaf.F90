@@ -62,9 +62,18 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   USE mod_tsmp, ONLY: flexible_da_interval
   USE mod_assimilation, &
        ONLY: obs_filename
+  USE mod_assimilation, ONLY: use_omi
   use mod_read_obs, &
-       only: check_n_observationfile
-  use mod_read_obs, ONLY: check_n_observationfile_da_interval
+       only: check_n_observationfile, check_n_observationfile_da_interval
+#ifdef CLMFIVE
+  use mod_read_obs, only: check_n_observationfile_set_zero
+  use mod_read_obs, only: check_n_observationfile_next_type
+  use mod_read_obs, only: update_obs_type
+  use clm_time_manager, only: get_nstep
+  use clm_varcon, only: set_averaging_to_zero
+  use clm_varcon, only: ispval
+  use enkf_clm_mod, only: clmupdate_tws
+#endif
   IMPLICIT NONE
 
 ! !ARGUMENTS:
@@ -80,7 +89,10 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   !kuw: local variables
   integer :: counter
   integer :: no_obs
+  integer :: nstep
   character (len = 110) :: fn
+  character(len=32) :: obs_type_str
+  logical :: file_exists
   !kuw end
 
   REAL :: da_interval_new
@@ -212,6 +224,51 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 
 !   doexit = ??
   !print *, "next_observation_pdaf finished"
+
+#ifdef CLMSA
+#ifdef CLMFIVE
+  OMI:if (use_omi)  then
+    if (clmupdate_tws/=0) then ! only update set_zero when GRACE is assimilated at the current time step
+      nstep = get_nstep()
+      if (stepnow/=toffset) then
+        write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
+        call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
+        if (set_averaging_to_zero/=ispval) then
+          set_averaging_to_zero = set_averaging_to_zero+nstep
+        end if
+
+        if (mype_world==0 .and. screen > 2) then
+          write(*,*) 'set_averaging_to_zero (in next_observation_pdaf):',set_averaging_to_zero
+        end if
+      end if
+    end if
+
+    ! update observation type with next file
+    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow + delt_obs
+    if (mype_world==0 .and. screen > 2) then
+      write(*,*)'next_observation_pdaf: fn = ', fn
+      write(*,*)'Call check_n_observationfile_next_type'
+    end if
+
+    inquire(file=fn, exist=file_exists)
+    if (.not. file_exists) then
+        if (mype_world == 0 .and. screen > 2) then
+            write(*,*) 'next_observation_pdaf: skipping setting next observation type as no next file available'
+        end if
+    else
+        call check_n_observationfile_next_type(fn, obs_type_str)
+        if (trim(obs_type_str) /= '') then
+          call update_obs_type(obs_type_str)
+        end if
+
+        if (mype_world==0 .and. screen > 2) then
+          write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
+        end if
+    end if
+
+  end if OMI
+#endif
+#endif
 
 END SUBROUTINE next_observation_pdaf
 

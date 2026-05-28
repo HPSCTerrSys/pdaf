@@ -77,17 +77,26 @@ SUBROUTINE PDAF_set_forget_local(domain, step, dim_obs_l, dim_ens, mens_l, &
   INTEGER, SAVE :: domain_save = 1    ! Index of domain from last call to routine
   INTEGER :: n_domains                ! Number of local analysis domains
   REAL :: forget_neg, forget_max, forget_min ! limiting values of forgetting factor
+  REAL :: var_target
+  REAL :: spread_fac
 
 
 ! **********************
 ! *** INITIALIZATION ***
 ! **********************
 
+  ! spread_fac defines the minimum ensemble std relative to obs std:
+  ! sqrt(var_ens_target) = spread_fac * sqrt(var_obs)
+  ! hence: var_target = spread_fac^2 * var_obs
+  spread_fac = 1.0
+
   ! Define limiting values of forgetting factor
-  ! These are set very arbitrarily for now
+  ! The input 'forget' is used as obs-type dependent lower bound
   forget_neg = forget
-  forget_max = 100.0
-  forget_min = 0.01
+  forget_max = 1.0
+  forget_min = forget
+
+
 
 
 ! ****************************************************
@@ -150,8 +159,19 @@ SUBROUTINE PDAF_set_forget_local(domain, step, dim_obs_l, dim_ens, mens_l, &
   CALL U_init_obsvar_l(domain, step, dim_obs_l, obs_l, var_obs)
   CALL PDAF_timeit(52, 'old')
 
+  ! Define target ensemble variance in local observation space
+  var_target = spread_fac * spread_fac * var_obs
+
   ! *** Compute optimal forgetting factor ***
-  forget = var_ens / (var_resid - var_obs)
+  IF (var_target > 0.0) THEN
+     IF (var_ens < var_target .and. dim_obs_l>3) THEN
+        forget = var_ens / var_target
+     ELSE
+        forget = 1.0
+     ENDIF
+  ELSE
+     forget = 1.0
+  ENDIF
 
   ! Apply special condition if observation variance is larger than residual variance
   IF (forget < 0.0) forget = forget_neg

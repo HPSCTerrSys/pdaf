@@ -51,6 +51,16 @@ Details: <https://pdaf.awi.de/trac/wiki/WhichFiltertouse>
 `subtype` (integer) Parameter subtype, different options for each
 filter. See [](cmd:command-line-examples).
 
+(cmd:use_omi)=
+## use_omi ##
+
+`use_omi` (logical) Controls whether to use OMI interface.
+
+- `.true.`: OMI interface is used
+- `.false.`: OMI interface is not used (default)
+
+See [](omi:tsmp-pdaf-with-pdaf-omi).
+
 ## obs_filename ##
 
 `obs_filename` (string) Prefix for observation files.
@@ -92,29 +102,70 @@ For flexible time stepping, `delt_obs` must be one.
 - 2: 1 plus timing output
 - 3: 2 plus debug output
 
+## type_forget ##
+
+`type_forget` (integer) Type of forgetting factor. Default: `0`.
+
+For SEIK / LSEIK / ETKF / LETKF / ESTKF / LESTKF:
+- `0`: fixed forgetting factor (value given by `forget`)
+- `1`: global adaptive forgetting factor (computed from ensemble
+  spread and observation error variance; `forget` acts as lower bound)
+- `2`: local adaptive forgetting factor, for LSEIK / LETKF / LESTKF
+  only (same adaptive logic applied per local analysis domain; `forget`
+  acts as lower bound)
+
+For NETF / LNETF / PF:
+- `0`: apply inflation on forecast ensemble
+- `2`: apply inflation on analysis ensemble
+
 ## forget ##
 
-`forget` (real) forgetting factor for filter analysis
+`forget` (real) forgetting factor for filter analysis. Default: `1.0`.
 
-Example: `-forget 0.98`.
+**Fixed mode (`type_forget = 0`):** `forget` is applied directly as the
+forgetting factor. Example: `-forget 0.98`.
 
-General advise: Choose forgetting factor close to one. For values
-smaller than 0.95, effects like a splitting of the ensemble have been
-observed (compare Amezcua et al., Tellus A 2012, 64, 18039,
+General advice: choose `forget` close to one. For values smaller than
+0.95, effects like a splitting of the ensemble have been observed
+(compare Amezcua et al., Tellus A 2012, 64, 18039,
 <http://dx.doi.org/10.3402/tellusa.v64i0.18039>)
 
 For EnKF / LEnKF, the forgetting factor leads to a spreading of the
-ensemble through manipulating ensemble member by
+ensemble through manipulating each ensemble member by
 
-\begin{align*}
-x^{f}_{i} &= \bar{x} + (x_{i}-\bar{x}) \cdot \frac{1}{\mathtt{forget}^2},
-\end{align*}
+$$
+x^{f}_{i} = \bar{x} + (x_{i}-\bar{x}) \cdot \frac{1}{\mathtt{forget}^2},
+$$
 
 where $x_{i}$ is the state vector ensemble member $i$ and $\bar{x}$ is
 the ensemble mean of the state vector.
 
 For ETKF, see
 e.g. <https://github.com/PDAF/PDAF/blob/ae9545227bd4804469dff389a9baadcc9e31906e/src/PDAF_etkf_analysis.F90#L441-L444>
+
+**Adaptive mode (`type_forget = 1` or `2`):** `forget` is used as a
+lower bound on the computed forgetting factor. The adaptive algorithm
+inflates the ensemble only when its spread in observation space falls
+below the observation error standard deviation. 
+
+Concretely, the forgetting factor is computed as
+
+$$
+\mathtt{forget_adaptive} = \begin{cases}
+\mathtt{forget} & \text{if } \sigma^2_{\mathrm{ens}} < \mathtt{forget} \cdot \sigma^2_{\mathrm{obs}}, \\[5pt]
+\sigma^2_{\mathrm{ens}} / \sigma^2_{\mathrm{obs}} & \text{if } \mathtt{forget} \cdot \sigma^2_{\mathrm{obs}} \leq \sigma^2_{\mathrm{ens}} \leq \sigma^2_{\mathrm{obs}}, \\[5pt]
+1 & \text{otherwise.}
+\end{cases}
+$$
+
+Note that the result is clipped to $[{\mathtt{forget}},\, 1]$, so
+`forget` provides a lower bound (maximum inflation).
+
+The resulting `forget` factor is then used in the same way as the
+global one.
+
+A typical choice is `-forget 0.95` to allow moderate inflation while
+preventing excessive spread.
 
 ## locweight ##
 
@@ -325,6 +376,11 @@ With this command, the TSMP-PDAF executable `tsmp-pdaf` will be run with
 64 realisations (8 processors for each realisation) and Lestkf analysis
 will be performed every assimilation cycle with an observation error of
 0.1 and observations read from the files `myobs.xxxxx`.
+
+
+Using LESTKF analysis with PDAF-OMI:
+
+        mpiexec -np 512 ./tsmp-pdaf -n_modeltasks 64 -filtertype 7 -cradius 3 -locweight 0 -subtype 0 -delt_obs 1 -rms_obs 0.1 -obs_filename myobs -use_omi .true.
 
 #### LESTKF: subtype ####
 

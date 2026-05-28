@@ -124,7 +124,8 @@ OBJ_PDAF_GEN = 	PDAF_analysis_utils.o \
 		PDAFlocalomi_put_state_nondiagR.o \
 		PDAFlocalomi_put_state_nondiagR_si.o \
 		PDAFlocalomi_put_state_si.o \
-		PDAF_correlation_function.o
+		PDAF_correlation_function.o \
+		PDAF_reset_dim_p.o
 
 
 # Specific PDAF-routines for SEIK

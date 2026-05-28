@@ -81,6 +81,7 @@ void read_enkfpar(char *parname)
   clmupdate_texture     = iniparser_getint(pardict,"CLM:update_texture",0);
   clmprint_swc          = iniparser_getint(pardict,"CLM:print_swc",0);
   clmprint_et           = iniparser_getint(pardict,"CLM:print_et",0);
+  clmprint_inc           = iniparser_getint(pardict,"CLM:print_inc",0);
   clmstatevec_allcol    = iniparser_getint(pardict,"CLM:statevec_allcol",0);
   clmstatevec_colmean   = iniparser_getint(pardict,"CLM:statevec_colmean",0);
   clmstatevec_only_active = iniparser_getint(pardict,"CLM:statevec_only_active",0);
@@ -88,6 +89,7 @@ void read_enkfpar(char *parname)
   clmt_printensemble    = iniparser_getint(pardict,"CLM:t_printensemble",-2);
   clmwatmin_switch      = iniparser_getint(pardict,"CLM:watmin_switch",0);
   clmswc_mask_snow      = iniparser_getint(pardict,"CLM:swc_mask_snow",0);
+  clmupdate_tws         = iniparser_getint(pardict,"CLM:update_tws",0);
 
   /* get settings for COSMO */
   nproccosmo      = iniparser_getint(pardict,"COSMO:nprocs",0);
@@ -105,6 +107,15 @@ void read_enkfpar(char *parname)
   screen_wrapper        = iniparser_getint(pardict,"DA:screen_wrapper",1);
   point_obs             = iniparser_getint(pardict,"DA:point_obs",1);
   obs_interp_switch     = iniparser_getint(pardict,"DA:obs_interp_switch",0);
+
+  max_inc               = iniparser_getdouble(pardict,"DA:max_inc",1.0);
+  TWS_smoother          = iniparser_getint(pardict,"DA:TWS_smoother",0);
+  state_setup           = iniparser_getint(pardict,"DA:state_setup",0);
+  update_snow           = iniparser_getint(pardict,"DA:update_snow",0);
+  remove_mean           = iniparser_getint(pardict,"DA:remove_mean",0);
+  exclude_greenland     = iniparser_getint(pardict,"DA:exclude_greenland",0);
+  set_zero_start        = iniparser_getint(pardict,"DA:set_zero_start",0);
+
   crns_flag             = iniparser_getint(pardict,"DA:crns_flag",0);
   da_crns_depth_tol     = iniparser_getdouble(pardict,"DA:da_crns_depth_tol",0.01);
   clmcrns_bd            = iniparser_getdouble(pardict, "DA:crns_bd", -1.0);

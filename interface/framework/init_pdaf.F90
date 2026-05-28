@@ -80,6 +80,7 @@ SUBROUTINE init_pdaf()
         type_winf, limit_winf, &
         type_hyb, hyb_gamma, hyb_kappa, &
         pf_res_type, pf_noise_type, pf_noise_amp
+  USE mod_assimilation, ONLY: use_omi
   USE mod_tsmp, &
         ONLY: pf_statevecsize, nprocpf, tag_model_parflow, tag_model_clm, nprocclm, pf_statevec, pf_statevec_fortran, &
         idx_map_subvec2state, idx_map_subvec2state_fortran, model
@@ -97,6 +98,16 @@ SUBROUTINE init_pdaf()
   USE spmdMod      , only : masterproc
 #endif
   use enkf_clm_mod, only: clm_statevecsize
+
+#ifdef CLMFIVE
+  USE obs_GRACE_pdafomi, ONLY: assim_GRACE
+  USE obs_SM_pdafomi, ONLY: assim_SM
+  !USE obs_ST_pdafomi, ONLY: assim_C
+
+  USE enkf_clm_mod, ONLY: clmupdate_tws
+  USE enkf_clm_mod, ONLY: clmupdate_swc
+!  use enkf_clm_mod, only: clmupdate_C
+#endif
 #endif
   ! kuw end
 
@@ -227,6 +238,20 @@ SUBROUTINE init_pdaf()
   call MPI_Barrier(MPI_COMM_WORLD, ierror)
 
 ! **********************************************************
+! ***   OMI observation types in assimilation            ***
+! **********************************************************
+! Inputs parsed from enkfpf.par are set to OMI switches assim_*
+!
+! Only applies to eCLM simulations
+#if defined CLMSA
+#ifdef CLMFIVE
+  assim_GRACE = (clmupdate_tws /= 0)
+  assim_SM = (clmupdate_swc /= 0)
+  ! assim_C = (clmupdate_C /= 0)
+#endif
+#endif
+
+! **********************************************************
 ! ***   CONTROL OF PDAF - used in call to PDAF_init      ***
 ! **********************************************************
 
@@ -251,6 +276,8 @@ SUBROUTINE init_pdaf()
   type_trans = 0     ! Type of ensemble transformation (deterministic or random)
   type_sqrt = 0      ! SEIK/LSEIK/ESTKF/LESTKF: Type of transform matrix square-root
   incremental = 0    ! SEIK/LSEIK: (1) to perform incremental updating
+
+  use_omi = .false.    ! Default: Do not use OMI interface
 
   !EnKF
   rank_analysis_enkf = 0  ! EnKF: rank to be considered for inversion of HPH in analysis step

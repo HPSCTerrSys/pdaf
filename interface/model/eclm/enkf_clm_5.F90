@@ -72,6 +72,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 #if defined CLMSA
   use enkf_clm_mod, only: define_clm_statevec
 #endif
+  use clm_varcon, only: averaging_var
 !!<< TSMP PDAF addition end
 
   implicit none
@@ -193,6 +194,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
        callcount=0)
 
 #if defined CLMSA
+  averaging_var=0
   call define_clm_statevec(mype)
 #endif
 
@@ -210,7 +212,10 @@ end subroutine clm_init
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
 #if defined CLMSA
+  use enkf_clm_mod, only : cleanup_clm_statevec
+  use enkf_clm_mod, only : define_clm_statevec
   use enkf_clm_mod, only : set_clm_statevec
+  use enkf_clm_mod, only : use_omi_model
 #endif
   use, intrinsic :: iso_C_binding, only : c_int
 
@@ -226,6 +231,12 @@ subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   call cime_run(ntstep)
 
 #if defined CLMSA
+  if (use_omi_model) then
+    call cleanup_clm_statevec() ! cleanup before defining statevec
+    call define_clm_statevec(mype) ! call define statevec not in the beginning
+    ! but here as we can define the statevec for each obs type
+  end if
+
   ! Calling PDAF Function to set state vector before assimiliation
   call set_clm_statevec(tstartcycle, mype)
 #endif
