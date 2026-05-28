@@ -32,6 +32,7 @@
 
 ! Author: Yorck Ewerdwalbesloh
 
+#ifdef CLMSA
 #ifdef CLMFIVE
   SUBROUTINE init_dim_obs_pdafomi(step, dim_obs)
 
@@ -364,4 +365,5 @@
 
   END SUBROUTINE deallocate_obs_pdafomi
 
+#endif
 #endif

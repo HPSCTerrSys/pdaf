@@ -50,6 +50,7 @@
 !! * 2019-06 - Lars Nerger - Initial code
 !! * Later revisions - see repository log
 !!
+#ifdef CLMSA
 #ifdef CLMFIVE
 MODULE obs_GRACE_pdafomi
 
@@ -1418,6 +1419,7 @@ MODULE obs_GRACE_pdafomi
     end subroutine deallocate_obs_GRACE
 
   END MODULE obs_GRACE_pdafomi
+#endif
 #endif
 
 

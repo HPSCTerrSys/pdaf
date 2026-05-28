@@ -54,6 +54,7 @@
 ! Author: Yorck Ewerdwalbesloh, adaptations of original implementations of TSMP2-PDAF interface for OMI framework
 
 
+#ifdef CLMSA
 #ifdef CLMFIVE
 MODULE obs_SM_pdafomi
 
@@ -1401,4 +1402,5 @@ MODULE obs_SM_pdafomi
 
 
   END MODULE obs_SM_pdafomi
+#endif
 #endif

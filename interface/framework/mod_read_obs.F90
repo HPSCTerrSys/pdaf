@@ -837,6 +837,7 @@ contains
   end subroutine check
 
 
+#ifdef CLMSA
 #ifdef CLMFIVE
     !> @author Anne Springer, adaptation for TSMP2 by Yorck Ewerdwalbesloh
     !> @date 04.12.2023
@@ -888,7 +889,6 @@ contains
         end if
 
     end subroutine check_n_observationfile_set_zero
-#endif
 
     !> @author Yorck Ewerdwalbesloh
     !> @date 29.10.2025
@@ -947,7 +947,6 @@ contains
     end subroutine check_n_observationfile_next_type
 
 
-#ifdef CLMFIVE
     !> @author Yorck Ewerdwalbesloh
     !> @date 29.10.2025
     !> @brief Update observation type for next assimilation cycle
@@ -1187,6 +1186,7 @@ contains
         end if
 
     end subroutine domain_def_clm
+#endif
 #endif
 
 
