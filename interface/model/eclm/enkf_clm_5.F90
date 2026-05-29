@@ -134,16 +134,16 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 
 
   select case(esmf_logfile_option)
-  case('ESMF_LOGKIND_SINGLE')
+  case("ESMF_LOGKIND_SINGLE")
      esmf_logfile_kind = ESMF_LOGKIND_SINGLE
-  case('ESMF_LOGKIND_MULTI')
+  case("ESMF_LOGKIND_MULTI")
      esmf_logfile_kind = ESMF_LOGKIND_MULTI
-  case('ESMF_LOGKIND_MULTI_ON_ERROR')
+  case("ESMF_LOGKIND_MULTI_ON_ERROR")
      esmf_logfile_kind = ESMF_LOGKIND_MULTI_ON_ERROR
-  case('ESMF_LOGKIND_NONE')
+  case("ESMF_LOGKIND_NONE")
      esmf_logfile_kind = ESMF_LOGKIND_NONE
   case default
-     call shr_sys_abort('CIME ERROR: invalid ESMF logfile kind '//trim(esmf_logfile_option))
+     call shr_sys_abort("CIME ERROR: invalid ESMF logfile kind "//trim(esmf_logfile_option))
   end select
 !!>> TSMP PDAF addition beginning
   write(6,*) "esmf_initialize"
@@ -175,22 +175,22 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
   ! Call the initialize, run and finalize routines.
   !--------------------------------------------------------------------------
 
-  call t_startf('CPL:INIT')
+  call t_startf("CPL:INIT")
   call t_adj_detailf(+1)
 
-  call t_startstop_valsf('CPL:cime_pre_init1',  walltime=cime_pre_init1_time)
-  call t_startstop_valsf('CPL:ESMF_Initialize', walltime=ESMF_Initialize_time)
-  call t_startstop_valsf('CPL:cime_pre_init2',  walltime=cime_pre_init2_time)
+  call t_startstop_valsf("CPL:cime_pre_init1",  walltime=cime_pre_init1_time)
+  call t_startstop_valsf("CPL:ESMF_Initialize", walltime=ESMF_Initialize_time)
+  call t_startstop_valsf("CPL:cime_pre_init2",  walltime=cime_pre_init2_time)
 
   call cime_init()
 
   call t_adj_detailf(-1)
-  call t_stopf('CPL:INIT')
+  call t_stopf("CPL:INIT")
 
   cime_init_time_adjustment = cime_pre_init1_time  &
        + ESMF_Initialize_time &
        + cime_pre_init2_time
-  call t_startstop_valsf('CPL:INIT',  walltime=cime_init_time_adjustment, &
+  call t_startstop_valsf("CPL:INIT",  walltime=cime_init_time_adjustment, &
        callcount=0)
 
 #if defined CLMSA

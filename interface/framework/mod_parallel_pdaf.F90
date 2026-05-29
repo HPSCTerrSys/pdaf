@@ -83,7 +83,7 @@ MODULE mod_parallel_pdaf
 !EOP
 
   INTERFACE
-    SUBROUTINE read_enkfpar(parname) BIND(C, name='read_enkfpar')
+    SUBROUTINE read_enkfpar(parname) BIND(C, name="read_enkfpar")
       ! USE iso_c_binding
       IMPLICIT NONE
       CHARACTER(LEN=*), INTENT(in) :: parname

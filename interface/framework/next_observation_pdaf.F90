@@ -115,7 +115,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
   !nsteps  = 0
 
   if (mype_world==0 .and. screen > 2) then
-      write(*,*) 'TSMP-PDAF (in next_observation_pdaf.F90) total_steps: ',total_steps
+      write(*,*) "TSMP-PDAF (in next_observation_pdaf.F90) total_steps: ",total_steps
   end if
 
   do
@@ -129,7 +129,7 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
     end if
 
     ! Check observation file #counter for observations
-    write(fn, '(a, i5.5)') trim(obs_filename)//'.', counter
+    write(fn, "(a, i5.5)") trim(obs_filename)//".", counter
     call check_n_observationfile(fn,no_obs)
 
     ! Exit loop if observation file contains observations
@@ -148,17 +148,17 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 #ifdef PDAF_DEBUG
     ! Error Check: delt_obs must be one for flexible time stepping
     if (delt_obs /= 1) then
-      write(*,'(a,i10)') "delt_obs = ", delt_obs
-      write(*,'(a)') "delt_obs must be one for flexible time stepping"
+      write(*,"(a,i10)") "delt_obs = ", delt_obs
+      write(*,"(a)") "delt_obs must be one for flexible time stepping"
       stop "Stopped from incorrect delt_obs"
     end if
 
     ! Warning: nsteps should be one
     if(nsteps > 1) then
-      write(*,'(a,i10)') "WARNING: nsteps = ", nsteps
-      write(*,'(a)') "WARNING: nsteps should be one for flexible time stepping"
-      write(*,'(a)') "WARNING: Any time differences can be encoded in observation files"
-      write(*,'(a)') "WARNING: using the variable da_interval."
+      write(*,"(a,i10)") "WARNING: nsteps = ", nsteps
+      write(*,"(a)") "WARNING: nsteps should be one for flexible time stepping"
+      write(*,"(a)") "WARNING: Any time differences can be encoded in observation files"
+      write(*,"(a)") "WARNING: using the variable da_interval."
     end if
 #endif
 
@@ -176,8 +176,8 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
 #ifdef PDAF_DEBUG
     ! Error Check: da_interval_new should be set to at least one
     if(da_interval_new < 1.0) then
-      write(*,'(a,es22.15)') "da_interval_new = ", da_interval_new
-      write(*,'(a)') "da_interval_new is too small, should be minimum of one"
+      write(*,"(a,es22.15)") "da_interval_new = ", da_interval_new
+      write(*,"(a)") "da_interval_new is too small, should be minimum of one"
       stop "Stopped from incorrect da_interval_new"
     end if
 #endif
@@ -186,14 +186,14 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
     da_interval = da_interval_new
 
     if (mype_world==0 .and. screen > 2) then
-      write(*,'(a,es22.15)')'TSMP-PDAF (next_observation_pdaf.F90) da_interval: ', da_interval
+      write(*,"(a,es22.15)")"TSMP-PDAF (next_observation_pdaf.F90) da_interval: ", da_interval
     end if
 
   end if
 
   if (mype_world==0 .and. screen > 2) then
-      write(*,*)'TSMP-PDAF (next_observation_pdaf.F90) stepnow: ',stepnow
-      write(*,*)'TSMP-PDAF (next_observation_pdaf.F90) no_obs, nsteps, counter: ',no_obs,nsteps,counter
+      write(*,*)"TSMP-PDAF (next_observation_pdaf.F90) stepnow: ",stepnow
+      write(*,*)"TSMP-PDAF (next_observation_pdaf.F90) no_obs, nsteps, counter: ",no_obs,nsteps,counter
   end if
   !kuw end
 
@@ -233,38 +233,38 @@ SUBROUTINE next_observation_pdaf(stepnow, nsteps, doexit, time)
     if (clmupdate_tws/=0) then ! only update set_zero when GRACE is assimilated at the current time step
       nstep = get_nstep()
       if (stepnow/=toffset) then
-        write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow
+        write(fn, "(a, i5.5)") trim(obs_filename)//".", stepnow
         call check_n_observationfile_set_zero(fn, set_averaging_to_zero)
         if (set_averaging_to_zero/=ispval) then
           set_averaging_to_zero = set_averaging_to_zero+nstep
         end if
 
         if (mype_world==0 .and. screen > 2) then
-          write(*,*) 'set_averaging_to_zero (in next_observation_pdaf):',set_averaging_to_zero
+          write(*,*) "set_averaging_to_zero (in next_observation_pdaf):",set_averaging_to_zero
         end if
       end if
     end if
 
     ! update observation type with next file
-    write(fn, '(a, i5.5)') trim(obs_filename)//'.', stepnow + delt_obs
+    write(fn, "(a, i5.5)") trim(obs_filename)//".", stepnow + delt_obs
     if (mype_world==0 .and. screen > 2) then
-      write(*,*)'next_observation_pdaf: fn = ', fn
-      write(*,*)'Call check_n_observationfile_next_type'
+      write(*,*)"next_observation_pdaf: fn = ", fn
+      write(*,*)"Call check_n_observationfile_next_type"
     end if
 
     inquire(file=fn, exist=file_exists)
     if (.not. file_exists) then
         if (mype_world == 0 .and. screen > 2) then
-            write(*,*) 'next_observation_pdaf: skipping setting next observation type as no next file available'
+            write(*,*) "next_observation_pdaf: skipping setting next observation type as no next file available"
         end if
     else
         call check_n_observationfile_next_type(fn, obs_type_str)
-        if (trim(obs_type_str) /= '') then
+        if (trim(obs_type_str) /= "") then
           call update_obs_type(obs_type_str)
         end if
 
         if (mype_world==0 .and. screen > 2) then
-          write(*,*)'next_type (in next_observation_pdaf):',trim(obs_type_str)
+          write(*,*)"next_type (in next_observation_pdaf):",trim(obs_type_str)
         end if
     end if
 

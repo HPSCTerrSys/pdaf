@@ -76,13 +76,13 @@
     ! in which order they are called
 
     if (mype_world==0 .and. screen > 2) then
-      write(*,*)'Call dimension initialization'
+      write(*,*)"Call dimension initialization"
     end if
 
 #ifdef PDAF_DEBUG
     if (mype_world==0) then
-      write(*,*)'PDAF-OMI-DEBUG: assim_GRACE=', assim_GRACE
-      write(*,*)'PDAF-OMI-DEBUG: assim_SM=', assim_SM
+      write(*,*)"PDAF-OMI-DEBUG: assim_GRACE=", assim_GRACE
+      write(*,*)"PDAF-OMI-DEBUG: assim_SM=", assim_SM
       ! write(*,*)'PDAF-OMI assim_C=', assim_C
     end if
 #endif
@@ -135,7 +135,7 @@
     ! order of the calls in init_dim_obs_pdafomi
 
     if (mype_world==0 .and. screen > 2) then
-      write(*,*)'Call observation operators'
+      write(*,*)"Call observation operators"
     end if
 
     IF (assim_GRACE) CALL obs_op_GRACE(dim_p, dim_obs, state_p, ostate)

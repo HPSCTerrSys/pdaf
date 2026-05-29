@@ -141,7 +141,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
      call C_F_POINTER(xcoord, xcoord_fortran, [enkf_subvecsize])
      call C_F_POINTER(ycoord, ycoord_fortran, [enkf_subvecsize])
      call C_F_POINTER(zcoord, zcoord_fortran, [enkf_subvecsize])
-  ENDIF
+  END IF
 
   ! Index for local analysis domain `domain_p` in coordinate array
   ! that only spans `enkf_subvecsize`.
@@ -208,8 +208,8 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
               obsind(i) = 1
            end if
         end do
-     endif
-  endif
+     end if
+  end if
 #endif
 #endif
 
@@ -242,8 +242,8 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
                  end if
               end if
            end do
-        enddo
-     enddo
+        end do
+     end do
 
      do m = 1, dim_nx
         do k = 1, dim_ny
@@ -264,8 +264,8 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
                  end if
               end if
            end do
-        enddo
-     enddo
+        end do
+     end do
      end if
   else
      if(model == tag_model_clm) THEN

@@ -275,8 +275,9 @@ MODULE obs_SM_pdafomi
   ! *** Initialize full observation dimension ***
   ! *********************************************
 
-      IF (mype_filter==0) &
-        WRITE (*,*) 'Assimilate observations - obs type soil moisture'
+      IF (mype_filter==0) then
+        WRITE (*,*) "Assimilate observations - obs type soil moisture"
+      end if
 
       ! Store whether to assimilate this observation type (used in routines below)
 
@@ -295,14 +296,14 @@ MODULE obs_SM_pdafomi
   ! **********************************
 
 
-      obs_type_name = 'SM'
+      obs_type_name = "SM"
 
       ! now call function to get observations
 
       if (mype_filter==0 .and. screen > 2) then
-        write(*,*)'load observations from type SM'
+        write(*,*)"load observations from type SM"
       end if
-      write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
+      write(current_observation_filename, "(a, i5.5)") trim(obs_filename)//".", step
 
 
       if (mype_filter == 0) then
@@ -317,8 +318,8 @@ MODULE obs_SM_pdafomi
 
       if (dim_obs == 0) then
         if (mype_filter==0 .and. screen > 2) then
-          write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
-                    ': No observations of type SM found in file ', &
+          write(*,*)"TSMP-PDAF mype(w) =", mype_world, &
+                    ": No observations of type SM found in file ", &
                     trim(current_observation_filename)
         end if
         dim_obs_p = 0
@@ -369,7 +370,7 @@ MODULE obs_SM_pdafomi
 
 
       if (mype_filter==0 .and. screen > 2) then
-        write(*,*)'Done: load observations from type SM'
+        write(*,*)"Done: load observations from type SM"
       end if
 
 
@@ -1254,8 +1255,8 @@ MODULE obs_SM_pdafomi
               ! process, we also can just take index cnt instead of
               ! complicated mapping between nc and pdaf indices
               cnt = cnt + 1
-            ENDDO
-        ENDDO
+            END DO
+        END DO
 
         ! The matrix is diagonal
         ! This setting avoids the computation of the SVD of COVAR
@@ -1338,26 +1339,26 @@ MODULE obs_SM_pdafomi
 
         ! Screen output
         IF (verbose == 1) THEN
-            WRITE (*, '(8x, a, f12.3)') &
-                '--- Use global rms for observations of ', rms_obs_SM
-            WRITE (*, '(8x, a, 1x)') &
-                '--- Domain localization'
-            WRITE (*, '(12x, a, 1x, f12.2)') &
-                '--- Local influence radius', cradius_SM
+            WRITE (*, "(8x, a, f12.3)") &
+                "--- Use global rms for observations of ", rms_obs_SM
+            WRITE (*, "(8x, a, 1x)") &
+                "--- Domain localization"
+            WRITE (*, "(12x, a, 1x, f12.2)") &
+                "--- Local influence radius", cradius_SM
 
             IF (locweight > 0) THEN
-                WRITE (*, '(12x, a)') &
-                        '--- Use distance-dependent weight for observation errors'
+                WRITE (*, "(12x, a)") &
+                        "--- Use distance-dependent weight for observation errors"
 
                 IF (locweight == 3) THEN
-                    write (*, '(12x, a)') &
-                        '--- Use regulated weight with mean error variance'
+                    write (*, "(12x, a)") &
+                        "--- Use regulated weight with mean error variance"
                 ELSE IF (locweight == 4) THEN
-                    write (*, '(12x, a)') &
-                        '--- Use regulated weight with single-point error variance'
+                    write (*, "(12x, a)") &
+                        "--- Use regulated weight with single-point error variance"
                 END IF
             END IF
-        ENDIF
+        END IF
 
         ALLOCATE(weight(thisobs_l%dim_obs_l))
         call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
@@ -1381,7 +1382,7 @@ MODULE obs_SM_pdafomi
         implicit none
 
         if (mype_filter==0) then
-            WRITE (*,*) 'Deallocating observations type SM'
+            WRITE (*,*) "Deallocating observations type SM"
         end if
         call PDAFomi_deallocate_obs(thisobs)
 

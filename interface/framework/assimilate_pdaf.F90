@@ -156,7 +156,7 @@ SUBROUTINE assimilate_pdaf()
           init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, &
           localize_covar_pdafomi, next_observation_pdaf, status_pdaf)
 
-      ELSEIF (filtertype == 2) then ! non diagonal R for EnKF has its own callback routine
+      ELSE IF (filtertype == 2) then ! non diagonal R for EnKF has its own callback routine
         CALL PDAFomi_assimilate_enkf_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
           init_dim_obs_pdafomi, obs_op_pdafomi, add_obs_err_pdafomi, init_obscovar_pdafomi, &
           prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
@@ -167,9 +167,9 @@ SUBROUTINE assimilate_pdaf()
           init_dim_obs_pdafomi, obs_op_pdafomi, prodRinvA_pdafomi, &
           prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
 
-      ENDIF
+      END IF
 
-    ENDIF
+    END IF
 #endif
 #endif
   ELSE OMI
@@ -249,9 +249,9 @@ SUBROUTINE assimilate_pdaf()
   ! Check for errors during execution of PDAF
 
   IF (status_pdaf /= 0) THEN
-     WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
-          'ERROR ', status_pdaf, &
-          ' in PDAF_assimilate - stopping! (PE ', mype_world,')'
+     WRITE (*,"(/1x,a6,i3,a43,i4,a1/)") &
+          "ERROR ", status_pdaf, &
+          " in PDAF_assimilate - stopping! (PE ", mype_world,")"
      CALL  abort_parallel()
   END IF
 

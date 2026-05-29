@@ -83,7 +83,7 @@ PROGRAM pdaf_terrsysmp
 
         IF (mype_world > -1 .AND. screen > 2) THEN
             PRINT *, "TSMP-PDAF mype(w)=", mype_world, ": time loop", tcycle
-        ENDIF
+        END IF
 
         ! forward simulation of component models
         CALL integrate_tsmp()
@@ -98,7 +98,7 @@ PROGRAM pdaf_terrsysmp
 
         !call MPI_BARRIER(MPI_COMM_WORLD, MPIerr)
         !print *,"Finished complete assimilation cycle", tcycle
-    ENDDO
+    END DO
 
     ! barrier after model integrations
     !call MPI_BARRIER(MPI_COMM_WORLD, MPIerr)
