@@ -236,7 +236,7 @@ module enkf_clm_mod
 
 #ifdef PDAF_DEBUG
     ! Debug output of clm_statevecsize
-    WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
+    WRITE(*, "(a,x,a,i5,x,a,i10)") "TSMP-PDAF-debug", "mype(w)=", mype, "define_clm_statevec: clm_statevecsize=", clm_statevecsize
 #endif
 
     IF (allocated(clm_statevec)) deallocate(clm_statevec)
@@ -449,11 +449,11 @@ module enkf_clm_mod
 #ifdef PDAF_DEBUG
         ! Check that all state vectors have been assigned c, i
         if(state_pdaf2clm_c_p(cc) == ispval) then
-          write(*,*) 'cc: ', cc
+          write(*,*) "cc: ", cc
           error stop "state_pdaf2clm_c_p not set at cc"
         end if
         if(state_pdaf2clm_j_p(cc) == ispval) then
-          write(*,*) 'cc: ', cc
+          write(*,*) "cc: ", cc
           error stop "state_pdaf2clm_j_p not set at cc"
         end if
 #endif
@@ -752,18 +752,18 @@ module enkf_clm_mod
     ! calculate shift when CRP data are assimilated
     if(clmupdate_swc==2) then
       error stop "Not implemented clmupdate_swc.eq.2"
-    endif
+    end if
 
     !hcp  LAI
     if(clmupdate_T==1) then
       error stop "Not implemented: clmupdate_T.eq.1"
-    endif
+    end if
     !end hcp  LAI
 
     ! write average swc to state vector (CRP assimilation)
     if(clmupdate_swc==2) then
       error stop "Not implemented: clmupdate_swc.eq.2"
-    endif
+    end if
 
     ! write texture values to state vector (if desired)
     if(clmupdate_texture/=0) then
@@ -779,7 +779,7 @@ module enkf_clm_mod
           cc = cc + 1
         end do
       end do
-    endif
+    end if
 
     if (clmupdate_tws==1) then
       call set_clm_statevec_tws
@@ -1204,7 +1204,7 @@ module enkf_clm_mod
     ! calculate shift when CRP data are assimilated
     if(obs_type_update_swc==2) then
       error stop "Not implemented: clmupdate_swc.eq.2"
-    endif
+    end if
 
     ! CLM5: Update the Data Assimulation time-step to the current time
     ! step, since DA has been done. Used by CLM5 to skip BalanceChecks
@@ -1214,18 +1214,18 @@ module enkf_clm_mod
     ! write updated swc back to CLM
     if(obs_type_update_swc/=0) then
       call update_clm_swc(tstartcycle, mype)
-    endif
+    end if
 
     !hcp: TG, TV
     if(obs_type_update_T==1) then
       error stop "Not implemented: clmupdate_T.eq.1"
-    endif
+    end if
     ! end hcp TG, TV
 
     ! write updated texture back to CLM
     if(obs_type_update_texture/=0) then
       call update_clm_texture(tstartcycle, mype)
-    endif
+    end if
 
     if (obs_type_update_tws==1) then
       call clm_update_tws
@@ -1371,12 +1371,12 @@ module enkf_clm_mod
                   swc(j,i) = watsat(j,i)
                 else
                   swc(j,i)   = swc_update
-                endif
+                end if
 
                 if (ieee_is_nan(swc(j,i))) then
                   swc(j,i) = watmin_set
                   print *, "WARNING: swc at j,i is nan: ", j, i
-                endif
+                end if
 
                 if(swc_zero_before_update) then
                   ! This case should not appear for hydrologically
@@ -2019,7 +2019,7 @@ module enkf_clm_mod
             perc_frac = perc_norm*(om_frac - pcalpha)**pcbeta
          else
             perc_frac = 0._r8
-         endif
+         end if
 
          ! uncon_frac is fraction of mineral soil plus fraction of
          ! "nonpercolating" organic soil
@@ -2182,7 +2182,7 @@ module enkf_clm_mod
        else if(((lat_clmobs(i) + 90) - minlat) == 0) then
           longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
           latixy_obs(i) = 1
-       endif
+       end if
     end do
     ! deallocate temporary arrays
     !deallocate(longxy)
@@ -2269,7 +2269,7 @@ module enkf_clm_mod
        else if(((lat_clmobs(i) + 90) - minlat) == 0) then
           longxy_obs_floor(i) = floor(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
           latixy_obs_floor(i) = 1
-       endif
+       end if
     end do
 
   end subroutine get_interp_idx
@@ -2437,21 +2437,21 @@ module enkf_clm_mod
         dim_l = nlevsoi
         nshift = nlevsoi
       end if
-    endif
+    end if
 
     if(clmupdate_swc==2) then
       error stop "Not implemented: clmupdate_swc.eq.2"
       ! dim_l = nlevsoi + 1
       ! nshift = nlevsoi + 1
-    endif
+    end if
 
     if(clmupdate_texture==1) then
       dim_l = 2*nlevsoi + nshift
-    endif
+    end if
 
     if(clmupdate_texture==2) then
       dim_l = 3*nlevsoi + nshift
-    endif
+    end if
 
     if (clmupdate_tws==1) then
       dim_l = 0
@@ -2499,7 +2499,7 @@ module enkf_clm_mod
         error stop "Unsupported state_setup"
 
       end select
-    endif
+    end if
 
   end subroutine init_dim_l_clm
 
@@ -2746,7 +2746,7 @@ module enkf_clm_mod
 
       end select
 
-    endif NOGRACE
+    end if NOGRACE
 
   end subroutine l2g_state_clm
 #endif

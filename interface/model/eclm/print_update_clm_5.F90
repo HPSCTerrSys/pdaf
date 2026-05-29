@@ -102,24 +102,24 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
         if(clmprint_swc==1) then
           status =  nf90_def_var(il_file_id, "swc", NF90_DOUBLE, dimids, ncvarid(1))
-        endif
+        end if
 
         if(clmupdate_texture==1) then
           status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
           status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
-        endif
+        end if
 
         ! write updates to sand, clay and organic matter
         if(clmupdate_texture==2) then
           status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
           status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
           status =  nf90_def_var(il_file_id, "orgm", NF90_DOUBLE, dimids, ncvarid(4))
-        endif
+        end if
         status =  nf90_enddef(il_file_id)
       else
         status = nf90_open(update_filename,NF90_WRITE,il_file_id)
-      endif
-    endif
+      end if
+    end if
 
 
     if(clmprint_swc==1) then
@@ -206,7 +206,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
                    start = [ 1, 1, 1, ts], count = [ ndlon, ndlat, nlevsoi, 1] )
           !status = nf90_close(il_file_id)
         end if
-      endif
+      end if
 
     end if
 
@@ -532,7 +532,7 @@ subroutine get_update_filename (iofile)
     write(cdate,'(i4.4,"-",i2.2)') yr,mon
     call get_curr_date (yr, mon, day, sec)
     !write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr,mon,day,sec
-    write(cdate,'(i4.4)') yr
+    write(cdate,"(i4.4)") yr
     iofile = trim(caseid)//".update."//trim(cdate)//".nc"
     !iofile = trim(caseid)//".update.nc"
 end subroutine get_update_filename

@@ -92,8 +92,8 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
   if(multierr/=1) then
     DO i = 1, dim_obs
        C_p(i, i) = C_p(i, i) + variance_obs
-    ENDDO
-  endif
+    END DO
+  end if
 
 
   if(multierr==1) then
@@ -110,7 +110,7 @@ SUBROUTINE add_obs_error_pdaf(step, dim_obs, C_p)
 #else
       C_p(i,i) = C_p(i,i) + pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
 #endif
-    enddo
-  endif
+    end do
+  end if
 
 END SUBROUTINE add_obs_error_pdaf
