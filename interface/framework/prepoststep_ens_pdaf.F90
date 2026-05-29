@@ -137,15 +137,15 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     if (2 == 1) then
     IF (mype_filter == 0) THEN
         IF (firsttime) THEN
-            WRITE (*, '(8x, a)') 'Analize initial state ensemble'
-            anastr = 'ini'
+            WRITE (*, "(8x, a)") "Analize initial state ensemble"
+            anastr = "ini"
         ELSE
             IF (step<0) THEN
-                WRITE (*, '(8x, a)') 'Analize and write forecasted state ensemble'
-                anastr = 'for'
+                WRITE (*, "(8x, a)") "Analize and write forecasted state ensemble"
+                anastr = "for"
             ELSE
-                WRITE (*, '(8x, a)') 'Analize and write assimilated state ensemble'
-                anastr = 'ana'
+                WRITE (*, "(8x, a)") "Analize and write assimilated state ensemble"
+                anastr = "ana"
             END IF
         END IF
     END IF
@@ -168,7 +168,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! **************************************************************
 
     ! *** Compute mean state
-    IF (mype_filter == 0) WRITE (*, '(8x, a)') '--- compute ensemble mean'
+    IF (mype_filter == 0) WRITE (*, "(8x, a)") "--- compute ensemble mean"
 
     !    state_p = 0.0
     state_p = 0.0
@@ -195,7 +195,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! *** Assemble global variance vector on filter PE 0 ***
     ! ******************************************************
 
-    WRITE (*,*) 'TEMPLATE prepoststep_ens_pdaf.F90: Initialize variance, either directly or with MPI'
+    WRITE (*,*) "TEMPLATE prepoststep_ens_pdaf.F90: Initialize variance, either directly or with MPI"
     if (filterpe) then
         call MPI_Barrier(comm_filter, ierror)
     end if
@@ -210,7 +210,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     end do
 #ifdef PDAF_DEBUG
     ! Debug output: summed until index local state dimension array
-    if (mype_model == 0 ) WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+    if (mype_model == 0 ) WRITE(*, "(a,x,a,i5,x,a,x,i9)") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
       "init_pdaf: dim_state_p_stride in modified:", dim_state_p_stride
 #endif
 
@@ -240,7 +240,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     IF (mype_filter == 0) THEN
         DO i = 1, dim_state
             rmserror_est = rmserror_est + variance(i)
-        ENDDO
+        END DO
         rmserror_est = SQRT(rmserror_est / dim_state)
     END IF
     DEALLOCATE(variance)
@@ -253,8 +253,8 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! Output RMS errors given by sampled covar matrix
     !    if (model == tag_model_parflow) then
     IF (mype_filter == 0) THEN
-        WRITE (*, '(12x, a, es12.4)') &
-            'RMS error according to sampled variance: ', rmserror_est
+        WRITE (*, "(12x, a, es12.4)") &
+            "RMS error according to sampled variance: ", rmserror_est
     END IF
     !    end if
 
@@ -262,7 +262,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     ! *** File output ***
     ! *******************
     notfirst: IF (.not. firsttime) THEN
-        WRITE (*,*) 'TEMPLATE prepoststep_ens_pdaf.F90: Implement writing of output files here!'
+        WRITE (*,*) "TEMPLATE prepoststep_ens_pdaf.F90: Implement writing of output files here!"
     END IF notfirst
 
 

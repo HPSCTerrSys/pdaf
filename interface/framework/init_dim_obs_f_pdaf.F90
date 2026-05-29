@@ -215,10 +215,10 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
   is_multi_observation_files = .true.
   if (is_multi_observation_files) then
       ! Set name of current NetCDF observation file
-      write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
+      write(current_observation_filename, "(a, i5.5)") trim(obs_filename)//".", step
   else
       ! Single NetCDF observation file (currently NOT used)
-      write(current_observation_filename, '(a, i5.5)') trim(obs_filename)
+      write(current_observation_filename, "(a, i5.5)") trim(obs_filename)
   end if
 
   if (mype_filter == 0) then
@@ -238,7 +238,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
   if(point_obs==0) then
      call mpi_bcast(dim_nx, 1, MPI_INTEGER, 0, comm_filter, ierror)
      call mpi_bcast(dim_ny, 1, MPI_INTEGER, 0, comm_filter, ierror)
-  endif
+  end if
   ! broadcast damping factor flags
   call mpi_bcast(is_dampfac_state_time_dependent, 1, MPI_INTEGER, 0, comm_filter, ierror)
   call mpi_bcast(is_dampfac_param_time_dependent, 1, MPI_INTEGER, 0, comm_filter, ierror)
@@ -311,7 +311,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
         if (multierr==1) then
              if (allocated(pressure_obserr)) deallocate(pressure_obserr)
              allocate(pressure_obserr(dim_obs))
-        endif
+        end if
         if(allocated(idx_obs_nc)) deallocate(idx_obs_nc)
         allocate(idx_obs_nc(dim_obs))
         if(allocated(x_idx_obs_nc))deallocate(x_idx_obs_nc)
@@ -329,7 +329,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
         if(point_obs==0) then
            if(allocated(var_id_obs_nc))deallocate(var_id_obs_nc)
            allocate(var_id_obs_nc(dim_ny, dim_nx))
-        endif
+        end if
      !end if
 #endif
 #endif
@@ -351,7 +351,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
         if(point_obs==0) then
             if(allocated(var_id_obs_nc)) deallocate(var_id_obs_nc)
             allocate(var_id_obs_nc(dim_ny, dim_nx))
-        endif
+        end if
         if(multierr==1) then
             if(allocated(clm_obserr)) deallocate(clm_obserr)
             allocate(clm_obserr(dim_obs))
@@ -699,14 +699,14 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
      if(multierr==1) then
         if (allocated(pressure_obserr_p)) deallocate(pressure_obserr_p)
         allocate(pressure_obserr_p(dim_obs_p))
-     endif
+     end if
 
      if(crns_flag==1) then
         if (allocated(sc_p)) deallocate(sc_p)
         allocate(sc_p(nz_glob, dim_obs_p))
         if (allocated(idx_obs_nc_p)) deallocate(idx_obs_nc_p)
         allocate(idx_obs_nc_p(dim_obs_p))
-     endif
+     end if
      !hcp fin
 
   if (point_obs==0) then
@@ -770,7 +770,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
      !hcp
      if(crns_flag==1) then
          idx_obs_nc(:)=nx_glob*(y_idx_obs_nc(:)-1)+x_idx_obs_nc(:)
-     endif
+     end if
      !hcp fin
      cnt = 1
      do i = 1, dim_obs
@@ -787,7 +787,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
               if(crns_flag==1) then
                   idx_obs_nc_p(cnt)=idx_obs_nc(i)
                   !Allocate(sc_p(cnt)%scol_obs_in(nz_glob))
-              endif
+              end if
               cnt = cnt + 1
            end if
         end do
@@ -798,10 +798,10 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
           k_cnt=idx_obs_nc_p(i)+(k-1)*nx_glob*ny_glob
           do j = 1, enkf_subvecsize
              if (k_cnt == idx_map_subvec2state_fortran(j)) sc_p(nz_glob-k+1,i)=j
-          enddo
-        enddo
-      endif
-     enddo
+          end do
+        end do
+      end if
+     end do
 
      if(obs_interp_switch==1) then
          ! loop over all obs and save the indices of the nearest grid
@@ -873,7 +873,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
      if(multierr==1) then
          if (allocated(clm_obserr_p)) deallocate(clm_obserr_p)
          allocate(clm_obserr_p(dim_obs_p))
-     endif
+     end if
   if(point_obs==0) then
      max_var_id = MAXVAL(var_id_obs_nc(:,:))
      if(allocated(lon_var_id)) deallocate(lon_var_id)
@@ -909,8 +909,8 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
            lon_var_id(j) = (maxlon(j) + minlon(j))/2.0
            lat_var_id(j) = (maxlat(j) + minlat(j))/2.0
            !print *, 'j  lon_var_id  lat_var_id ', j, lon_var_id(j), lat_var_id(j)
-        enddo  ! allocate clm_obserr_p observation error for clm run at PE-local domain
-     enddo
+        end do  ! allocate clm_obserr_p observation error for clm run at PE-local domain
+     end do
 
      cnt = 1
      do m = 1, dim_nx
@@ -924,7 +924,7 @@ SUBROUTINE init_dim_obs_f_pdaf(step, dim_obs_f)
                  var_id_obs(cnt) = var_id_obs_nc(l,m)
                  if(multierr==1) clm_obserr_p(cnt) = clm_obserr(i)
                  cnt = cnt + 1
-              endif
+              end if
            end do
         end do
      end do

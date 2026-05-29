@@ -262,8 +262,9 @@ MODULE obs_GRACE_pdafomi
   ! *********************************************
 
       !IF (mype_filter==0) &
-      IF (mype_filter==0) &
-        WRITE (*,*) 'Assimilate observations - obs type GRACE'
+      IF (mype_filter==0) then
+        WRITE (*,*) "Assimilate observations - obs type GRACE"
+      end if
 
       ! Store whether to assimilate this observation type (used in routines below)
 
@@ -288,25 +289,25 @@ MODULE obs_GRACE_pdafomi
       ! ...; dependent on what you want to implement)
 
 
-      obs_type_name = 'GRACE'
+      obs_type_name = "GRACE"
 
       ! now call function to get observations
 
       if (mype_filter==0 .and. screen > 2) then
-        write(*,*)'load observations from type GRACE'
+        write(*,*)"load observations from type GRACE"
       end if
-      write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
+      write(current_observation_filename, "(a, i5.5)") trim(obs_filename)//".", step
       call read_obs_nc_type(current_observation_filename, obs_type_name, &
                             dim_obs, obs_g, lon_obs, lat_obs, layer_obs, &
                             dr_obs, obserr, clm_obscov)
       if (mype_filter==0 .and. screen > 2) then
-        write(*,*)'Done: load observations from type GRACE'
+        write(*,*)"Done: load observations from type GRACE"
       end if
 
       if (dim_obs == 0) then
         if (mype_filter==0 .and. screen > 2) then
-          write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
-                    ': No observations of type GRACE found in file ', &
+          write(*,*)"TSMP-PDAF mype(w) =", mype_world, &
+                    ": No observations of type GRACE found in file ", &
                     trim(current_observation_filename)
         end if
         dim_obs_p = 0
@@ -852,7 +853,7 @@ MODULE obs_GRACE_pdafomi
         CALL PDAFomi_gather_obsstate(thisobs, ostate_p, ostate)
         deallocate(ostate_p)
         if (screen>2 .and. mype_filter==0 .and. thisobs%dim_obs_f>0) then
-            write(*,*)'m_state_sum_global = ', m_state_sum_global
+            write(*,*)"m_state_sum_global = ", m_state_sum_global
         end if
 
     END SUBROUTINE obs_op_GRACE
@@ -1108,8 +1109,8 @@ MODULE obs_GRACE_pdafomi
                 DO i = id_start(pe), id_end(pe)
                 covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt)
                 cnt = cnt + 1
-                ENDDO
-            ENDDO
+                END DO
+            END DO
 
             ! The matrix is diagonal
             ! This setting avoids the computation of the SVD of COVAR
@@ -1248,26 +1249,26 @@ MODULE obs_GRACE_pdafomi
 
         ! Screen output
         IF (verbose == 1) THEN
-            WRITE (*, '(8x, a, f12.3)') &
-                '--- Use global rms for observations of ', rms_obs_GRACE
-            WRITE (*, '(8x, a, 1x)') &
-                '--- Domain localization'
-            WRITE (*, '(12x, a, 1x, f12.2)') &
-                '--- Local influence radius', cradius_GRACE
+            WRITE (*, "(8x, a, f12.3)") &
+                "--- Use global rms for observations of ", rms_obs_GRACE
+            WRITE (*, "(8x, a, 1x)") &
+                "--- Domain localization"
+            WRITE (*, "(12x, a, 1x, f12.2)") &
+                "--- Local influence radius", cradius_GRACE
 
             IF (locweight > 0) THEN
-                WRITE (*, '(12x, a)') &
-                        '--- Use distance-dependent weight for observation errors'
+                WRITE (*, "(12x, a)") &
+                        "--- Use distance-dependent weight for observation errors"
 
                 IF (locweight == 3) THEN
-                    write (*, '(12x, a)') &
-                        '--- Use regulated weight with mean error variance'
+                    write (*, "(12x, a)") &
+                        "--- Use regulated weight with mean error variance"
                 ELSE IF (locweight == 4) THEN
-                    write (*, '(12x, a)') &
-                        '--- Use regulated weight with single-point error variance'
+                    write (*, "(12x, a)") &
+                        "--- Use regulated weight with single-point error variance"
                 END IF
             END IF
-        ENDIF
+        END IF
 
         ALLOCATE(weight(thisobs_l%dim_obs_l))
         call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
@@ -1398,7 +1399,7 @@ MODULE obs_GRACE_pdafomi
         implicit none
 
         if (mype_filter==0) then
-            WRITE (*,*) 'Deallocating observations type GRACE'
+            WRITE (*,*) "Deallocating observations type GRACE"
         end if
         call PDAFomi_deallocate_obs(thisobs)
 

@@ -75,20 +75,19 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     integer ,dimension(1) :: il_var_id
     integer :: il_file_id, ncvarid(4), status
     character(len = 300) :: update_filename
-    integer :: nerror
     integer :: ndlon,ndlat
 
 
     call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
     call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
-    ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)), stat=nerror)
+    ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)))
 
     ndlon  = ldomain%ni
     ndlat  = ldomain%nj
 
     if (masterproc) then
-      ! allocate(clmstate_tmp_global(nlevsoi*numg), stat=nerror)
-      allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+      ! allocate(clmstate_tmp_global(nlevsoi*numg))
+      allocate(clmstate_out(ndlon,ndlat,nlevsoi))
     end if
 
     if(masterproc) then
@@ -102,24 +101,24 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
         if(clmprint_swc==1) then
           status =  nf90_def_var(il_file_id, "swc", NF90_DOUBLE, dimids, ncvarid(1))
-        endif
+        end if
 
         if(clmupdate_texture==1) then
           status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
           status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
-        endif
+        end if
 
         ! write updates to sand, clay and organic matter
         if(clmupdate_texture==2) then
           status =  nf90_def_var(il_file_id, "sand", NF90_DOUBLE, dimids, ncvarid(2))
           status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
           status =  nf90_def_var(il_file_id, "orgm", NF90_DOUBLE, dimids, ncvarid(4))
-        endif
+        end if
         status =  nf90_enddef(il_file_id)
       else
         status = nf90_open(update_filename,NF90_WRITE,il_file_id)
-      endif
-    endif
+      end if
+    end if
 
 
     if(clmprint_swc==1) then
@@ -206,7 +205,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
                    start = [ 1, 1, 1, ts], count = [ ndlon, ndlat, nlevsoi, 1] )
           !status = nf90_close(il_file_id)
         end if
-      endif
+      end if
 
     end if
 
@@ -278,7 +277,6 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   integer ,dimension(1) :: il_var_id
   integer :: il_file_id, ncvarid(4), status
   character(len = 300) :: inc_filename
-  integer :: nerror
   integer :: ndlon,ndlat
 
   integer :: ier                    !return code
@@ -297,8 +295,8 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
   call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
   call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
-  allocate(clmstate_tmp_local(begg:endg,1:nlevsoi), stat=nerror)
-  allocate(tws_inc(begg:endg), stat=nerror)
+  allocate(clmstate_tmp_local(begg:endg,1:nlevsoi))
+  allocate(tws_inc(begg:endg))
   tws_inc(begg:endg) = 0._r8
 
   ndlon  = ldomain%ni
@@ -306,8 +304,8 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
   if (masterproc) then
 
-    allocate(clmstate_tmp_global(1:numg), stat=nerror)
-    allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+    allocate(clmstate_tmp_global(1:numg))
+    allocate(clmstate_out(ndlon,ndlat,nlevsoi))
     clmstate_out(:,:,:) = nan
 
   end if
@@ -532,7 +530,7 @@ subroutine get_update_filename (iofile)
     write(cdate,'(i4.4,"-",i2.2)') yr,mon
     call get_curr_date (yr, mon, day, sec)
     !write(cdate,'(i4.4,"-",i2.2,"-",i2.2,"-",i5.5)') yr,mon,day,sec
-    write(cdate,'(i4.4)') yr
+    write(cdate,"(i4.4)") yr
     iofile = trim(caseid)//".update."//trim(cdate)//".nc"
     !iofile = trim(caseid)//".update.nc"
 end subroutine get_update_filename
