@@ -75,14 +75,18 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     use mod_tsmp, &
         only: tag_model_parflow, pf_statevecsize, nprocclm, model
 
+#ifdef CLMSA
 #ifdef CLMFIVE
     USE mod_assimilation, ONLY: use_omi
+#endif
 #endif
 
     IMPLICIT NONE
 
+#ifdef CLMSA
 #ifdef CLMFIVE
     external :: deallocate_obs_pdafomi
+#endif
 #endif
 
     ! !ARGUMENTS:
@@ -275,6 +279,7 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
     firsttime = .FALSE.
     end if
 
+#ifdef CLMSA
 #ifdef CLMFIVE
     OMI: IF (use_omi) THEN ! deallocate observation arrays for second call of prepoststep
         if (firsttime_omi) then
@@ -284,5 +289,6 @@ SUBROUTINE prepoststep_ens_pdaf(step, dim_p, dim_ens, dim_ens_p, dim_obs_p, &
             firsttime_omi = .TRUE.
         end if
     end if OMI
+#endif
 #endif
 END SUBROUTINE prepoststep_ens_pdaf

@@ -59,12 +59,10 @@ SUBROUTINE init_pdaf_parse()
   use mod_assimilation,&
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
+#ifdef CLMSA
 #ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM
-#endif
-#if defined CLMSA
-#ifdef CLMFIVE
   use enkf_clm_mod, only: use_omi_model
 #endif
 #endif
@@ -99,6 +97,7 @@ SUBROUTINE init_pdaf_parse()
   handle = "rms_obs"                 ! Assumed uniform RMS error of the observations
   CALL parse(handle, rms_obs)
 
+#ifdef CLMSA
 #ifdef CLMFIVE
   rms_obs_GRACE = rms_obs  ! backward compatibility
   handle = "rms_obs_GRACE"          ! RMS error for GRACE observations
@@ -109,6 +108,7 @@ SUBROUTINE init_pdaf_parse()
   ! rms_obs_C = rms_obs              ! backward compatibility
   ! handle = 'rms_obs_C'             ! RMS error for C observations
   ! CALL parse(handle, rms_obs_C)
+#endif
 #endif
 
   handle = "dim_obs"                 ! Number of observations

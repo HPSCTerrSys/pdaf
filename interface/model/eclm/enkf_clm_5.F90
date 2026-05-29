@@ -68,8 +68,8 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!<< TSMP PDAF comment out end
 !!>> TSMP PDAF addition beginning
   use, intrinsic :: iso_C_binding, only: c_char, c_int
-  use enkf_clm_mod, only: COMM_model_clm
 #if defined CLMSA
+  use enkf_clm_mod, only: COMM_model_clm
   use enkf_clm_mod, only: define_clm_statevec
 #endif
   use clm_varcon, only: averaging_var
@@ -108,10 +108,18 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!>> TSMP PDAF comment out beginning
   ! call cime_pre_init1(esmf_logfile_option)
 !!>> TSMP PDAF addition beginning
+#if defined CLMSA
   call cime_pre_init1(esmf_logfile_option, &
                       COMM_model_clm, &
                       pdaf_id=pdaf_id, &
                       pdaf_max=pdaf_max)
+#endif
+
+#if defined COUP_OAS_PFL
+  ! EXPERIMENTAL: For eCLM-ParFlow-PDAF, the whole management of
+  ! communicators has to be re-traced, see HPSCTerrSys/pdaf#82
+  call cime_pre_init1(esmf_logfile_option)
+#endif
 !!<< TSMP PDAF addition end
 
   end_count = shr_sys_irtc(irtc_rate)
@@ -203,10 +211,12 @@ end subroutine clm_init
 !--------------------------------------------------------------------------
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
+#if defined CLMSA
   use enkf_clm_mod, only : cleanup_clm_statevec
   use enkf_clm_mod, only : define_clm_statevec
   use enkf_clm_mod, only : set_clm_statevec
   use enkf_clm_mod, only : use_omi_model
+#endif
   use, intrinsic :: iso_C_binding, only : c_int
 
   implicit none
@@ -242,7 +252,9 @@ subroutine clm_finalize() bind(C,name="clm_finalize")
 
   ! use ESMF,          only : ESMF_Initialize, ESMF_Finalize
   use cime_comp_mod, only : cime_final
+#if defined CLMSA
   use enkf_clm_mod, only : cleanup_clm_statevec
+#endif
 
   implicit none
 
