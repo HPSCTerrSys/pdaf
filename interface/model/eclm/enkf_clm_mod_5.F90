@@ -2126,9 +2126,9 @@ module enkf_clm_mod
 
     ! allocate vector with size of elements in x directions * size of elements in y directions
     if(allocated(longxy)) deallocate(longxy)
-    allocate(longxy(ncells), stat=ier)
+    allocate(longxy(ncells))
     if(allocated(latixy)) deallocate(latixy)
-    allocate(latixy(ncells), stat=ier)
+    allocate(latixy(ncells))
 
     ! initialize vector with zero values
     longxy(:) = 0
@@ -2162,9 +2162,9 @@ module enkf_clm_mod
     maxlat = MAXVAL(lat(:) + 90)
 
     if(allocated(longxy_obs)) deallocate(longxy_obs)
-    allocate(longxy_obs(dim_obs), stat=ier)
+    allocate(longxy_obs(dim_obs))
     if(allocated(latixy_obs)) deallocate(latixy_obs)
-    allocate(latixy_obs(dim_obs), stat=ier)
+    allocate(latixy_obs(dim_obs))
 
     do i = 1, dim_obs
        if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
@@ -2252,9 +2252,9 @@ module enkf_clm_mod
     maxlat = MAXVAL(lat(:) + 90)
 
     if(allocated(longxy_obs_floor)) deallocate(longxy_obs_floor)
-    allocate(longxy_obs_floor(dim_obs), stat=ier)
+    allocate(longxy_obs_floor(dim_obs))
     if(allocated(latixy_obs_floor)) deallocate(latixy_obs_floor)
-    allocate(latixy_obs_floor(dim_obs), stat=ier)
+    allocate(latixy_obs_floor(dim_obs))
     do i = 1, dim_obs
        if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. ((lat_clmobs(i) + 90) - minlat) /= 0) then
           longxy_obs_floor(i) = floor(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1

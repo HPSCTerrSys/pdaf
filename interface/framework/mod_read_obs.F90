@@ -1028,7 +1028,7 @@ contains
         integer, allocatable, intent(inout) :: latixy(:)
         integer, allocatable, intent(inout) :: longxy_obs(:)
         integer, allocatable, intent(inout) :: latixy_obs(:)
-        integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits, &
+        integer :: ni, nj, ii, jj, kk, cid, ncells, nlunits, &
         ncols, npatches, ncohorts, counter, i, g, ll
         real :: minlon, minlat, maxlon, maxlat
         real(r8), pointer :: lon(:)
@@ -1069,8 +1069,8 @@ contains
 
         if (allocated(longxy)) deallocate(longxy)
         if (allocated(latixy)) deallocate(latixy)
-        allocate(longxy(num_hactiveg), stat=ier)
-        allocate(latixy(num_hactiveg), stat=ier)
+        allocate(longxy(num_hactiveg))
+        allocate(latixy(num_hactiveg))
 
 
         longxy(:) = 0
@@ -1162,8 +1162,8 @@ contains
 
         if (allocated(longxy_obs)) deallocate(longxy_obs)
         if (allocated(latixy_obs)) deallocate(latixy_obs)
-        allocate(longxy_obs(dim_obs), stat=ier)
-        allocate(latixy_obs(dim_obs), stat=ier)
+        allocate(longxy_obs(dim_obs))
+        allocate(latixy_obs(dim_obs))
 
         in_mpi_(2,:) = longxy_obs_lokal
         call mpi_allreduce(in_mpi_,out_mpi_, dim_obs, mpi_2integer, mpi_minloc, comm_filter, ierror)

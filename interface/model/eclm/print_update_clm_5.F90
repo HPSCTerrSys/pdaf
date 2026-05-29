@@ -75,20 +75,19 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     integer ,dimension(1) :: il_var_id
     integer :: il_file_id, ncvarid(4), status
     character(len = 300) :: update_filename
-    integer :: nerror
     integer :: ndlon,ndlat
 
 
     call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
     call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
-    ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)), stat=nerror)
+    ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)))
 
     ndlon  = ldomain%ni
     ndlat  = ldomain%nj
 
     if (masterproc) then
-      ! allocate(clmstate_tmp_global(nlevsoi*numg), stat=nerror)
-      allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+      ! allocate(clmstate_tmp_global(nlevsoi*numg))
+      allocate(clmstate_out(ndlon,ndlat,nlevsoi))
     end if
 
     if(masterproc) then
@@ -278,7 +277,6 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
   integer ,dimension(1) :: il_var_id
   integer :: il_file_id, ncvarid(4), status
   character(len = 300) :: inc_filename
-  integer :: nerror
   integer :: ndlon,ndlat
 
   integer :: ier                    !return code
@@ -297,8 +295,8 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
   call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
   call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
-  allocate(clmstate_tmp_local(begg:endg,1:nlevsoi), stat=nerror)
-  allocate(tws_inc(begg:endg), stat=nerror)
+  allocate(clmstate_tmp_local(begg:endg,1:nlevsoi))
+  allocate(tws_inc(begg:endg))
   tws_inc(begg:endg) = 0._r8
 
   ndlon  = ldomain%ni
@@ -306,8 +304,8 @@ subroutine print_inc_clm() bind(C,name="print_inc_clm")
 
   if (masterproc) then
 
-    allocate(clmstate_tmp_global(1:numg), stat=nerror)
-    allocate(clmstate_out(ndlon,ndlat,nlevsoi), stat=nerror)
+    allocate(clmstate_tmp_global(1:numg))
+    allocate(clmstate_out(ndlon,ndlat,nlevsoi))
     clmstate_out(:,:,:) = nan
 
   end if
