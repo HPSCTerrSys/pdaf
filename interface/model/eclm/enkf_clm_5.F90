@@ -117,7 +117,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 
 #if defined COUP_OAS_PFL
   ! EXPERIMENTAL: For eCLM-ParFlow-PDAF, the whole management of
-  ! communicators has to be re-traced
+  ! communicators has to be re-traced, see HPSCTerrSys/pdaf#82
   call cime_pre_init1(esmf_logfile_option)
 #endif
 !!<< TSMP PDAF addition end
