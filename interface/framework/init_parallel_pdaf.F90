@@ -158,50 +158,51 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
 
   ! *** Print TSMP-PDAF information ***
   IF (mype_world==0) THEN
-     WRITE(*, '(/a)') 'TSMP-PDAF    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++                   TSMP-PDAF                        +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++                                                    +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++                   Please cite                      +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++ Kurtz, W., He, G., Kollet, S. J., Maxwell, R. M.,  +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++ Vereecken, H., & Hendricks Franssen, H. J. (2016). +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++      TerrSysMP-PDAF (version 1.0): a modular       +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++  high-performance data assimilation framework for  +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++     an integrated land surface-subsurface model.   +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++ Geoscientific Model Development, 9(4), 1341-1360.  +++'
-     WRITE(*, '(a)')  'TSMP-PDAF    +++          doi: 10.5194/gmd-9-1341-2016              +++'
-     WRITE(*, '(a/)') 'TSMP-PDAF    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+     WRITE(*, "(/a)") "TSMP-PDAF    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++                   TSMP-PDAF                        +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++                                                    +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++                   Please cite                      +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++ Kurtz, W., He, G., Kollet, S. J., Maxwell, R. M.,  +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++ Vereecken, H., & Hendricks Franssen, H. J. (2016). +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++      TerrSysMP-PDAF (version 1.0): a modular       +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++  high-performance data assimilation framework for  +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++     an integrated land surface-subsurface model.   +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++ Geoscientific Model Development, 9(4), 1341-1360.  +++"
+     WRITE(*, "(a)")  "TSMP-PDAF    +++          doi: 10.5194/gmd-9-1341-2016              +++"
+     WRITE(*, "(a/)") "TSMP-PDAF    ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
   END IF
 
   ! *** Parse number of model tasks ***
-  handle = 'n_modeltasks'
+  handle = "n_modeltasks"
   CALL parse(handle, n_modeltasks)
 
 
   ! *** Initialize communicators for ensemble evaluations ***
-  IF (mype_world == 0) &
-       WRITE (*, '(/1x, a)') 'Initialize communicators for assimilation with PDAF'
+  IF (mype_world == 0) then
+    WRITE (*, "(/1x, a)") "Initialize communicators for assimilation with PDAF"
+  end if
 
 
   ! *** Check consistency of number of parallel ensemble tasks ***
   consist1: IF (n_modeltasks > npes_world) THEN
      ! *** # parallel tasks is set larger than available PEs ***
      n_modeltasks = npes_world
-     IF (mype_world == 0) WRITE (*, '(3x, a)') &
-          '!!! Resetting number of parallel ensemble tasks to total number of PEs!'
+     IF (mype_world == 0) WRITE (*, "(3x, a)") &
+          "!!! Resetting number of parallel ensemble tasks to total number of PEs!"
   END IF consist1
   IF (dim_ens > 0) THEN
      ! Check consistency with ensemble size
      consist2: IF (n_modeltasks > dim_ens) THEN
         ! # parallel ensemble tasks is set larger than ensemble size
         n_modeltasks = dim_ens
-        IF (mype_world == 0) WRITE (*, '(5x, a)') &
-             '!!! Resetting number of parallel ensemble tasks to number of ensemble states!'
+        IF (mype_world == 0) WRITE (*, "(5x, a)") &
+             "!!! Resetting number of parallel ensemble tasks to number of ensemble states!"
      END IF consist2
   END IF
   consist3: IF (modulo(npes_world, n_modeltasks) /= 0) THEN
     ! *** # parallel tasks is a divisor of # available PEs ***
-    IF (mype_world == 0) WRITE (*, '(3x, a)') &
-        'Error: n_modeltasks should be a divisor of npes_world.'
+    IF (mype_world == 0) WRITE (*, "(3x, a)") &
+        "Error: n_modeltasks should be a divisor of npes_world."
     stop
   END IF consist3
 
@@ -250,8 +251,8 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
   CALL MPI_Comm_Rank(COMM_model, mype_model, MPIerr)
 
   if (screen > 1) then
-    write (*,*) 'MODEL: mype(w)= ', mype_world, '; model task: ', task_id, &
-         '; mype(m)= ', mype_model, '; npes(m)= ', npes_model
+    write (*,*) "MODEL: mype(w)= ", mype_world, "; model task: ", task_id, &
+         "; mype(m)= ", mype_model, "; npes(m)= ", npes_model
   end if
 
 
@@ -293,25 +294,25 @@ SUBROUTINE init_parallel_pdaf(dim_ens, screen)
 
   IF (screen > 0) THEN
      IF (mype_world == 0) THEN
-        WRITE (*, '(/a, 18x, a)') 'Pconf', 'PE configuration:'
-        WRITE (*, '(a, 2x, a6, a9, a10, a14, a13, /a, 2x, a5, a9, a7, a7, a7, a7, a7, /a, 2x, a)') &
-          'Pconf', 'world', 'filter', 'model', 'couple', 'filterPE', &
-          'Pconf', 'rank', 'rank', 'task', 'rank', 'task', 'rank', 'T/F', &
-          'Pconf', '----------------------------------------------------------'
+        WRITE (*, "(/a, 18x, a)") "Pconf", "PE configuration:"
+        WRITE (*, "(a, 2x, a6, a9, a10, a14, a13, /a, 2x, a5, a9, a7, a7, a7, a7, a7, /a, 2x, a)") &
+          "Pconf", "world", "filter", "model", "couple", "filterPE", &
+          "Pconf", "rank", "rank", "task", "rank", "task", "rank", "T/F", &
+          "Pconf", "----------------------------------------------------------"
      END IF
      CALL MPI_Barrier(MPI_COMM_WORLD, MPIerr)
      IF (task_id == 1) THEN
-        WRITE (*, '(a, 2x, i4, 4x, i4, 4x, i3, 4x, i3, 4x, i3, 4x, i3, 5x, l3)') &
-          'Pconf', mype_world, mype_filter, task_id, mype_model, color_couple, &
+        WRITE (*, "(a, 2x, i4, 4x, i4, 4x, i3, 4x, i3, 4x, i3, 4x, i3, 5x, l3)") &
+          "Pconf", mype_world, mype_filter, task_id, mype_model, color_couple, &
           mype_couple, filterpe
-     ENDIF
+     END IF
      IF (task_id > 1) THEN
-        WRITE (*, '(a, 2x, i4, 12x, i3, 4x, i3, 4x, i3, 4x, i3, 5x, l3)') &
-          'Pconf', mype_world, task_id, mype_model, color_couple, mype_couple, filterpe
+        WRITE (*, "(a, 2x, i4, 12x, i3, 4x, i3, 4x, i3, 4x, i3, 5x, l3)") &
+          "Pconf", mype_world, task_id, mype_model, color_couple, mype_couple, filterpe
      END IF
      CALL MPI_Barrier(MPI_COMM_WORLD, MPIerr)
 
-     IF (mype_world == 0) WRITE (*, '(/a)') ''
+     IF (mype_world == 0) WRITE (*, "(/a)") ""
 
   END IF
 

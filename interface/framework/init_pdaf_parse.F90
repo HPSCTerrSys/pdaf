@@ -59,12 +59,10 @@ SUBROUTINE init_pdaf_parse()
   use mod_assimilation,&
        only: cradius_GRACE, sradius_GRACE, &
        cradius_SM, sradius_SM
+#ifdef CLMSA
 #ifdef CLMFIVE
   use obs_GRACE_pdafomi, only: rms_obs_GRACE
   use obs_SM_pdafomi, only: rms_obs_SM
-#endif
-#if defined CLMSA
-#ifdef CLMFIVE
   use enkf_clm_mod, only: use_omi_model
 #endif
 #endif
@@ -86,46 +84,48 @@ SUBROUTINE init_pdaf_parse()
 ! **********************************
 
   ! Settings for model and time stepping
-  handle = 'model_error'             ! Control application of model error
+  handle = "model_error"             ! Control application of model error
   CALL parse(handle, model_error)
-  handle = 'model_err_amp'           ! Amplitude of model error
+  handle = "model_err_amp"           ! Amplitude of model error
   CALL parse(handle, model_err_amp)
 
   ! Observation settings
-  handle = 'delt_obs'                ! Time step interval between filter analyses
+  handle = "delt_obs"                ! Time step interval between filter analyses
   CALL parse(handle, delt_obs)
-  handle = 'toffset'                ! Offset in time steps
+  handle = "toffset"                ! Offset in time steps
   CALL parse(handle, toffset)
-  handle = 'rms_obs'                 ! Assumed uniform RMS error of the observations
+  handle = "rms_obs"                 ! Assumed uniform RMS error of the observations
   CALL parse(handle, rms_obs)
 
+#ifdef CLMSA
 #ifdef CLMFIVE
   rms_obs_GRACE = rms_obs  ! backward compatibility
-  handle = 'rms_obs_GRACE'          ! RMS error for GRACE observations
+  handle = "rms_obs_GRACE"          ! RMS error for GRACE observations
   CALL parse(handle, rms_obs_GRACE)
   rms_obs_SM = rms_obs              ! backward compatibility
-  handle = 'rms_obs_SM'             ! RMS error for SM observations
+  handle = "rms_obs_SM"             ! RMS error for SM observations
   CALL parse(handle, rms_obs_SM)
   ! rms_obs_C = rms_obs              ! backward compatibility
   ! handle = 'rms_obs_C'             ! RMS error for C observations
   ! CALL parse(handle, rms_obs_C)
 #endif
+#endif
 
-  handle = 'dim_obs'                 ! Number of observations
+  handle = "dim_obs"                 ! Number of observations
   CALL parse(handle, dim_obs)
 
   ! General settings for PDAF
-  handle = 'screen'                  ! set verbosity of PDAF
+  handle = "screen"                  ! set verbosity of PDAF
   CALL parse(handle, screen)
-  handle = 'dim_ens'                 ! set ensemble size/rank of covar matrix
+  handle = "dim_ens"                 ! set ensemble size/rank of covar matrix
   CALL parse(handle, dim_ens)
-  handle = 'filtertype'              ! Choose filter algorithm
+  handle = "filtertype"              ! Choose filter algorithm
   CALL parse(handle, filtertype)
-  handle = 'subtype'                 ! Set subtype of filter
+  handle = "subtype"                 ! Set subtype of filter
   CALL parse(handle, subtype)
-  handle = 'incremental'             ! Set whether to use incremental updating
+  handle = "incremental"             ! Set whether to use incremental updating
   CALL parse(handle, incremental)
-  handle = 'use_omi'                 ! Set whether to use OMI interface
+  handle = "use_omi"                 ! Set whether to use OMI interface
   CALL parse(handle, use_omi)
 #if defined CLMSA
 #ifdef CLMFIVE
@@ -134,59 +134,59 @@ SUBROUTINE init_pdaf_parse()
 #endif
 
   ! Filter-specific settings
-  handle = 'type_trans'              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF
+  handle = "type_trans"              ! Type of ensemble transformation in SEIK/ETKF/LSEIK/LETKF
   CALL parse(handle, type_trans)
-  handle = 'rank_analysis_enkf'      ! Set rank for pseudo inverse in EnKF
+  handle = "rank_analysis_enkf"      ! Set rank for pseudo inverse in EnKF
   CALL parse(handle, rank_analysis_enkf)
-  handle = 'type_forget'             ! Set type of forgetting factor
+  handle = "type_forget"             ! Set type of forgetting factor
   CALL parse(handle, type_forget)
-  handle = 'forget'                  ! Set forgetting factor
+  handle = "forget"                  ! Set forgetting factor
   CALL parse(handle,forget)
-  handle = 'type_sqrt'               ! Set type of transformation square-root (SEIK-sub4, ESTKF)
+  handle = "type_sqrt"               ! Set type of transformation square-root (SEIK-sub4, ESTKF)
   CALL parse(handle, type_sqrt)
 
   ! Settings for localization in LSEIK/LETKF
-  handle = 'local_range'             ! For backward compatibility
+  handle = "local_range"             ! For backward compatibility
   CALL parse(handle, cradius)
-  handle = 'cradius'                 ! Set cut-off radius in grid points for observation domain
+  handle = "cradius"                 ! Set cut-off radius in grid points for observation domain
   CALL parse(handle, cradius)
-  handle = 'locweight'               ! Set type of localizating weighting
+  handle = "locweight"               ! Set type of localizating weighting
   CALL parse(handle, locweight)
   sradius = cradius                  ! By default use cradius as support radius
-  handle = 'srange'                  ! For backward compatibility
+  handle = "srange"                  ! For backward compatibility
   CALL parse(handle, sradius)
-  handle = 'sradius'                 ! Set support radius in grid points
+  handle = "sradius"                 ! Set support radius in grid points
              ! for 5th-order polynomial or radius for 1/e in exponential weighting
   CALL parse(handle, sradius)
 
   ! Settings for different observation types
   cradius_GRACE = cradius  ! For backward compatibility
-  handle = 'cradius_GRACE'          ! Set cut-off radius for GRACE observations
+  handle = "cradius_GRACE"          ! Set cut-off radius for GRACE observations
   call parse(handle, cradius_GRACE)
   sradius_GRACE = sradius  ! For backward compatibility
-  handle = 'sradius_GRACE'          ! Set support radius for GRACE observations
+  handle = "sradius_GRACE"          ! Set support radius for GRACE observations
   call parse(handle, sradius_GRACE)
   cradius_SM = cradius              ! For backward compatibility
-  handle = 'cradius_SM'             ! Set cut-off radius for SM observations
+  handle = "cradius_SM"             ! Set cut-off radius for SM observations
   call parse(handle, cradius_SM)
   sradius_SM = sradius              ! For backward compatibility
-  handle = 'sradius_SM'             ! Set support radius for SM observations
+  handle = "sradius_SM"             ! Set support radius for SM observations
   call parse(handle, sradius_SM)
 
   ! Setting for file output
-  handle = 'filename'                ! Set name of output file
+  handle = "filename"                ! Set name of output file
   CALL parse(handle, filename)
 
   ! *** user defined observation filename *** !
-  handle = 'obs_filename'
+  handle = "obs_filename"
   call parse(handle, obs_filename)
 
   ! *** Yorck: user defined filename for temporal mean of TWS to be subtracted in observation operator *** !
-  handle = 'temp_mean_filename'
+  handle = "temp_mean_filename"
   call parse(handle, temp_mean_filename)
 
   !kuw: add smoother support
-  handle = 'smoother_lag'
+  handle = "smoother_lag"
   call parse(handle, dim_lag)
   !kuw end
 

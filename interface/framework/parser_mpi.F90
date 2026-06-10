@@ -125,12 +125,12 @@ CONTAINS
 ! *** Initialization ***
     CALL MPI_Comm_Rank(MPI_COMM_WORLD, mype, MPIerr)
 
-    string = '-' // TRIM(handle)
+    string = "-" // TRIM(handle)
     modified = .FALSE.
 
 ! *** Parsing ***
 #ifdef F77
-    write (*,*) 'PARSE for F77!!!!!!!!!!!!!!!'
+    write (*,*) "PARSE for F77!!!!!!!!!!!!!!!"
     IF (iargc() > 0) THEN
        DO i = 1, iargc() - 1
           CALL getarg(i, str1)
@@ -139,8 +139,8 @@ CONTAINS
              READ(str2, *) parsed_int
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #else
     IF (command_argument_count() > 0) THEN
        DO i = 1, command_argument_count() - 1
@@ -150,16 +150,16 @@ CONTAINS
              READ(str2, *) parsed_int
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #endif
 
 ! *** Finalize ***
     IF (modified) THEN
        intvalue = parsed_int
 !        IF (mype == 0) WRITE (*, '(2x, a, a, a, i)') &
-       IF (mype == 0) WRITE (*, '(2x, a, a, a, i10)') &
-            'PARSER: ', TRIM(handle), '=', parsed_int
+       IF (mype == 0) WRITE (*, "(2x, a, a, a, i10)") &
+            "PARSER: ", TRIM(handle), "=", parsed_int
     END IF
   END SUBROUTINE parse_int
 
@@ -180,7 +180,7 @@ CONTAINS
 ! *** Initialize ***
     CALL MPI_Comm_Rank(MPI_COMM_WORLD, mype, MPIerr)
 
-    string = '-' // TRIM(handle)
+    string = "-" // TRIM(handle)
     modified = .FALSE.
 
 ! *** Parsing ***
@@ -193,8 +193,8 @@ CONTAINS
              READ(str2, *) parsed_real
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #else
     IF (command_argument_count() > 0) THEN
        DO i = 1, command_argument_count() - 1
@@ -204,15 +204,15 @@ CONTAINS
              READ(str2, *) parsed_real
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #endif
 
 ! *** Finalize ***
     IF (modified) THEN
        realvalue = parsed_real
-       IF (mype == 0) WRITE (*, '(2x, a, a, a, es12.4)') &
-            'PARSER: ', TRIM(handle), '=', parsed_real
+       IF (mype == 0) WRITE (*, "(2x, a, a, a, es12.4)") &
+            "PARSER: ", TRIM(handle), "=", parsed_real
     END IF
   END SUBROUTINE parse_real
 
@@ -236,7 +236,7 @@ CONTAINS
 ! *** Initialize ***
     CALL MPI_Comm_Rank(MPI_COMM_WORLD, mype, MPIerr)
 
-    string = '-' // TRIM(handle)
+    string = "-" // TRIM(handle)
     modified = .FALSE.
 
 ! *** Parsing ***
@@ -248,11 +248,11 @@ CONTAINS
           IF (str1 == TRIM(string)) THEN
              ! Format specifier is needed for reading paths.  Using
              ! `*` as format specifier, reading stops at a `/`
-             READ(str2, '(a)') parsed_string
+             READ(str2, "(a)") parsed_string
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #else
     IF (command_argument_count() > 0) THEN
        DO i = 1, command_argument_count() - 1
@@ -265,10 +265,10 @@ CONTAINS
           CALL get_command_argument(i+1, str2_check)
           IF (mype == 0) THEN
              IF (.NOT. TRIM(str2_check) == TRIM(str2)) THEN
-                WRITE (*,'(2x, a)') "PARSER: ERROR, command line input too long."
-                WRITE (*,'(2x, a, 1x, a)') "called handle=", TRIM(string)
-                WRITE (*,'(2x, a, 1x, a)') "parsed handle=", TRIM(str1)
-                WRITE (*,'(2x, a, 1x, a)') "parsed input(cut)=", TRIM(str2)
+                WRITE (*,"(2x, a)") "PARSER: ERROR, command line input too long."
+                WRITE (*,"(2x, a, 1x, a)") "called handle=", TRIM(string)
+                WRITE (*,"(2x, a, 1x, a)") "parsed handle=", TRIM(str1)
+                WRITE (*,"(2x, a, 1x, a)") "parsed input(cut)=", TRIM(str2)
                 call abort_parallel()
              END IF
           END IF
@@ -277,18 +277,18 @@ CONTAINS
           IF (str1 == TRIM(string)) THEN
              ! Format specifier is needed for reading paths.  Using
              ! `*` as format specifier, reading stops at a `/`
-             READ(str2, '(a)') parsed_string
+             READ(str2, "(a)") parsed_string
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #endif
 
 ! *** Finalize ***
     IF (modified) THEN
        charvalue = parsed_string
-       IF (mype == 0) WRITE (*, '(2x, a, a, a, a)') &
-           'PARSER: ', TRIM(handle), '= ', TRIM(parsed_string)
+       IF (mype == 0) WRITE (*, "(2x, a, a, a, a)") &
+           "PARSER: ", TRIM(handle), "= ", TRIM(parsed_string)
     END IF
 
   END SUBROUTINE parse_string
@@ -310,7 +310,7 @@ CONTAINS
 ! *** Initialization ***
     CALL MPI_Comm_Rank(MPI_COMM_WORLD, mype, MPIerr)
 
-    string = '-' // TRIM(handle)
+    string = "-" // TRIM(handle)
     modified = .FALSE.
 
 ! *** Parsing ***
@@ -323,8 +323,8 @@ CONTAINS
              READ(str2, *) parsed_log
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #else
     IF (command_argument_count() > 0) THEN
        DO i = 1, command_argument_count() - 1
@@ -334,15 +334,15 @@ CONTAINS
              READ(str2, *) parsed_log
              modified = .TRUE.
           END IF
-       ENDDO
-    ENDIF
+       END DO
+    END IF
 #endif
 
 ! *** Finalize ***
     IF (modified) THEN
        logvalue = parsed_log
-       IF (mype == 0) WRITE (*, '(2x, a, a, a, l1)') &
-            'PARSER: ', TRIM(handle), '=', parsed_log
+       IF (mype == 0) WRITE (*, "(2x, a, a, a, l1)") &
+            "PARSER: ", TRIM(handle), "=", parsed_log
     END IF
   END SUBROUTINE parse_logical
 

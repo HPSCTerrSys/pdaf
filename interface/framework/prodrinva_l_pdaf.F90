@@ -110,26 +110,26 @@ SUBROUTINE prodRinvA_l_pdaf(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
 
   ! Screen output
   IF (verbose == 1) THEN
-     WRITE (*, '(8x, a, f12.3)') &
-           '--- Use global rms for observations of ', rms_obs
-     WRITE (*, '(8x, a, 1x)') &
-          '--- Domain localization'
-     WRITE (*, '(12x, a, 1x, f12.2)') &
-          '--- Local influence radius', cradius
+     WRITE (*, "(8x, a, f12.3)") &
+           "--- Use global rms for observations of ", rms_obs
+     WRITE (*, "(8x, a, 1x)") &
+          "--- Domain localization"
+     WRITE (*, "(12x, a, 1x, f12.2)") &
+          "--- Local influence radius", cradius
 
      IF (locweight > 0) THEN
-        WRITE (*, '(12x, a)') &
-             '--- Use distance-dependent weight for observation errors'
+        WRITE (*, "(12x, a)") &
+             "--- Use distance-dependent weight for observation errors"
 
         IF (locweight == 3) THEN
-           write (*, '(12x, a)') &
-                '--- Use regulated weight with mean error variance'
+           write (*, "(12x, a)") &
+                "--- Use regulated weight with mean error variance"
         ELSE IF (locweight == 4) THEN
-           write (*, '(12x, a)') &
-                '--- Use regulated weight with single-point error variance'
+           write (*, "(12x, a)") &
+                "--- Use regulated weight with single-point error variance"
         END IF
      END IF
-  ENDIF
+  END IF
 
   ! *** initialize numbers (this is for constant observation errors)
   ! Set observation variance and inverse here
