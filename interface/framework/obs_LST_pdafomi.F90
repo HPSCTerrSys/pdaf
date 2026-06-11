@@ -105,7 +105,7 @@ MODULE obs_LST_pdafomi
   !! analysis domains on the PE-local state domain.
   !!
 SUBROUTINE init_dim_obs_LST(step, dim_obs)
-  
+
   USE mpi, ONLY: MPI_INTEGER
   USE mpi, ONLY: MPI_DOUBLE_PRECISION
   USE mpi, ONLY: MPI_SUM
@@ -206,8 +206,9 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! *** Initialize full observation dimension ***
   ! *********************************************
 
-  IF (mype_filter==0) &
-    WRITE (*,*) 'PDAF-OMI: Assimilate observations - obs type LST'
+  IF (mype_filter==0) then
+    WRITE (*,*) "PDAF-OMI: Assimilate observations - obs type LST"
+  end if
 
   IF (assim_LST) thisobs%doassim = 1
 
@@ -215,18 +216,18 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   thisobs%disttype = 3
   thisobs%ncoord = 2
 
-  obs_type_name = 'LST'
+  obs_type_name = "LST"
 
   ! **********************************
   ! *** Read PE-local observations ***
   ! **********************************
 
   if(mype_filter==0 .and. screen > 2) then
-    write(*,*)'PDAF-OMI: load observations from type LST'
+    write(*,*)"PDAF-OMI: load observations from type LST"
   end if
 
   ! Set name of current NetCDF observation file
-  write(current_observation_filename, '(a, i5.5)') trim(obs_filename)//'.', step
+  write(current_observation_filename, "(a, i5.5)") trim(obs_filename)//".", step
 
   !  if I'm root in filter, read the nc file
   if (mype_filter == 0) then
@@ -248,8 +249,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! when this observation is not present.
   if (dim_obs == 0) then
     if (mype_filter==0 .and. screen > 2) then
-      write(*,*)'TSMP-PDAF mype(w) =', mype_world, &
-        ': No observations of type LST found in file ', &
+      write(*,*)"TSMP-PDAF mype(w) =", mype_world, &
+        ": No observations of type LST found in file ", &
         trim(current_observation_filename)
     end if
     dim_obs_p = 0
@@ -304,7 +305,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   thisobs%infile = 1
 
   if (mype_filter==0 .and. screen > 2) then
-    write(*,*)'PDAF-OMI: Done: load observations from type LST'
+    write(*,*)"PDAF-OMI: Done: load observations from type LST"
   end if
 
   ! CLM grid information
@@ -870,8 +871,8 @@ subroutine init_obscovar_LST(step, dim_obs, dim_obs_p, covar, m_state_p, isdiag)
     DO i = id_start(pe), id_end(pe)
       covar(i, i) = covar(i, i) + 1.0/thisobs%ivar_obs_f(cnt)
       cnt = cnt + 1
-    ENDDO
-  ENDDO
+    END DO
+  END DO
 
   isdiag = .TRUE.
 
@@ -934,17 +935,17 @@ subroutine prodRinvA_l_LST(domain_p, step, dim_obs_l, rank, obs_l, A_l, C_l)
   domain_save = domain_p
 
   IF (verbose == 1) THEN
-    WRITE (*, '(8x, a, f12.3)') &
-      '--- Use global rms for LST observations of ', rms_obs_LST
-    WRITE (*, '(8x, a, 1x)') &
-      '--- Domain localization'
-    WRITE (*, '(12x, a, 1x, f12.2)') &
-      '--- Local influence radius', cradius_LST
+    WRITE (*, "(8x, a, f12.3)") &
+      "--- Use global rms for LST observations of ", rms_obs_LST
+    WRITE (*, "(8x, a, 1x)") &
+      "--- Domain localization"
+    WRITE (*, "(12x, a, 1x, f12.2)") &
+      "--- Local influence radius", cradius_LST
     IF (locweight > 0) THEN
-      WRITE (*, '(12x, a)') &
-        '--- Use distance-dependent weight for observation errors'
+      WRITE (*, "(12x, a)") &
+        "--- Use distance-dependent weight for observation errors"
     END IF
-  ENDIF
+  END IF
 
   ALLOCATE(weight(thisobs_l%dim_obs_l))
   call PDAFomi_observation_localization_weights(thisobs_l, thisobs, rank, A_l, &
@@ -969,7 +970,7 @@ subroutine deallocate_obs_LST()
   implicit none
 
   if(mype_filter==0) then
-    WRITE (*,*) 'Deallocating observations type LST'
+    WRITE (*,*) "Deallocating observations type LST"
   end if
   call PDAFomi_deallocate_obs(thisobs)
 

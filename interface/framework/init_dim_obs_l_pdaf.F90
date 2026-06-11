@@ -320,7 +320,7 @@ SUBROUTINE init_dim_obs_l_pdaf(domain_p, step, dim_obs_f, dim_obs_l)
 !------------------------------------------------------------------------
 
 #ifdef PDAF_DEBUG
-  WRITE(*, '(a,x,a,i5,x,a,i10,x,a,i10)') "TSMP-PDAF-debug", "mype(f)=", mype_filter, &
+  WRITE(*, "(a,x,a,i5,x,a,i10,x,a,i10)") "TSMP-PDAF-debug", "mype(f)=", mype_filter, &
     "init_dim_obs_l_pdaf: domain_p=", domain_p, "dim_obs_l=", dim_obs_l
 #endif
 

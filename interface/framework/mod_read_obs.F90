@@ -973,7 +973,7 @@ contains
             clmupdate_T       = 0
             clmupdate_texture = 0
 
-        case ('LST')
+        case ("LST")
             ! TODO: General values for clmupdate_T (saving previous values)
             clmupdate_tws     = 0
             clmupdate_swc     = 0

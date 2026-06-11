@@ -109,7 +109,7 @@ SUBROUTINE init_pdaf_parse()
   handle = "rms_obs_SM"             ! RMS error for SM observations
   CALL parse(handle, rms_obs_SM)
   rms_obs_LST = rms_obs              ! backward compatibility
-  handle = 'rms_obs_LST'             ! RMS error for LST observations
+  handle = "rms_obs_LST"             ! RMS error for LST observations
   CALL parse(handle, rms_obs_LST)
   ! rms_obs_C = rms_obs              ! backward compatibility
   ! handle = 'rms_obs_C'             ! RMS error for C observations
@@ -179,10 +179,10 @@ SUBROUTINE init_pdaf_parse()
   handle = "sradius_SM"             ! Set support radius for SM observations
   call parse(handle, sradius_SM)
   cradius_LST = cradius              ! For backward compatibility
-  handle = 'cradius_LST'             ! Set cut-off radius for LST observations
+  handle = "cradius_LST"             ! Set cut-off radius for LST observations
   call parse(handle, cradius_LST)
   sradius_LST = sradius              ! For backward compatibility
-  handle = 'sradius_LST'             ! Set support radius for LST observations
+  handle = "sradius_LST"             ! Set support radius for LST observations
   call parse(handle, sradius_LST)
 
   ! Setting for file output

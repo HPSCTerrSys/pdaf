@@ -167,7 +167,7 @@ module enkf_clm_mod
     clm_endp     = endp
 
 #ifdef PDAF_DEBUG
-    WRITE(*, '(a,x,a,i5,x,a,i10)') "TSMP-PDAF-debug", "mype(w)=", mype, &
+    WRITE(*, "(a,x,a,i5,x,a,i10)") "TSMP-PDAF-debug", "mype(w)=", mype, &
       "define_clm_statevec entry: clm_statevecsize=", clm_statevecsize
 #endif
 
@@ -554,7 +554,7 @@ module enkf_clm_mod
         state_pdaf2clm_j_p(cc+clm_varsize) = 1
       end do
 
-    endif
+    end if
     !end hcp
 
     if(clmupdate_T==2) then
@@ -655,7 +655,7 @@ module enkf_clm_mod
 
       end do
 
-    endif
+    end if
 
     if(clmupdate_T==3) then
 
@@ -763,7 +763,7 @@ module enkf_clm_mod
 
       end do
 
-    endif
+    end if
 
     if(clmupdate_T==4) then
 
@@ -839,7 +839,7 @@ module enkf_clm_mod
         end do
       end do
 
-    endif
+    end if
 
     if(clmupdate_T==5) then
 
@@ -921,7 +921,7 @@ module enkf_clm_mod
         end do
       end do
 
-    endif
+    end if
 
     if(clmupdate_T < 1 .or. clmupdate_T > 5) then
       error stop "LST-DA only implemented for clmupdate_T==1 to clmupdate_T==5."
@@ -1398,7 +1398,7 @@ module enkf_clm_mod
         ! the order)
         clm_paramarr(cc) = tlai(state_pdaf2clm_p_p(cc))
       end do
-    endif
+    end if
     !end hcp  LAI
 
     ! Skin temperature updating state vector with skin, soil and vegetation temperature.
@@ -1488,7 +1488,7 @@ module enkf_clm_mod
         clm_statevec_orig(cc) = clm_statevec(cc)
       end do
 
-    endif
+    end if
 
     ! Skin temperature updating state vector with skin, soil and vegetation
     ! temperature and ground temperature.
@@ -1577,7 +1577,7 @@ module enkf_clm_mod
         clm_statevec_orig(cc) = clm_statevec(cc)
       end do
 
-    endif
+    end if
 
     ! clmupdate_T==4: like ==2 but with T_H2OSFC added.
     if(clmupdate_T==4) then
@@ -1662,7 +1662,7 @@ module enkf_clm_mod
         clm_statevec_orig(cc) = clm_statevec(cc)
       end do
 
-    endif
+    end if
 
     ! clmupdate_T==5: like ==3 but with T_H2OSFC added.
     if(clmupdate_T==5) then
@@ -1763,7 +1763,7 @@ module enkf_clm_mod
         clm_statevec_orig(cc) = clm_statevec(cc)
       end do
 
-    endif
+    end if
 
   end subroutine set_clm_statevec_T
 
@@ -2353,7 +2353,7 @@ module enkf_clm_mod
     use clm_varpar   , only : nlevgrnd
     use clm_instMod, only : temperature_inst
     use clm_instMod, only : waterstate_inst
-    use IEEE_ARITHMETIC, only: ieee_is_nan
+    use, intrinsic :: IEEE_ARITHMETIC, only: ieee_is_nan
     use shr_const_mod, only: SHR_CONST_TKFRZ
 
     implicit none
@@ -2417,7 +2417,7 @@ module enkf_clm_mod
         t_grnd(c) = clm_statevec(state_clm2pdaf_p(p,1))
         t_veg(p)  = clm_statevec(state_clm2pdaf_p(p,1) + clm_varsize)
       end do
-    endif
+    end if
     ! end hcp TG, TV
 
     ! Skin temperature updating skin, soil and vegetation temperature.
@@ -2529,7 +2529,7 @@ module enkf_clm_mod
       if (incr_warn_count_veg    > 0) print *, "WARNING: t_veg total increments exceeding T_max_increment:", &
         incr_warn_count_veg
       deallocate(col_updated)
-    endif
+    end if
 
     ! Skin temperature updating skin, soil, vegetation and ground temperature.
     ! Uses gridcell mean increment factor: applies the ratio of
@@ -2671,7 +2671,7 @@ module enkf_clm_mod
       if (incr_warn_count_grnd   > 0) print *, "WARNING: t_grnd total increments exceeding T_max_increment:", &
         incr_warn_count_grnd
       deallocate(col_updated)
-    endif
+    end if
 
     ! clmupdate_T==4: like ==2 but also updating T_H2OSFC.
     if(clmupdate_T==4) then
@@ -2810,7 +2810,7 @@ module enkf_clm_mod
       if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", &
         incr_warn_count_h2osfc
       deallocate(col_updated)
-    endif
+    end if
 
     ! clmupdate_T==5: like ==3 but also updating T_H2OSFC.
     if(clmupdate_T==5) then
@@ -2977,7 +2977,7 @@ module enkf_clm_mod
       if (incr_warn_count_h2osfc > 0) print *, "WARNING: t_h2osfc total increments exceeding T_max_increment:", &
         incr_warn_count_h2osfc
       deallocate(col_updated)
-    endif
+    end if
 
 #ifdef PDAF_DEBUG
     IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble == -1) THEN
@@ -3992,10 +3992,10 @@ module enkf_clm_mod
     end if NOGRACE
 
 #ifdef PDAF_DEBUG
-    WRITE(*, '(a,x,a,i10,x,a,i10)') "TSMP-PDAF-debug", "begc=", begc, &
+    WRITE(*, "(a,x,a,i10,x,a,i10)") "TSMP-PDAF-debug", "begc=", begc, &
       "init_n_domains_clm: n_domains_p=", n_domains_p
     if (allocated(state_loc2clm_c_p)) then
-      WRITE(*, '(a,x,a,i10,x,a,*(i10))') "TSMP-PDAF-debug", "begc=", begc, &
+      WRITE(*, "(a,x,a,i10,x,a,*(i10))") "TSMP-PDAF-debug", "begc=", begc, &
         "init_n_domains_clm: state_loc2clm_c_p=", state_loc2clm_c_p
     end if
 #endif
@@ -4050,27 +4050,27 @@ module enkf_clm_mod
     if(clmupdate_T==1) then
       ! TG + TV: 2 temperatures per patch
       dim_l = 2
-    endif
+    end if
 
     if(clmupdate_T==2) then
       ! TSKIN + TSOIL(n_lev_T layers) + TV
       dim_l = 2 + min(nlevgrnd, clmstatevec_max_layer)
-    endif
+    end if
 
     if(clmupdate_T==3) then
       ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND
       dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
-    endif
+    end if
 
     if(clmupdate_T==4) then
       ! TSKIN + TSOIL(n_lev_T layers) + TV + T_H2OSFC
       dim_l = 3 + min(nlevgrnd, clmstatevec_max_layer)
-    endif
+    end if
 
     if(clmupdate_T==5) then
       ! TSKIN + TSOIL(n_lev_T layers) + TV + TGRND + T_H2OSFC
       dim_l = 4 + min(nlevgrnd, clmstatevec_max_layer)
-    endif
+    end if
 
     if (clmupdate_tws==1) then
       dim_l = 0
