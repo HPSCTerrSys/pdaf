@@ -153,7 +153,7 @@ if (clmupdate_T==1) then
 !  write(*,*) 'TG', state_p(obs_index_p(:))
 !  write(*,*) 'TV', state_p(clm_varsize+obs_index_p(:))
 
-endif
+end if
 
 if (clmupdate_T==2) then
 
@@ -164,7 +164,7 @@ if (clmupdate_T==2) then
     m_state_p(i) = state_p(obs_index_p(i))
   END DO
 
-endif
+end if
 
 if (clmupdate_T==3) then
 
@@ -175,7 +175,7 @@ if (clmupdate_T==3) then
     m_state_p(i) = state_p(obs_index_p(i))
   END DO
 
-endif
+end if
 
 if (clmupdate_T==4) then
 
@@ -186,7 +186,7 @@ if (clmupdate_T==4) then
     m_state_p(i) = state_p(obs_index_p(i))
   END DO
 
-endif
+end if
 
 if (clmupdate_T==5) then
 
@@ -197,7 +197,7 @@ if (clmupdate_T==5) then
     m_state_p(i) = state_p(obs_index_p(i))
   END DO
 
-endif
+end if
 #endif
 
 
@@ -211,14 +211,14 @@ endif
      soide(0)=0.d0
      do i=1,nz_glob
        soide(i)=soide(i-1)+soilay_fortran(nz_glob-i+1)
-     enddo
+     end do
      do i = 1, dim_obs_p
 
        !Initial average soil moisture for 1st iteration
        avesm=0.d0
        do j=1,nz_glob
             avesm=avesm+(soide(j)-soide(j-1))*state_p(sc_p(j,i))/soide(nz_glob)
-       enddo
+       end do
        avesm_temp=0.d0
 
        !iteration
@@ -232,12 +232,12 @@ endif
           do j=1,nz_glob
              if ((soide(j-1)<Dp).AND.(Dp<=soide(j))) then
                nsc=j
-             endif
-          enddo
+             end if
+          end do
           do j=1, nsc-1
               avesm=avesm+(1.d0-0.5d0*(soide(j)+soide(j-1))/Dp)*(soide(j)-soide(j-1)) &
                     *state_p(sc_p(j,i))/Dp
-          enddo
+          end do
           avesm=avesm+(1.d0-0.5d0*(Dp+soide(nsc-1))/Dp)*(Dp-soide(nsc-1)) &
              *state_p(sc_p(nsc,i))/Dp
 
@@ -246,14 +246,14 @@ endif
           do j=1, nsc-1
               tot =   tot+(1.d0-0.5d0*(soide(j)+soide(j-1))/Dp)*(soide(j)-soide(j-1)) &
                                                     /Dp
-          enddo
+          end do
           tot  =  tot+(1.d0-0.5d0*(Dp+soide(nsc-1))/Dp)*(Dp-soide(nsc-1)) &
                                                /Dp
 
           avesm=avesm/tot
-       enddo
+       end do
        m_state_p(i)=avesm
-     enddo
+     end do
      deallocate(soide)
  end if
 #endif
@@ -276,7 +276,7 @@ endif
          bd = bd + soilstate_inst%bd_col(obs_index_p(i),j) ! bulk density
        END DO
          bd = bd / 8.0 * 0.001 ! average and convert from kg/m^3 to g/cm^3
-     ENDIF
+     END IF
      ! CRNS observed value
      y = obs_p(i) ! CRNS observation
      ! Penetration depth calculations D86(bd, r, y)
@@ -307,21 +307,21 @@ endif
      DO j = 1, 920
        IF (j > 680) then
          z = 8
-       ELSEIF (j < 680 .and. j > 480) then
+       ELSE IF (j < 680 .and. j > 480) then
          z = 7
-       ELSEIF (j < 480 .and. j > 320) then
+       ELSE IF (j < 480 .and. j > 320) then
          z = 6
-       ELSEIF (j < 320 .and. j > 200) then
+       ELSE IF (j < 320 .and. j > 200) then
          z = 5
-       ELSEIF (j < 200 .and. j > 120) then
+       ELSE IF (j < 200 .and. j > 120) then
          z = 4
-       ELSEIF (j < 120 .and. j > 60) then
+       ELSE IF (j < 120 .and. j > 60) then
          z = 3
-       ELSEIF (j < 60 .and. j > 20) then
+       ELSE IF (j < 60 .and. j > 20) then
          z = 2
-       ELSEIF (j < 20) then
+       ELSE IF (j < 20) then
          z = 1
-       ENDIF
+       END IF
        weights_layer(z) = weights_layer(z) + weights_r1(j) + weights_r2(j) + weights_r3(j)
        nweights(z) = nweights(z) + 1
      END DO
@@ -358,9 +358,9 @@ endif
           m_state_p(i) = 0
           do icorner = 1, 4
               m_state_p(i) = m_state_p(i) + state_p(obs_interp_indices_p(i,icorner)) * obs_interp_weights_p(i,icorner)
-          enddo
+          end do
 
-      enddo
+      end do
 
   end if
 

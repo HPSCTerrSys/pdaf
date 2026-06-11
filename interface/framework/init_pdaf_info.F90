@@ -62,212 +62,212 @@ SUBROUTINE init_pdaf_info()
 ! *****************************
 
   IF (filtertype == 1) THEN
-     WRITE (*, '(21x, a)') 'Filter: SEIK'
+     WRITE (*, "(21x, a)") "Filter: SEIK"
      IF (subtype == 2) THEN
-        WRITE (*, '(6x, a)') '-- fixed error-space basis'
+        WRITE (*, "(6x, a)") "-- fixed error-space basis"
      ELSE IF (subtype == 3) THEN
-        WRITE (*, '(6x, a)') '-- fixed state covariance matrix'
+        WRITE (*, "(6x, a)") "-- fixed state covariance matrix"
      ELSE IF (subtype == 4) THEN
-        WRITE (*, '(6x, a)') '-- use ensemble transformation'
+        WRITE (*, "(6x, a)") "-- use ensemble transformation"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*,'(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*,"(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 2) THEN
-     WRITE (*, '(21x, a)') 'Filter: EnKF'
+     WRITE (*, "(21x, a)") "Filter: EnKF"
      IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
      IF (rank_analysis_enkf > 0) THEN
-        WRITE (*, '(6x, a, i5)') &
-             'analysis with pseudo-inverse of HPH, rank:', rank_analysis_enkf
+        WRITE (*, "(6x, a, i5)") &
+             "analysis with pseudo-inverse of HPH, rank:", rank_analysis_enkf
      END IF
   ELSE IF (filtertype == 3) THEN
-     WRITE (*, '(21x, a)') 'Filter: LSEIK'
+     WRITE (*, "(21x, a)") "Filter: LSEIK"
      IF (subtype == 2) THEN
-        WRITE (*, '(6x, a)') '-- fixed error-space basis'
+        WRITE (*, "(6x, a)") "-- fixed error-space basis"
      ELSE IF (subtype == 3) THEN
-        WRITE (*, '(6x, a)') '-- fixed state covariance matrix'
+        WRITE (*, "(6x, a)") "-- fixed state covariance matrix"
      ELSE IF (subtype == 4) THEN
-        WRITE (*, '(6x, a)') '-- use ensemble transformation'
+        WRITE (*, "(6x, a)") "-- use ensemble transformation"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 4) THEN
-     WRITE (*, '(21x, a)') 'Filter: ETKF'
+     WRITE (*, "(21x, a)") "Filter: ETKF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Variant using T-matrix'
+        WRITE (*, "(6x, a)") "-- Variant using T-matrix"
      ELSE IF (subtype == 1) THEN
-        WRITE (*, '(6x, a)') '-- Variant following Hunt et al. (2007)'
+        WRITE (*, "(6x, a)") "-- Variant following Hunt et al. (2007)"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*,'(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*,"(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 5) THEN
-     WRITE (*, '(21x, a)') 'Filter: LETKF'
+     WRITE (*, "(21x, a)") "Filter: LETKF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Variant using T-matrix'
+        WRITE (*, "(6x, a)") "-- Variant using T-matrix"
      ELSE IF (subtype == 1) THEN
-        WRITE (*, '(6x, a)') '-- Variant following Hunt et al. (2007)'
+        WRITE (*, "(6x, a)") "-- Variant following Hunt et al. (2007)"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 6) THEN
-     WRITE (*, '(21x, a)') 'Filter: ESTKF'
+     WRITE (*, "(21x, a)") "Filter: ESTKF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*,'(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*,"(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 7) THEN
-     WRITE (*, '(21x, a)') 'Filter: LESTKF'
+     WRITE (*, "(21x, a)") "Filter: LESTKF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 8) THEN
-     WRITE (*, '(21x, a)') 'Filter: localized EnKF'
+     WRITE (*, "(21x, a)") "Filter: localized EnKF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
      IF (rank_analysis_enkf > 0) THEN
-        WRITE (*, '(6x, a, i5)') &
-             'analysis with pseudo-inverse of HPH, rank:', rank_analysis_enkf
+        WRITE (*, "(6x, a, i5)") &
+             "analysis with pseudo-inverse of HPH, rank:", rank_analysis_enkf
      END IF
   ELSE IF (filtertype == 9) THEN
-     WRITE (*, '(21x, a)') 'Filter: NETF'
+     WRITE (*, "(21x, a)") "Filter: NETF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 10) THEN
-     WRITE (*, '(21x, a)') 'Filter: LNETF'
+     WRITE (*, "(21x, a)") "Filter: LNETF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (dim_lag > 0) WRITE (*, '(15x, a, i5)') 'smoother lag:', dim_lag
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f5.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (dim_lag > 0) WRITE (*, "(15x, a, i5)") "smoother lag:", dim_lag
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f5.2)") "forgetting factor:", forget
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 11) THEN
-     WRITE (*, '(21x, a)') 'Filter: LKNETF'
+     WRITE (*, "(21x, a)") "Filter: LKNETF"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- HNK: 2-step LKNETF with NETF before LETKF'
+        WRITE (*, "(6x, a)") "-- HNK: 2-step LKNETF with NETF before LETKF"
      ELSE IF (subtype == 1) THEN
-        WRITE (*, '(6x, a)') '-- HKN: 2-step LKNETF with LETKF before NETF'
+        WRITE (*, "(6x, a)") "-- HKN: 2-step LKNETF with LETKF before NETF"
      ELSE IF (subtype == 4) THEN
-        WRITE (*, '(6x, a)') '-- HSync: LKNETF synchronous'
+        WRITE (*, "(6x, a)") "-- HSync: LKNETF synchronous"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode - HNK: 2-step LKNETF with NETF before LETKF'
+        WRITE (*, "(6x, a)") "-- Offline mode - HNK: 2-step LKNETF with NETF before LETKF"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(10x, a, f7.2)') 'forgetting factor:', forget
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(10x, a, f7.2)") "forgetting factor:", forget
      IF (type_hyb == 0) THEN
-     ELSEIF (type_hyb == 0) THEN
-        WRITE (*, '(6x, a)') '-- use fixed hybrid weight hyb_gamma'
-     ELSEIF (type_hyb == 1) THEN
-        WRITE (*, '(6x, a)') '-- use gamma_lin: (1 - N_eff/N_e)*hyb_gamma'
-     ELSEIF (type_hyb == 2) THEN
-        WRITE (*, '(6x, a)') '-- use gamma_alpha: hybrid weight from N_eff/N>=hyb_gamma'
-     ELSEIF (type_hyb == 3) THEN
-        WRITE (*, '(6x, a)') '-- use gamma_ska: 1 - min(s,k)/sqrt(hyb_kappa) with N_eff/N>=hyb_gamma'
-     ELSEIF (type_hyb == 4) THEN
-        WRITE (*, '(6x, a)') '-- use gamma_sklin: 1 - min(s,k)/sqrt(hyb_kappa) >= 1-N_eff/N>=hyb_gamma'
+     ELSE IF (type_hyb == 0) THEN
+        WRITE (*, "(6x, a)") "-- use fixed hybrid weight hyb_gamma"
+     ELSE IF (type_hyb == 1) THEN
+        WRITE (*, "(6x, a)") "-- use gamma_lin: (1 - N_eff/N_e)*hyb_gamma"
+     ELSE IF (type_hyb == 2) THEN
+        WRITE (*, "(6x, a)") "-- use gamma_alpha: hybrid weight from N_eff/N>=hyb_gamma"
+     ELSE IF (type_hyb == 3) THEN
+        WRITE (*, "(6x, a)") "-- use gamma_ska: 1 - min(s,k)/sqrt(hyb_kappa) with N_eff/N>=hyb_gamma"
+     ELSE IF (type_hyb == 4) THEN
+        WRITE (*, "(6x, a)") "-- use gamma_sklin: 1 - min(s,k)/sqrt(hyb_kappa) >= 1-N_eff/N>=hyb_gamma"
      END IF
-     WRITE (*, '(8x, a, f7.2)') 'hybrid weight gamma:', hyb_gamma
-     WRITE (*, '(10x, a, f7.2)') 'hybrid norm kappa:', hyb_kappa
+     WRITE (*, "(8x, a, f7.2)") "hybrid weight gamma:", hyb_gamma
+     WRITE (*, "(10x, a, f7.2)") "hybrid norm kappa:", hyb_kappa
      IF (model_error) THEN
-        WRITE (*, '(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*, "(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 12) THEN
-     WRITE (*, '(21x, a)') 'Filter: PF with resampling'
+     WRITE (*, "(21x, a)") "Filter: PF with resampling"
      IF (subtype == 0) THEN
-        WRITE (*, '(6x, a)') '-- Standard mode'
+        WRITE (*, "(6x, a)") "-- Standard mode"
      ELSE IF (subtype == 5) THEN
-        WRITE (*, '(6x, a)') '-- Offline mode'
+        WRITE (*, "(6x, a)") "-- Offline mode"
      END IF
-     WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
-     IF (subtype /= 5) WRITE (*, '(6x, a, i5)') 'Assimilation interval:', delt_obs
-     WRITE (*, '(13x, a, i5)') 'reampling type:', pf_res_type
-     WRITE (*, '(17x, a, i5)') 'noise type:', pf_noise_type
-     WRITE (*, '(12x, a, f8.3)') 'noise amplitude:', pf_noise_amp
+     WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
+     IF (subtype /= 5) WRITE (*, "(6x, a, i5)") "Assimilation interval:", delt_obs
+     WRITE (*, "(13x, a, i5)") "reampling type:", pf_res_type
+     WRITE (*, "(17x, a, i5)") "noise type:", pf_noise_type
+     WRITE (*, "(12x, a, f8.3)") "noise amplitude:", pf_noise_amp
      IF (model_error) THEN
-        WRITE (*,'(6x, a, f5.2)') 'model error amplitude:', model_err_amp
+        WRITE (*,"(6x, a, f5.2)") "model error amplitude:", model_err_amp
      END IF
   ELSE IF (filtertype == 100) THEN
-     WRITE (*, '(6x, a, f5.2)') '-- Generate observations --'
+     WRITE (*, "(6x, a, f5.2)") "-- Generate observations --"
      IF (dim_ens>1) THEN
-        WRITE (*, '(14x, a)') 'Use ensemble mean for observations'
-        WRITE (*, '(14x, a, i5)') 'ensemble size:', dim_ens
+        WRITE (*, "(14x, a)") "Use ensemble mean for observations"
+        WRITE (*, "(14x, a, i5)") "ensemble size:", dim_ens
      ELSE
-        WRITE (*, '(14x, a)') 'Generate observations from single ensemble state'
+        WRITE (*, "(14x, a)") "Generate observations from single ensemble state"
      END IF
   END IF
 

@@ -111,8 +111,8 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
   if(multierr/=1) then
     DO i = 1, dim_obs
        covar(i, i) = variance_obs
-    ENDDO
-  endif
+    END DO
+  end if
 
 
   if(multierr==1) then
@@ -129,8 +129,8 @@ SUBROUTINE init_obscovar_pdaf(step, dim_obs, dim_obs_p, covar, m_state_p, &
 #else
       covar(i,i) = pressure_obserr(obs_pdaf2nc(i))*pressure_obserr(obs_pdaf2nc(i))
 #endif
-    enddo
-  endif
+    end do
+  end if
   ! The matrix is diagonal
   ! This setting avoids the computation of the SVD of COVAR
   ! in PDAF_enkf_obs_ensemble

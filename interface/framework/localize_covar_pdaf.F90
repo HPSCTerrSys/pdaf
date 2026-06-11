@@ -111,17 +111,17 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
   tmp(1,1) = 1.0
 
   ! Screen output
-  WRITE (*,'(8x, a)') &
-       '--- Apply covariance localization'
-  WRITE (*, '(12x, a, 1x, f12.2)') &
-       '--- Local influence radius', cradius
+  WRITE (*,"(8x, a)") &
+       "--- Apply covariance localization"
+  WRITE (*, "(12x, a, 1x, f12.2)") &
+       "--- Local influence radius", cradius
 
   IF (locweight == 1) THEN
-     WRITE (*, '(12x, a)') &
-          '--- Use exponential distance-dependent weight'
+     WRITE (*, "(12x, a)") &
+          "--- Use exponential distance-dependent weight"
   ELSE IF (locweight == 2) THEN
-     WRITE (*, '(12x, a)') &
-          '--- Use distance-dependent weight by 5th-order polynomial'
+     WRITE (*, "(12x, a)") &
+          "--- Use distance-dependent weight by 5th-order polynomial"
   END IF
 
   ! Set parameters for weight calculation
@@ -195,7 +195,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
        END DO
     END DO
 
-  ENDIF ! model==tag_model_parflow
+  END IF ! model==tag_model_parflow
 #endif
 
 !by hcp to computer the localized covariance matrix in CLMSA case
@@ -311,7 +311,7 @@ SUBROUTINE localize_covar_pdaf(dim_p, dim_obs, HP, HPH)
     if(allocated(clmobs_lon))deallocate(clmobs_lon)
     if(allocated(clmobs_lat))deallocate(clmobs_lat)
 
-  ENDIF ! model==tag_model_clm
+  END IF ! model==tag_model_clm
 #endif
 !hcp end
 

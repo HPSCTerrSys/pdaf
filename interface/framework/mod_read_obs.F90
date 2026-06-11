@@ -442,7 +442,7 @@ contains
             if (screen > 2) then
                 print *, "TSMP-PDAF mype(w)=", mype_world, ": pressure_obserr=", pressure_obserr
             end if
-        endif
+        end if
 
         !has_depth = nf90_inq_varid(ncid, depth_name, depth_varid)
         !if(has_depth == nf90_noerr) then
@@ -483,7 +483,7 @@ contains
             !   write(*,*) 'For crns average mode parflow obs layer iz must be 1'
             !   stop
             !endif
-        endif
+        end if
         !end hcp
         if (screen > 2) then
             print *, "TSMP-PDAF mype(w)=", mype_world, ": z_idx_obs_nc=", z_idx_obs_nc
@@ -539,7 +539,7 @@ contains
             if (screen > 2) then
                 print *, "TSMP-PDAF mype(w)=", mype_world, ": clm_obserr=", clm_obserr
             end if
-        endif
+        end if
 
         ! Read the longitude latidute data from the file.
 
@@ -620,7 +620,7 @@ contains
   !> - `yidx_obs`
   !> - `zidx_obs`
   !> - `ind_obs`
-  subroutine get_obsindex_currentobsfile(no_obs) bind(c,name='get_obsindex_currentobsfile')
+  subroutine get_obsindex_currentobsfile(no_obs) bind(c,name="get_obsindex_currentobsfile")
     USE mod_tsmp, ONLY: tcycle
     USE mod_assimilation, only: obs_filename
     use netcdf, only: nf90_max_name
@@ -646,7 +646,7 @@ contains
     integer :: dimid, status
     integer :: haserr
 
-    write(filename, '(a, i5.5)') trim(obs_filename)//'.', tcycle
+    write(filename, "(a, i5.5)") trim(obs_filename)//".", tcycle
 
     if(allocated(idx_obs_pf))   deallocate(idx_obs_pf)
     if(allocated(x_idx_obs_pf)) deallocate(x_idx_obs_pf)
@@ -727,7 +727,7 @@ contains
   !> subroutine `get_obsindex_currentobsfile`.
   !>
   !> Only used in `enkf_parflow.c` with `pf_gwmasking=2`.
-  subroutine clean_obs_pf() bind(c,name='clean_obs_pf')
+  subroutine clean_obs_pf() bind(c,name="clean_obs_pf")
     implicit none
     if(allocated(idx_obs_pf))deallocate(idx_obs_pf)
     if(allocated(x_idx_obs_pf))deallocate(x_idx_obs_pf)
@@ -837,6 +837,7 @@ contains
   end subroutine check
 
 
+#ifdef CLMSA
 #ifdef CLMFIVE
     !> @author Anne Springer, adaptation for TSMP2 by Yorck Ewerdwalbesloh
     !> @date 04.12.2023
@@ -888,7 +889,6 @@ contains
         end if
 
     end subroutine check_n_observationfile_set_zero
-#endif
 
     !> @author Yorck Ewerdwalbesloh
     !> @date 29.10.2025
@@ -932,7 +932,7 @@ contains
         if(allocated(obs_type_lok))   deallocate(obs_type_lok)
         allocate(obs_type_lok(dim_obs))
 
-        obs_type_str = ''
+        obs_type_str = ""
 
         status = nf90_inq_varid(ncid, "type_clm", obstype_varid)
         if (status == nf90_noerr) then
@@ -947,7 +947,6 @@ contains
     end subroutine check_n_observationfile_next_type
 
 
-#ifdef CLMFIVE
     !> @author Yorck Ewerdwalbesloh
     !> @date 29.10.2025
     !> @brief Update observation type for next assimilation cycle
@@ -962,13 +961,13 @@ contains
         character(len=*), intent(in) :: obs_type_str
 
         select case (trim(adjustl(obs_type_str)))
-        case ('GRACE')
+        case ("GRACE")
             clmupdate_tws     = 1
             clmupdate_swc     = 0
             clmupdate_T       = 0
             clmupdate_texture = 0
 
-        case ('SM')
+        case ("SM")
             clmupdate_tws     = 0
             clmupdate_swc     = 1
             clmupdate_T       = 0
@@ -989,7 +988,7 @@ contains
         !     clmupdate_C       = 1
 
         case default
-            write(*,*) 'ERROR: Unknown obs_type_str in update_obs_type:', trim(obs_type_str)
+            write(*,*) "ERROR: Unknown obs_type_str in update_obs_type:", trim(obs_type_str)
             call abort_parallel()
         end select
     end subroutine update_obs_type
@@ -1035,7 +1034,7 @@ contains
         integer, allocatable, intent(inout) :: latixy(:)
         integer, allocatable, intent(inout) :: longxy_obs(:)
         integer, allocatable, intent(inout) :: latixy_obs(:)
-        integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits, &
+        integer :: ni, nj, ii, jj, kk, cid, ncells, nlunits, &
         ncols, npatches, ncohorts, counter, i, g, ll
         real :: minlon, minlat, maxlon, maxlat
         real(r8), pointer :: lon(:)
@@ -1076,8 +1075,8 @@ contains
 
         if (allocated(longxy)) deallocate(longxy)
         if (allocated(latixy)) deallocate(latixy)
-        allocate(longxy(num_hactiveg), stat=ier)
-        allocate(latixy(num_hactiveg), stat=ier)
+        allocate(longxy(num_hactiveg))
+        allocate(latixy(num_hactiveg))
 
 
         longxy(:) = 0
@@ -1169,8 +1168,8 @@ contains
 
         if (allocated(longxy_obs)) deallocate(longxy_obs)
         if (allocated(latixy_obs)) deallocate(latixy_obs)
-        allocate(longxy_obs(dim_obs), stat=ier)
-        allocate(latixy_obs(dim_obs), stat=ier)
+        allocate(longxy_obs(dim_obs))
+        allocate(latixy_obs(dim_obs))
 
         in_mpi_(2,:) = longxy_obs_lokal
         call mpi_allreduce(in_mpi_,out_mpi_, dim_obs, mpi_2integer, mpi_minloc, comm_filter, ierror)
@@ -1194,6 +1193,7 @@ contains
         end if
 
     end subroutine domain_def_clm
+#endif
 #endif
 
 

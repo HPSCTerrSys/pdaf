@@ -93,7 +93,7 @@ USE mod_tsmp, &
 ! *** Compute mean variance ***
 ! *****************************
 
-  WRITE (*,*) 'TEMPLATE init_obsvar_pdaf.F90: Set mean observation variance here!'
+  WRITE (*,*) "TEMPLATE init_obsvar_pdaf.F90: Set mean observation variance here!"
 
   ! We assume that all observations have the same error.
   ! Thus, the mean variance is the error variance of each single observation.
@@ -111,8 +111,8 @@ USE mod_tsmp, &
         if(pressure_obserr_p(i) /= 0) then
            sum_p = sum_p + pressure_obserr_p(i)
            counter = counter + 1
-        endif
-     enddo
+        end if
+     end do
      ! averaging the sum of observation errors with total no of non-zero observations
      meanvar_p = sum_p/counter
      ! summing the average of observation errors and communicating it back to each rank
@@ -131,8 +131,8 @@ USE mod_tsmp, &
         if(clm_obserr_p(i) /= 0) then
            sum_p = sum_p + clm_obserr_p(i)
            counter = counter + 1
-        endif
-     enddo
+        end if
+     end do
      ! averaging the sum of observation errors with total no of non-zero observations
      meanvar_p = sum_p/counter
      ! summing the average of observation errors and communicating it back to each rank

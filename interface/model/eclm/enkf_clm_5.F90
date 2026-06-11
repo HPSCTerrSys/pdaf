@@ -68,8 +68,8 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!<< TSMP PDAF comment out end
 !!>> TSMP PDAF addition beginning
   use, intrinsic :: iso_C_binding, only: c_char, c_int
-  use enkf_clm_mod, only: COMM_model_clm
 #if defined CLMSA
+  use enkf_clm_mod, only: COMM_model_clm
   use enkf_clm_mod, only: define_clm_statevec
 #endif
   use clm_varcon, only: averaging_var
@@ -108,10 +108,18 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 !!>> TSMP PDAF comment out beginning
   ! call cime_pre_init1(esmf_logfile_option)
 !!>> TSMP PDAF addition beginning
+#if defined CLMSA
   call cime_pre_init1(esmf_logfile_option, &
                       COMM_model_clm, &
                       pdaf_id=pdaf_id, &
                       pdaf_max=pdaf_max)
+#endif
+
+#if defined COUP_OAS_PFL
+  ! EXPERIMENTAL: For eCLM-ParFlow-PDAF, the whole management of
+  ! communicators has to be re-traced, see HPSCTerrSys/pdaf#82
+  call cime_pre_init1(esmf_logfile_option)
+#endif
 !!<< TSMP PDAF addition end
 
   end_count = shr_sys_irtc(irtc_rate)
@@ -126,16 +134,16 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 
 
   select case(esmf_logfile_option)
-  case('ESMF_LOGKIND_SINGLE')
+  case("ESMF_LOGKIND_SINGLE")
      esmf_logfile_kind = ESMF_LOGKIND_SINGLE
-  case('ESMF_LOGKIND_MULTI')
+  case("ESMF_LOGKIND_MULTI")
      esmf_logfile_kind = ESMF_LOGKIND_MULTI
-  case('ESMF_LOGKIND_MULTI_ON_ERROR')
+  case("ESMF_LOGKIND_MULTI_ON_ERROR")
      esmf_logfile_kind = ESMF_LOGKIND_MULTI_ON_ERROR
-  case('ESMF_LOGKIND_NONE')
+  case("ESMF_LOGKIND_NONE")
      esmf_logfile_kind = ESMF_LOGKIND_NONE
   case default
-     call shr_sys_abort('CIME ERROR: invalid ESMF logfile kind '//trim(esmf_logfile_option))
+     call shr_sys_abort("CIME ERROR: invalid ESMF logfile kind "//trim(esmf_logfile_option))
   end select
 !!>> TSMP PDAF addition beginning
   write(6,*) "esmf_initialize"
@@ -167,22 +175,22 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
   ! Call the initialize, run and finalize routines.
   !--------------------------------------------------------------------------
 
-  call t_startf('CPL:INIT')
+  call t_startf("CPL:INIT")
   call t_adj_detailf(+1)
 
-  call t_startstop_valsf('CPL:cime_pre_init1',  walltime=cime_pre_init1_time)
-  call t_startstop_valsf('CPL:ESMF_Initialize', walltime=ESMF_Initialize_time)
-  call t_startstop_valsf('CPL:cime_pre_init2',  walltime=cime_pre_init2_time)
+  call t_startstop_valsf("CPL:cime_pre_init1",  walltime=cime_pre_init1_time)
+  call t_startstop_valsf("CPL:ESMF_Initialize", walltime=ESMF_Initialize_time)
+  call t_startstop_valsf("CPL:cime_pre_init2",  walltime=cime_pre_init2_time)
 
   call cime_init()
 
   call t_adj_detailf(-1)
-  call t_stopf('CPL:INIT')
+  call t_stopf("CPL:INIT")
 
   cime_init_time_adjustment = cime_pre_init1_time  &
        + ESMF_Initialize_time &
        + cime_pre_init2_time
-  call t_startstop_valsf('CPL:INIT',  walltime=cime_init_time_adjustment, &
+  call t_startstop_valsf("CPL:INIT",  walltime=cime_init_time_adjustment, &
        callcount=0)
 
 #if defined CLMSA
@@ -203,10 +211,12 @@ end subroutine clm_init
 !--------------------------------------------------------------------------
 subroutine clm_advance(ntstep, tstartcycle, mype) bind(C,name="clm_advance")
   use cime_comp_mod, only : cime_run
+#if defined CLMSA
   use enkf_clm_mod, only : cleanup_clm_statevec
   use enkf_clm_mod, only : define_clm_statevec
   use enkf_clm_mod, only : set_clm_statevec
   use enkf_clm_mod, only : use_omi_model
+#endif
   use, intrinsic :: iso_C_binding, only : c_int
 
   implicit none
@@ -242,7 +252,9 @@ subroutine clm_finalize() bind(C,name="clm_finalize")
 
   ! use ESMF,          only : ESMF_Initialize, ESMF_Finalize
   use cime_comp_mod, only : cime_final
+#if defined CLMSA
   use enkf_clm_mod, only : cleanup_clm_statevec
+#endif
 
   implicit none
 

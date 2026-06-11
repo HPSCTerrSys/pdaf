@@ -158,7 +158,7 @@ SUBROUTINE init_pdaf()
 ! ***************************
 
   IF (mype_world == 0) THEN
-     WRITE (*,'(/1x,a)') 'INITIALIZE PDAF - ONLINE MODE'
+     WRITE (*,"(/1x,a)") "INITIALIZE PDAF - ONLINE MODE"
   END IF
 
 ! *** Pointer initialization for ParFlow-type state vector ***
@@ -219,7 +219,7 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: local state dimension array
-  if (mype_model == 0) WRITE(*, '(a,x,a,i5,x,a,x)', advance="no") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  if (mype_model == 0) WRITE(*, "(a,x,a,i5,x,a,x)", advance="no") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: dim_state_p_count in modified:"
   if (mype_model == 0) WRITE(*, *) dim_state_p_count
 #endif
@@ -231,9 +231,9 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: global state dimension
-  WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  WRITE(*, "(a,x,a,i5,x,a,x,i9)") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: my local state vector dimension dim_state_p:", dim_state_p
-  WRITE(*, '(a,x,a,i5,x,a,2x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  WRITE(*, "(a,x,a,i5,x,a,2x,i9)") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: my global state vector dimension dim_state:", dim_state
 #endif
 
@@ -322,7 +322,7 @@ SUBROUTINE init_pdaf()
                     ! or radius for 1/e for exponential weighting
 
 ! *** File names
-  filename = 'output.dat'
+  filename = "output.dat"
 
 ! *** TSMP-PDAF-specific inputs
   !kuw: add smoother support
@@ -409,9 +409,9 @@ SUBROUTINE init_pdaf()
 
 ! *** Check whether initialization of PDAF was successful ***
   IF (status_pdaf /= 0) THEN
-     WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
-          'ERROR ', status_pdaf, &
-          ' in initialization of PDAF - stopping! (PE ', mype_world,')'
+     WRITE (*,"(/1x,a6,i3,a43,i4,a1/)") &
+          "ERROR ", status_pdaf, &
+          " in initialization of PDAF - stopping! (PE ", mype_world,")"
      CALL abort_parallel()
   END IF
 

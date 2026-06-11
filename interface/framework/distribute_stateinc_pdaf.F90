@@ -74,7 +74,7 @@ SUBROUTINE distribute_stateinc_pdaf(dim_p, state_inc_p, new_forecast, steps)
      ! At begin of each forecast phase distribute full increment to
      ! all processes and compute increment per update step.
      ! (E.g., at each time step)
-  ENDIF
+  END IF
 
 
 ! *************************************
