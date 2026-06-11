@@ -28,9 +28,6 @@
 ! Both set the da_tape_phase label (used in the filename), populate the dedicated
 ! DA tape buffers with the current model state, and trigger hist_htapes_wrapup
 ! with da_call=.true. so that only the DA tape is written.
-! Each call produces one time-stamped netCDF file (mfilt=1):
-!   caseid.clm2<inst_suffix>.da_bef.YYYY-MM-DD-SSSSS.nc
-!   caseid.clm2<inst_suffix>.da_aft.YYYY-MM-DD-SSSSS.nc
 !-------------------------------------------------------------------------------------------
 
 #if defined CLMSA
