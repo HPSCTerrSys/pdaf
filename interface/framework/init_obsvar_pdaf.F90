@@ -63,6 +63,8 @@ USE mod_assimilation, &
     ONLY: rms_obs, pressure_obserr_p, clm_obserr_p
 USE mod_parallel_pdaf, &
     ONLY: COMM_filter, MPIerr, npes_filter
+USE mod_parallel_pdaf, ONLY: abort_parallel
+USE mod_read_obs, ONLY: multierr
 #if defined CLMSA
 USE mod_tsmp, &
        ONLY: tag_model_clm, model
@@ -124,6 +126,7 @@ USE mod_tsmp, &
 
 #if defined CLMSA
   if(model == tag_model_clm) then
+   if(multierr==1) then
      meanvar_p = 0
      sum_p = 0
      counter = 0
@@ -139,6 +142,12 @@ USE mod_tsmp, &
      call MPI_Allreduce(meanvar_p, meanvar, 1, MPI_REAL8, MPI_SUM, COMM_filter, MPIerr)
      ! to get the mean dividing the mean observation error by size of processors
      meanvar = meanvar/npes_filter
+   else if(multierr==0) then
+     meanvar = rms_obs * rms_obs
+   else
+     write(*,*) "ERROR: Wrong multierr in init_obsvar_pdaf:", multierr
+     call abort_parallel()
+   end if
   end if
 #endif
 
