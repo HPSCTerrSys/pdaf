@@ -52,6 +52,7 @@
 ! Author: Based on obs_SM_pdafomi.F90 by Yorck Ewerdwalbesloh;
 !         adapted for LST-DA (clmupdate_T)
 
+#ifdef CLMSA
 #ifdef CLMFIVE
 MODULE obs_LST_pdafomi
 
@@ -993,4 +994,5 @@ end subroutine deallocate_obs_LST
 
 
 END MODULE obs_LST_pdafomi
+#endif
 #endif
