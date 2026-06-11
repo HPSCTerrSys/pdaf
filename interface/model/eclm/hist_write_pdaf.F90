@@ -69,7 +69,7 @@ end subroutine clm_hist_write_da
 ! ---------------------------------------------------------------------------
 subroutine clm_hist_write_da_before() bind(C, name="clm_hist_write_da_before")
   implicit none
-  call clm_hist_write_da('bef')
+  call clm_hist_write_da("bef")
 end subroutine clm_hist_write_da_before
 
 ! ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ end subroutine clm_hist_write_da_before
 ! ---------------------------------------------------------------------------
 subroutine clm_hist_write_da_after() bind(C, name="clm_hist_write_da_after")
   implicit none
-  call clm_hist_write_da('aft')
+  call clm_hist_write_da("aft")
 end subroutine clm_hist_write_da_after
 
 #endif
