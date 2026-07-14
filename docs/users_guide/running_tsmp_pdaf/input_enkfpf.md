@@ -681,32 +681,6 @@ errors. Recommendation: Use at least an ensemble size of 4.
 `DA:startreal`: (integer) Added to suffix-numbers for input file
 creation.
 
-### DA:total_steps ###
-
-`DA:total_steps`: (integer) Number of observation Intervals.
-
-Together with `DA:da_interval` and `DA:startcycle`, `DA:total_steps`
-determines the simulation time.
-
-If not set directly, `DA:total_steps` is determined from `PF:simtime`.
-
-`DA:total_steps` must be in sync with timing information from
-component models.
-
-- ParFlow: `DA:total_steps` times `DA:da_interval` should be
-  `TimingInfo.StopTime` minus `TimingInfo.StartTime` (from `*.pfidb`).
-
-- CLM: `DA:total_steps` times `DA:da_interval` should be the number of
-  CLM time steps in `stop_ymd` minus `start_ymd start_tod`. To be
-  safe, CLM's stoptime can be chosen later, such that it will be
-  stopped by the TSMP-PDAF stop alarm.
-
-### DA:tstartcycle ###
-
-`DA:tstartcycle`: (integer) First observation cycle (file) to use.
-
-This should be zero. Other values are currently not supported.
-
 (enkfpf:da:da_interval)=
 ### DA:da_interval ###
 
