@@ -306,7 +306,7 @@ and $x_{update}$ is the state vector after the assimilation.
 
 ### PF:damping_switch_sm ###
 `PF:damping_switch_sm`: (integer) Switch for applying damping factor
-for state updates to soil moisture. Default `1` (damping factor
+for state updates to soil moisture. Default `0` (damping factor not
 applied). Only applies for `PF:gwmasking==2`.
 
 - `0`: State damping not applied to soil moisture
@@ -981,7 +981,7 @@ Default: 0, output turned off.
  |           | `paramupdate_frequency` | 1             |
  |           | `dampingfactor_param`   | 1.0           |
  |           | `dampingfactor_state`   | 1.0           |
- |           | `damping_switch_sm`     | 1             |
+ |           | `damping_switch_sm`     | 0             |
  |           | `aniso_perm_y`          | 1.0           |
  |           | `aniso_perm_z`          | 1.0           |
  |           | `aniso_use_parflow`     | 0             |
