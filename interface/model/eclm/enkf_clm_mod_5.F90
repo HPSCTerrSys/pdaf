@@ -54,6 +54,8 @@ module enkf_clm_mod
   integer, allocatable :: state_clm2pdaf_p(:,:) !Index of column in hydraulic active state vector (nlevsoi,endc-begc+1)
   real(r8),allocatable :: clm_patch2gc(:) ! index array to simplify patch to gridcell averaging
   real(r8),allocatable :: clm_patchwt(:) ! weight array to simplify patch to gridcell averaging
+  integer,allocatable :: clm_lai_patch_idx(:)   ! mode-3: CLM patch index per state slot
+  integer,allocatable :: clm_lai_patch_itype(:) ! mode-3: PFT type per state slot
   integer(c_int),bind(C,name="clmupdate_swc")     :: clmupdate_swc
   integer(c_int),bind(C,name="clmupdate_T")     :: clmupdate_T  ! by hcp
   integer(c_int),bind(C,name="clmupdate_texture") :: clmupdate_texture
@@ -102,6 +104,7 @@ module enkf_clm_mod
   subroutine define_clm_statevec(mype)
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
+    use PatchType  , only : patch
 
     implicit none
 
@@ -111,6 +114,7 @@ module enkf_clm_mod
     integer :: begc, endc   ! per-proc beginning and ending column indices
     integer :: begl, endl   ! per-proc beginning and ending landunit indices
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
+    integer :: i, cc
 
 
     call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
@@ -191,6 +195,35 @@ module enkf_clm_mod
       if (allocated(clm_patchwt)) deallocate(clm_patchwt)
       allocate(clm_patchwt(clm_varsize))
 
+    endif
+
+    ! LAI assimilation mode 3: leafc, livestemc, deadstemc per vegetated patch
+    if(clmupdate_lai==3) then
+      clm_varsize = 0
+      do i=clm_begp,clm_endp
+        if (.not. patch%is_bareground(i)) clm_varsize = clm_varsize + 1
+      end do
+      clm_statevecsize = 3*clm_varsize
+
+      if (allocated(clm_patch2gc)) deallocate(clm_patch2gc)
+      allocate(clm_patch2gc(clm_varsize))
+      if (allocated(clm_patchwt)) deallocate(clm_patchwt)
+      allocate(clm_patchwt(clm_varsize))
+      if (allocated(clm_lai_patch_idx)) deallocate(clm_lai_patch_idx)
+      allocate(clm_lai_patch_idx(clm_varsize))
+      if (allocated(clm_lai_patch_itype)) deallocate(clm_lai_patch_itype)
+      allocate(clm_lai_patch_itype(clm_varsize))
+
+      cc = 1
+      do i=clm_begp,clm_endp
+        if (.not. patch%is_bareground(i)) then
+          clm_lai_patch_idx(cc) = i
+          clm_lai_patch_itype(cc) = patch%itype(i)
+          clm_patch2gc(cc) = real(patch%gridcell(i), r8)
+          clm_patchwt(cc) = patch%wtgcell(i)
+          cc = cc + 1
+        end if
+      end do
     endif
 
     !hcp LST DA
@@ -431,6 +464,10 @@ module enkf_clm_mod
     IF (allocated(state_pdaf2clm_j_p)) deallocate(state_pdaf2clm_j_p)
     IF (allocated(state_clm2pdaf_p)) deallocate(state_clm2pdaf_p)
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
+    IF (allocated(clm_patch2gc)) deallocate(clm_patch2gc)
+    IF (allocated(clm_patchwt)) deallocate(clm_patchwt)
+    IF (allocated(clm_lai_patch_idx)) deallocate(clm_lai_patch_idx)
+    IF (allocated(clm_lai_patch_itype)) deallocate(clm_lai_patch_itype)
     IF (allocated(lai_wtsum2_gc)) deallocate(lai_wtsum2_gc)
     IF (allocated(tlai)) deallocate(tlai)
     IF (allocated(tlai_orig)) deallocate(tlai_orig)
@@ -457,6 +494,8 @@ module enkf_clm_mod
     real(r8), pointer :: pclay(:,:)
     real(r8), pointer :: porgm(:,:)
     real(r8), pointer :: leafc(:)
+    real(r8), pointer :: livestemc(:)
+    real(r8), pointer :: deadstemc(:)
     integer :: i,j,jj,g,c,cc,offset,igc
     integer :: n_c
     character (len = 34) :: fn    !TSMP-PDAF: function name for state vector output
@@ -573,6 +612,29 @@ module enkf_clm_mod
       enddo
       write(*,*) 'DEBUG LAI : statevec ', clm_statevec(:)
       write(*,*) 'DEBUG LAI : patches ', clm_patch2gc(:), clm_patchwt(:)
+    endif
+
+    ! Case 3: leafc, livestemc, deadstemc per vegetated patch; H(x) in obs_op
+    if (clmupdate_lai==3) then
+      livestemc => bgc_vegetation_inst%cnveg_carbonstate_inst%livestemc_patch
+      deadstemc => bgc_vegetation_inst%cnveg_carbonstate_inst%deadstemc_patch
+      cc = 1
+      do j = 1, clm_varsize
+        i = clm_lai_patch_idx(j)
+        clm_statevec(cc) = leafc(i)
+        clm_statevec(cc + clm_varsize) = livestemc(i)
+        clm_statevec(cc + 2*clm_varsize) = deadstemc(i)
+        cc = cc + 1
+      end do
+      if (allocated(clm_statevec_orig)) then
+        clm_statevec_orig(:) = clm_statevec(:)
+      end if
+
+#ifdef PDAF_DEBUG
+      IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble == -1) THEN
+        call write_lai_da_mode3_debug('integrate', tstartcycle + 1, mype)
+      END IF
+#endif
     endif
 
     if (clmupdate_lai_params==1) then
@@ -729,6 +791,86 @@ module enkf_clm_mod
   end subroutine lai_patch_tlai_blend
 
 
+  subroutine write_lai_da_mode3_debug(phase, cycle, mype)
+    use clm_instMod, only : bgc_vegetation_inst, canopystate_inst
+
+    implicit none
+
+    character(len=*), intent(in) :: phase
+    integer, intent(in) :: cycle
+    integer, intent(in) :: mype
+
+    real(r8), pointer :: leafc(:)
+    real(r8), pointer :: livestemc(:)
+    real(r8), pointer :: deadstemc(:)
+    real(r8), pointer :: leafn(:)
+    real(r8), pointer :: livestemn(:)
+    real(r8), pointer :: deadstemn(:)
+
+    character(len=48) :: fn
+    integer :: j, i
+
+    IF(clmt_printensemble /= cycle .AND. clmt_printensemble /= -1) RETURN
+
+    leafc => bgc_vegetation_inst%cnveg_carbonstate_inst%leafc_patch
+    livestemc => bgc_vegetation_inst%cnveg_carbonstate_inst%livestemc_patch
+    deadstemc => bgc_vegetation_inst%cnveg_carbonstate_inst%deadstemc_patch
+    leafn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%leafn_patch
+    livestemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%livestemn_patch
+    deadstemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%deadstemn_patch
+
+    WRITE(fn, "(a,i5.5,a,a,i5.5,a)") "lai_da_", mype, ".", trim(phase), ".", cycle, ".txt"
+    OPEN(unit=71, file=fn, action="write", status="replace")
+    WRITE(71,"(a)") "# mode3 blocks: clm_statevec clm_lai_patch_idx clm_lai_patch_itype clm_patch2gc clm_patchwt"
+    WRITE(71,"(a)") "#            leafc livestemc deadstemc leafn livestemn deadstemn tlai_clm"
+    DO i = 1, clm_statevecsize
+      WRITE(71,"(es22.15)") clm_statevec(i)
+    END DO
+    DO j = 1, clm_varsize
+      WRITE(71,"(i12)") clm_lai_patch_idx(j)
+    END DO
+    DO j = 1, clm_varsize
+      WRITE(71,"(i12)") clm_lai_patch_itype(j)
+    END DO
+    DO j = 1, clm_varsize
+      WRITE(71,"(es22.15)") clm_patch2gc(j)
+    END DO
+    DO j = 1, clm_varsize
+      WRITE(71,"(es22.15)") clm_patchwt(j)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") leafc(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") livestemc(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") deadstemc(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") leafn(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") livestemn(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") deadstemn(i)
+    END DO
+    DO j = 1, clm_varsize
+      i = clm_lai_patch_idx(j)
+      WRITE(71,"(es22.15)") canopystate_inst%tlai_patch(i)
+    END DO
+    CLOSE(71)
+
+  end subroutine write_lai_da_mode3_debug
+
+
   subroutine update_clm(tstartcycle, mype) bind(C,name="update_clm")
     use clm_time_manager  , only : update_DA_nstep
     use shr_kind_mod , only : r8 => shr_kind_r8
@@ -747,11 +889,17 @@ module enkf_clm_mod
     real(r8), pointer :: h2osoi_ice(:,:)
     real(r8), pointer :: leafc(:)         ! leaf carbon of patch
     real(r8), pointer :: leafn(:)         ! leaf nitrogen of patch
+    real(r8), pointer :: livestemc(:)
+    real(r8), pointer :: deadstemc(:)
+    real(r8), pointer :: livestemn(:)
+    real(r8), pointer :: deadstemn(:)
 
     real(r8) :: lai_gc_an
     real(r8) :: lai_gc_fc
 
     integer :: i
+    integer :: j
+    integer :: itype
     integer :: cc
     integer :: offset
     integer :: igc
@@ -785,6 +933,10 @@ module enkf_clm_mod
 
     leafc => bgc_vegetation_inst%cnveg_carbonstate_inst%leafc_patch
     leafn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%leafn_patch
+    livestemc => bgc_vegetation_inst%cnveg_carbonstate_inst%livestemc_patch
+    deadstemc => bgc_vegetation_inst%cnveg_carbonstate_inst%deadstemc_patch
+    livestemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%livestemn_patch
+    deadstemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%deadstemn_patch
 
 
 
@@ -932,6 +1084,40 @@ module enkf_clm_mod
         END IF
 #endif
 
+    endif
+
+    ! Case 3: leafc, livestemc, deadstemc per vegetated patch
+    if(clmupdate_lai==3) then
+      cc = 1
+      do j = 1, clm_varsize
+        i = clm_lai_patch_idx(j)
+        itype = clm_lai_patch_itype(j)
+        leafc(i) = max(0._r8, clm_statevec(cc))
+        livestemc(i) = max(0._r8, clm_statevec(cc + clm_varsize))
+        deadstemc(i) = max(0._r8, clm_statevec(cc + 2*clm_varsize))
+        if (pftcon%leafcn(itype) > 0._r8) then
+          leafn(i) = leafc(i) / pftcon%leafcn(itype)
+        else
+          leafn(i) = 0._r8
+        end if
+        if (pftcon%livewdcn(itype) > 0._r8) then
+          livestemn(i) = livestemc(i) / pftcon%livewdcn(itype)
+        else
+          livestemn(i) = 0._r8
+        end if
+        if (pftcon%deadwdcn(itype) > 0._r8) then
+          deadstemn(i) = deadstemc(i) / pftcon%deadwdcn(itype)
+        else
+          deadstemn(i) = 0._r8
+        end if
+        cc = cc + 1
+      end do
+
+#ifdef PDAF_DEBUG
+      IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble == -1) THEN
+        call write_lai_da_mode3_debug('update', tstartcycle, mype)
+      END IF
+#endif
     endif
 
     if (clmupdate_lai_params==1) then

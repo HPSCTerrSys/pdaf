@@ -49,7 +49,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 !
 ! !USES:
    USE mod_assimilation, &
-        ONLY: obs_index_p, obs_p
+        ONLY: obs_index_p, obs_p, mype_world
 #ifndef CLMSA
 #ifndef OBS_ONLY_CLM
    USE mod_assimilation, ONLY: sc_p
@@ -72,7 +72,9 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
    USE enkf_clm_mod, &
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
    USE enkf_clm_mod, &
-        ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt
+        ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt, &
+               clm_lai_patch_itype, clmt_printensemble
+   USE pftconMod, only : pftcon
 #ifdef CLMFIVE
    USE clm_instMod, &
      ONLY : soilstate_inst
@@ -104,6 +106,7 @@ real, dimension(:), allocatable :: soide !soil depth
 
 real :: tot, avesm, avelai, avesm_temp, Dp
 integer :: nsc
+character(len=48) :: fn_hx
 ! end of hcp
 
 #ifndef PARFLOW_STAND_ALONE
@@ -158,6 +161,43 @@ if (clmupdate_lai==2) then
     m_state_p(i) = avelai ! == lai of gridcell where the observation is
   enddo ! all observations
 endif ! clmupdate_lai == 2 : m_state_p now contains lai for each gridcell with an observation.
+
+! LAI assimilation assuming statevec contains leafc, livestemc, deadstemc
+! for each vegetated patch (bare-ground PFT excluded).
+! H uses fixed slatop/dsladlai from pftcon to compute gridcell LAI.
+if (clmupdate_lai==3) then
+  lpointobs = .false.
+
+  do i = 1, dim_obs_p
+    avelai = 0.0
+    do j = 1, clm_varsize
+      if (obs_index_p(i)==clm_patch2gc(j)) then
+        if (pftcon%dsladlai(clm_lai_patch_itype(j)) > 0.0) then
+          avelai = avelai + clm_patchwt(j) * ((pftcon%slatop(clm_lai_patch_itype(j))&
+            *(exp(state_p(j)*pftcon%dsladlai(clm_lai_patch_itype(j))) - 1.0))&
+            /pftcon%dsladlai(clm_lai_patch_itype(j)))
+        else
+          avelai = avelai + clm_patchwt(j) * (pftcon%slatop(clm_lai_patch_itype(j))*state_p(j))
+        endif
+      endif
+    enddo
+    m_state_p(i) = avelai
+  enddo
+
+#ifdef PDAF_DEBUG
+  IF(clmt_printensemble == step .OR. clmt_printensemble == -1) THEN
+    WRITE(fn_hx, "(a,i5.5,a,i5.5,a)") "lai_hx_", mype_world, "_", step, ".txt"
+    OPEN(unit=72, file=fn_hx, action="write", status="replace")
+    WRITE(72,"(a,i8)") "# mode3 H(x) at PDAF step ", step
+    WRITE(72,"(a,i8)") "# dim_obs_p ", dim_obs_p
+    DO i = 1, dim_obs_p
+      WRITE(72,"(a,i8,a)") "# obs_index ", obs_index_p(i)
+      WRITE(72,"(es22.15)") m_state_p(i)
+    END DO
+    CLOSE(72)
+  END IF
+#endif
+endif ! clmupdate_lai == 3
 
 
 
