@@ -17,6 +17,9 @@ need to be specified when TSMP-PDAF is executed.
 For assimilation of LAI observations into eCLM, see
 [LAI Data Assimilation](laida).
 
+For assimilation of GRACE/GRACE-FO terrestrial water storage
+observations into eCLM, see [GRACE/TWS Data Assimilation](gracetws).
+
 See the Virtual Machine download on webpage
 <https://datapub.fz-juelich.de/slts/tsmp-vm/index.html>.
 

@@ -78,7 +78,7 @@ SUBROUTINE prodRinvA_pdaf(step, dim_obs_p, rank_dim_ens, obs_p, A_p, C_p)
 ! *** INITIALIZATION ***
 ! **********************
 
-  WRITE (*,*) 'TEMPLATE prodrinva_pdaf.F90: Implement multiplication here!'
+  WRITE (*,*) "TEMPLATE prodrinva_pdaf.F90: Implement multiplication here!"
 
   ! *** initialize numbers
   ivariance_obs = 1.0 / rms_obs ** 2

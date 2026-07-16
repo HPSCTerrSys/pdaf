@@ -80,6 +80,7 @@ SUBROUTINE init_pdaf()
         type_winf, limit_winf, &
         type_hyb, hyb_gamma, hyb_kappa, &
         pf_res_type, pf_noise_type, pf_noise_amp
+  USE mod_assimilation, ONLY: use_omi
   USE mod_tsmp, &
         ONLY: pf_statevecsize, nprocpf, tag_model_parflow, tag_model_clm, nprocclm, pf_statevec, pf_statevec_fortran, &
         idx_map_subvec2state, idx_map_subvec2state_fortran, model
@@ -97,6 +98,16 @@ SUBROUTINE init_pdaf()
   USE spmdMod      , only : masterproc
 #endif
   use enkf_clm_mod, only: clm_statevecsize
+
+#ifdef CLMFIVE
+  USE obs_GRACE_pdafomi, ONLY: assim_GRACE
+  USE obs_SM_pdafomi, ONLY: assim_SM
+  !USE obs_ST_pdafomi, ONLY: assim_C
+
+  USE enkf_clm_mod, ONLY: clmupdate_tws
+  USE enkf_clm_mod, ONLY: clmupdate_swc
+!  use enkf_clm_mod, only: clmupdate_C
+#endif
 #endif
   ! kuw end
 
@@ -145,7 +156,7 @@ SUBROUTINE init_pdaf()
 ! ***************************
 
   IF (mype_world == 0) THEN
-     WRITE (*,'(/1x,a)') 'INITIALIZE PDAF - ONLINE MODE'
+     WRITE (*,"(/1x,a)") "INITIALIZE PDAF - ONLINE MODE"
   END IF
 
 ! *** Pointer initialization for ParFlow-type state vector ***
@@ -206,7 +217,7 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: local state dimension array
-  if (mype_model == 0) WRITE(*, '(a,x,a,i5,x,a,x)', advance="no") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  if (mype_model == 0) WRITE(*, "(a,x,a,i5,x,a,x)", advance="no") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: dim_state_p_count in modified:"
   if (mype_model == 0) WRITE(*, *) dim_state_p_count
 #endif
@@ -218,13 +229,27 @@ SUBROUTINE init_pdaf()
 
 #ifdef PDAF_DEBUG
   ! Debug output: global state dimension
-  WRITE(*, '(a,x,a,i5,x,a,x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  WRITE(*, "(a,x,a,i5,x,a,x,i9)") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: my local state vector dimension dim_state_p:", dim_state_p
-  WRITE(*, '(a,x,a,i5,x,a,2x,i9)') "TSMP-PDAF-debug", "mype(w)=", mype_world, &
+  WRITE(*, "(a,x,a,i5,x,a,2x,i9)") "TSMP-PDAF-debug", "mype(w)=", mype_world, &
     "init_pdaf: my global state vector dimension dim_state:", dim_state
 #endif
 
   call MPI_Barrier(MPI_COMM_WORLD, ierror)
+
+! **********************************************************
+! ***   OMI observation types in assimilation            ***
+! **********************************************************
+! Inputs parsed from enkfpf.par are set to OMI switches assim_*
+!
+! Only applies to eCLM simulations
+#if defined CLMSA
+#ifdef CLMFIVE
+  assim_GRACE = (clmupdate_tws /= 0)
+  assim_SM = (clmupdate_swc /= 0)
+  ! assim_C = (clmupdate_C /= 0)
+#endif
+#endif
 
 ! **********************************************************
 ! ***   CONTROL OF PDAF - used in call to PDAF_init      ***
@@ -251,6 +276,8 @@ SUBROUTINE init_pdaf()
   type_trans = 0     ! Type of ensemble transformation (deterministic or random)
   type_sqrt = 0      ! SEIK/LSEIK/ESTKF/LESTKF: Type of transform matrix square-root
   incremental = 0    ! SEIK/LSEIK: (1) to perform incremental updating
+
+  use_omi = .false.    ! Default: Do not use OMI interface
 
   !EnKF
   rank_analysis_enkf = 0  ! EnKF: rank to be considered for inversion of HPH in analysis step
@@ -292,7 +319,7 @@ SUBROUTINE init_pdaf()
                     ! or radius for 1/e for exponential weighting
 
 ! *** File names
-  filename = 'output.dat'
+  filename = "output.dat"
 
 ! *** TSMP-PDAF-specific inputs
   !kuw: add smoother support
@@ -379,9 +406,9 @@ SUBROUTINE init_pdaf()
 
 ! *** Check whether initialization of PDAF was successful ***
   IF (status_pdaf /= 0) THEN
-     WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
-          'ERROR ', status_pdaf, &
-          ' in initialization of PDAF - stopping! (PE ', mype_world,')'
+     WRITE (*,"(/1x,a6,i3,a43,i4,a1/)") &
+          "ERROR ", status_pdaf, &
+          " in initialization of PDAF - stopping! (PE ", mype_world,")"
      CALL abort_parallel()
   END IF
 

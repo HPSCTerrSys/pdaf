@@ -91,9 +91,9 @@ SUBROUTINE init_ens(filtertype, dim_p, dim_ens, state_p, Uinv, &
 
     ! *** Generate full ensemble on filter-PE 0 ***
     IF (mype_filter==0 .and. screen > 0) THEN
-        WRITE (*, '(/9x, a)') 'Initialize state ensemble'
-        WRITE (*, '(9x, a)') '--- read ensemble from files'
-        WRITE (*, '(9x, a, i5)') '--- Ensemble size:  ', dim_ens
+        WRITE (*, "(/9x, a)") "Initialize state ensemble"
+        WRITE (*, "(9x, a)") "--- read ensemble from files"
+        WRITE (*, "(9x, a, i5)") "--- Ensemble size:  ", dim_ens
     END IF
 
 

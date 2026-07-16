@@ -45,7 +45,16 @@ SUBROUTINE assimilate_pdaf()
        ONLY: abort_parallel, mype_world
   USE mod_assimilation, &      ! Variables for assimilation
        ONLY: filtertype
-  ! USE PDAF_interfaces_module   ! Check consistency of PDAF calls
+  USE mod_assimilation, ONLY: use_omi
+#ifdef CLMSA
+#ifdef CLMFIVE
+  USE PDAF_interfaces_module, &   ! Check consistency of PDAF calls
+      ONLY: PDAFomi_assimilate_local, PDAFomi_assimilate_global, &
+      PDAFomi_assimilate_lenkf, PDAF_get_localfilter, &
+      PDAFomi_assimilate_enkf_nondiagR, &
+      PDAFomi_assimilate_global_nondiagR, PDAFomi_assimilate_local_nondiagR
+#endif
+#endif
 
   IMPLICIT NONE
 
@@ -57,6 +66,7 @@ SUBROUTINE assimilate_pdaf()
 
 ! Local variables
   INTEGER :: status_pdaf       ! PDAF status flag
+  INTEGER :: localfilter          ! Flag for domain-localized filter (1=true)
 
 
 ! ! External subroutines
@@ -102,6 +112,19 @@ SUBROUTINE assimilate_pdaf()
 !   EXTERNAL :: likelihood_hyb_l_pdaf, & ! Compute local likelihood awith hybrid weight for an ensemble member
 !        prodRinvA_hyb_l_pdaf            ! Provide product R^-1 A for some matrix A including hybrid weight
 
+  ! Interface to PDAF-OMI for local and global filters
+  EXTERNAL :: init_dim_obs_pdafomi, & ! Get dimension of full obs. vector for PE-local domain
+    obs_op_pdafomi, &              ! Obs. operator for full obs. vector for PE-local domain
+    init_dim_obs_l_pdafomi, &      ! Get dimension of obs. vector for local analysis domain
+    localize_covar_pdafomi, &      ! Apply localization to covariance matrix in LEnKF
+    add_obs_err_pdafomi, &         ! Add obs. error covariance R to HPH in EnKF
+    init_obscovar_pdafomi, &       ! Initialize obs error covar R in EnKF
+    prodRinvA_pdafomi, &           ! Provide product R^-1 A for some matrix A
+    prodRinvA_l_pdafomi            ! Provide product R^-1 A for some local matrix A
+
+
+
+
 ! *** Switch on debug output ***
 ! *** for main process        ***
 #ifdef PDAF_DEBUG
@@ -111,6 +134,45 @@ SUBROUTINE assimilate_pdaf()
 ! *********************************
 ! *** Call assimilation routine ***
 ! *********************************
+
+  OMI: IF (use_omi) THEN
+#ifdef CLMSA
+#ifdef CLMFIVE
+    CALL PDAF_get_localfilter(localfilter)
+
+    IF (localfilter == 1) THEN
+
+      CALL PDAFomi_assimilate_local_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+       init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, init_n_domains_pdaf, &
+       init_dim_l_pdaf, init_dim_obs_l_pdafomi, prodRinvA_l_pdafomi, g2l_state_pdaf, &
+       l2g_state_pdaf, next_observation_pdaf, status_pdaf)
+
+
+    ELSE
+
+      IF (filtertype == 8) THEN
+        ! LEnKF has its own OMI interface routine
+        CALL PDAFomi_assimilate_lenkf(collect_state_pdaf, distribute_state_pdaf, &
+          init_dim_obs_pdafomi, obs_op_pdafomi, prepoststep_ens_pdaf, &
+          localize_covar_pdafomi, next_observation_pdaf, status_pdaf)
+
+      ELSE IF (filtertype == 2) then ! non diagonal R for EnKF has its own callback routine
+        CALL PDAFomi_assimilate_enkf_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+          init_dim_obs_pdafomi, obs_op_pdafomi, add_obs_err_pdafomi, init_obscovar_pdafomi, &
+          prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
+
+      ELSE
+
+        CALL PDAFomi_assimilate_global_nondiagR(collect_state_pdaf, distribute_state_pdaf, &
+          init_dim_obs_pdafomi, obs_op_pdafomi, prodRinvA_pdafomi, &
+          prepoststep_ens_pdaf, next_observation_pdaf, status_pdaf)
+
+      END IF
+
+    END IF
+#endif
+#endif
+  ELSE OMI
 
   ! IF (filtertype == 1) THEN
   !    CALL PDAF_assimilate_seik(collect_state_pdaf, distribute_state_pdaf, &
@@ -182,12 +244,14 @@ SUBROUTINE assimilate_pdaf()
   !         likelihood_pdaf, next_observation_pdaf, status_pdaf)
   END IF
 
+  END IF OMI
+
   ! Check for errors during execution of PDAF
 
   IF (status_pdaf /= 0) THEN
-     WRITE (*,'(/1x,a6,i3,a43,i4,a1/)') &
-          'ERROR ', status_pdaf, &
-          ' in PDAF_assimilate - stopping! (PE ', mype_world,')'
+     WRITE (*,"(/1x,a6,i3,a43,i4,a1/)") &
+          "ERROR ", status_pdaf, &
+          " in PDAF_assimilate - stopping! (PE ", mype_world,")"
      CALL  abort_parallel()
   END IF
 
