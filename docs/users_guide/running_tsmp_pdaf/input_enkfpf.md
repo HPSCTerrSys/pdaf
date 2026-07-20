@@ -311,7 +311,7 @@ and $x_{update}$ is the state vector after the assimilation.
 
 ### PF:damping_switch_sm ###
 `PF:damping_switch_sm`: (integer) Switch for applying damping factor
-for state updates to soil moisture. Default `1` (damping factor
+for state updates to soil moisture. Default `0` (damping factor not
 applied). Only applies for `PF:gwmasking==2`.
 
 - `0`: State damping not applied to soil moisture
@@ -793,32 +793,6 @@ errors. Recommendation: Use at least an ensemble size of 4.
 `DA:startreal`: (integer) Added to suffix-numbers for input file
 creation.
 
-### DA:total_steps ###
-
-`DA:total_steps`: (integer) Number of observation Intervals.
-
-Together with `DA:da_interval` and `DA:startcycle`, `DA:total_steps`
-determines the simulation time.
-
-If not set directly, `DA:total_steps` is determined from `PF:simtime`.
-
-`DA:total_steps` must be in sync with timing information from
-component models.
-
-- ParFlow: `DA:total_steps` times `DA:da_interval` should be
-  `TimingInfo.StopTime` minus `TimingInfo.StartTime` (from `*.pfidb`).
-
-- CLM: `DA:total_steps` times `DA:da_interval` should be the number of
-  CLM time steps in `stop_ymd` minus `start_ymd start_tod`. To be
-  safe, CLM's stoptime can be chosen later, such that it will be
-  stopped by the TSMP-PDAF stop alarm.
-
-### DA:tstartcycle ###
-
-`DA:tstartcycle`: (integer) First observation cycle (file) to use.
-
-This should be zero. Other values are currently not supported.
-
 (enkfpf:da:da_interval)=
 ### DA:da_interval ###
 
@@ -1119,7 +1093,7 @@ Default: 0, output turned off.
  |           | `paramupdate_frequency` | 1             |
  |           | `dampingfactor_param`   | 1.0           |
  |           | `dampingfactor_state`   | 1.0           |
- |           | `damping_switch_sm`     | 1             |
+ |           | `damping_switch_sm`     | 0             |
  |           | `aniso_perm_y`          | 1.0           |
  |           | `aniso_perm_z`          | 1.0           |
  |           | `aniso_use_parflow`     | 0             |
