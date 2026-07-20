@@ -48,6 +48,13 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     use netcdf, only : nf90_put_var
     use netcdf, only : nf90_close
     use enkf_clm_mod, only : clmupdate_swc,clmupdate_texture,clmprint_swc
+    use enkf_clm_mod, only : clmupdate_lai, clmupdate_lai_params
+    use enkf_clm_mod, only : clm_begg, clm_endg, clm_begp, clm_endp
+    use PatchType  , only : patch
+    use pftconMod  , only : pftcon
+    use mpi, only : mpi_gatherv, mpi_real8
+    use spmdmod    , only : npes, mpicom, iam
+    use decompmod  , only : get_proc_total
 
     implicit none
 
@@ -63,7 +70,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     integer :: begc,endc      ! local beg/end columns
     integer :: begp,endp      ! local beg/end pfts
 
-    integer ::   isec, info, jn, jj, ji, g1, jx    ! temporary integer
+    integer ::   isec, info, jn, jj, ji, g1, jx, g, p    ! temporary integer
     real(r8), pointer :: swc(:,:)
     real(r8), pointer :: psand(:,:)
     real(r8), pointer :: pclay(:,:)
@@ -71,13 +78,26 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     ! real(r8), pointer :: clmstate_tmp_local(:)
     ! real(r8), pointer :: clmstate_tmp_global(:)
     real(r8), allocatable :: clmstate_out(:,:,:)
+    real(r8), allocatable :: clmstate_out_2d(:,:)
+    real(r8), allocatable :: slatop_gc(:)
+    real(r8), allocatable :: medlynslope_gc(:)
+    real(r8), allocatable :: param_tmp_global(:)
     integer ,dimension(4) :: dimids
+    integer ,dimension(3) :: dimids_xyt
     integer ,dimension(1) :: il_var_id
-    integer :: il_file_id, ncvarid(4), status
+    integer :: il_file_id, ncvarid(4), slatop_varid, medlynslope_varid, status
     character(len = 300) :: update_filename
     integer :: ndlon,ndlat
+    logical :: write_lai_params
+    integer :: ier
+    integer :: beg
+    integer :: numrecvv(0:npes-1)
+    integer :: displsv(0:npes-1)
+    integer :: numsend
+    integer :: pid
+    integer :: ncells, nlunits, ncols, npfts_local, ncohorts
 
-
+    write_lai_params = (clmupdate_lai == 3 .and. clmupdate_lai_params == 1)
     call get_proc_global(ng=numg,nl=numl,nc=numc,np=nump)
     call get_proc_bounds(begg,endg,begl,endl,begc,endc,begp,endp)
     ! allocate(clmstate_tmp_local(nlevsoi*(-begc+endc)))
@@ -88,6 +108,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
     if (masterproc) then
       ! allocate(clmstate_tmp_global(nlevsoi*numg))
       allocate(clmstate_out(ndlon,ndlat,nlevsoi))
+      if (write_lai_params) allocate(clmstate_out_2d(ndlon,ndlat))
     end if
 
     if(masterproc) then
@@ -98,6 +119,7 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
         status =  nf90_def_dim(il_file_id, "y", ndlat, dimids(2))
         status =  nf90_def_dim(il_file_id, "z", nlevsoi, dimids(3))
         status =  nf90_def_dim(il_file_id, "t", ttot, dimids(4))
+        dimids_xyt = [ dimids(1), dimids(2), dimids(4) ]
 
         if(clmprint_swc==1) then
           status =  nf90_def_var(il_file_id, "swc", NF90_DOUBLE, dimids, ncvarid(1))
@@ -114,12 +136,16 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
           status =  nf90_def_var(il_file_id, "clay", NF90_DOUBLE, dimids, ncvarid(3))
           status =  nf90_def_var(il_file_id, "orgm", NF90_DOUBLE, dimids, ncvarid(4))
         end if
+
+        if (write_lai_params) then
+          status = nf90_def_var(il_file_id, "slatop", NF90_DOUBLE, dimids_xyt, slatop_varid)
+          status = nf90_def_var(il_file_id, "medlynslope", NF90_DOUBLE, dimids_xyt, medlynslope_varid)
+        end if
         status =  nf90_enddef(il_file_id)
       else
         status = nf90_open(update_filename,NF90_WRITE,il_file_id)
       end if
     end if
-
 
     if(clmprint_swc==1) then
       swc  => waterstate_inst%h2osoi_vol_col
@@ -209,9 +235,77 @@ subroutine print_update_clm(ts,ttot) bind(C,name="print_update_clm")
 
     end if
 
+    if (write_lai_params) then
+      allocate(slatop_gc(begg:endg))
+      allocate(medlynslope_gc(begg:endg))
+      slatop_gc(:) = 0._r8
+      medlynslope_gc(:) = 0._r8
+
+      do p = begp, endp
+        g = patch%gridcell(p)
+        if (g >= begg .and. g <= endg) then
+          slatop_gc(g) = slatop_gc(g) + patch%wtgcell(p) * pftcon%slatop(patch%itype(p))
+          medlynslope_gc(g) = medlynslope_gc(g) + patch%wtgcell(p) * pftcon%medlynslope(patch%itype(p))
+        end if
+      end do
+
+      call get_proc_total(iam, ncells, nlunits, ncols, npfts_local, ncohorts)
+      numsend = ncells
+      beg = begg
+      do pid = 0, npes-1
+        call get_proc_total(pid, ncells, nlunits, ncols, npfts_local, ncohorts)
+        numrecvv(pid) = ncells
+      end do
+      displsv(0) = 0
+      do pid = 1, npes-1
+        displsv(pid) = displsv(pid-1) + numrecvv(pid-1)
+      end do
+
+      if (masterproc) allocate(param_tmp_global(1:numg))
+
+      if (masterproc) then
+        call mpi_gatherv(slatop_gc(beg), numsend, MPI_REAL8, &
+             param_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      else
+        call mpi_gatherv(slatop_gc(beg), numsend, MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      end if
+      if (masterproc) then
+        do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out_2d(ji,jj) = param_tmp_global(g1)
+        end do
+        status = nf90_inq_varid(il_file_id, "slatop", slatop_varid)
+        status = nf90_put_var(il_file_id, slatop_varid, clmstate_out_2d(:,:), &
+             start = [1, 1, ts], count = [ndlon, ndlat, 1])
+      end if
+
+      if (masterproc) then
+        call mpi_gatherv(medlynslope_gc(beg), numsend, MPI_REAL8, &
+             param_tmp_global, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      else
+        call mpi_gatherv(medlynslope_gc(beg), numsend, MPI_REAL8, 0._r8, numrecvv, displsv, MPI_REAL8, 0, mpicom, ier)
+      end if
+      if (masterproc) then
+        do g1 = 1, numg
+          ji = mod(ldecomp%gdc2glo(g1)-1,ldomain%ni) + 1
+          jj = (ldecomp%gdc2glo(g1) - 1)/ldomain%ni + 1
+          clmstate_out_2d(ji,jj) = param_tmp_global(g1)
+        end do
+        status = nf90_inq_varid(il_file_id, "medlynslope", medlynslope_varid)
+        status = nf90_put_var(il_file_id, medlynslope_varid, clmstate_out_2d(:,:), &
+             start = [1, 1, ts], count = [ndlon, ndlat, 1])
+      end if
+
+      if (masterproc) deallocate(param_tmp_global)
+      deallocate(slatop_gc)
+      deallocate(medlynslope_gc)
+    end if
+
     if(masterproc) then
       status = nf90_close(il_file_id)
       deallocate(clmstate_out)
+      if (write_lai_params) deallocate(clmstate_out_2d)
       ! deallocate(clmstate_tmp_global)
     end if
 

@@ -83,6 +83,11 @@ module enkf_clm_mod
   logical :: first_cycle = .TRUE.
   logical :: use_omi_model = .FALSE.
 
+  ! Mode-3 state layout: 3 carbon pools; +2 PFT params when update_lai_params=1
+  ! (kmax is private/protected in PhotosynthesisMod and cannot be updated from PDAF)
+  integer, parameter :: lai_mode3_npool = 3
+  integer, parameter :: lai_mode3_nparam = 2   ! slatop, medlynslope
+
 
   ! OMI --> I want to update the observation type after each observation comes in.
   ! problem: the observation type is updated before the update of the assimilation
@@ -144,6 +149,7 @@ module enkf_clm_mod
     use decompMod , only : get_proc_bounds
     use clm_varpar   , only : nlevsoi
     use PatchType  , only : patch
+    use pftconMod  , only : noveg
     use clm_varcon, only: set_averaging_to_zero
     use PDAF_interfaces_module, only: PDAF_reset_dim_p
 
@@ -254,9 +260,12 @@ module enkf_clm_mod
     if(clmupdate_lai==3) then
       clm_varsize = 0
       do i=clm_begp,clm_endp
-        if (.not. patch%is_bareground(i)) clm_varsize = clm_varsize + 1
+        if (patch%itype(i) /= noveg) clm_varsize = clm_varsize + 1
       end do
-      clm_statevecsize = 3*clm_varsize
+      clm_statevecsize = lai_mode3_npool*clm_varsize
+      if (clmupdate_lai_params == 1) then
+        clm_statevecsize = (lai_mode3_npool + lai_mode3_nparam)*clm_varsize
+      end if
 
       if (allocated(clm_patch2gc)) deallocate(clm_patch2gc)
       allocate(clm_patch2gc(clm_varsize))
@@ -269,7 +278,7 @@ module enkf_clm_mod
 
       cc = 1
       do i=clm_begp,clm_endp
-        if (.not. patch%is_bareground(i)) then
+        if (patch%itype(i) /= noveg) then
           clm_lai_patch_idx(cc) = i
           clm_lai_patch_itype(cc) = patch%itype(i)
           clm_patch2gc(cc) = real(patch%gridcell(i), r8)
@@ -328,7 +337,7 @@ module enkf_clm_mod
 #endif
 
     IF (allocated(clm_statevec)) deallocate(clm_statevec)
-    if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0) .or. (clmupdate_tws/=0)) .or. (clmupdate_lai/=0)) then
+    if ((clmupdate_swc/=0) .or. (clmupdate_T/=0) .or. (clmupdate_texture/=0) .or. (clmupdate_tws/=0) .or. (clmupdate_lai/=0)) then
       !hcp added condition
       allocate(clm_statevec(clm_statevecsize))
     end if
@@ -808,7 +817,6 @@ module enkf_clm_mod
     use PatchType  , only : patch
     use pftconMod  , only : pftcon
     use shr_kind_mod, only: r8 => shr_kind_r8
-    use PhotosynthesisMod, only : params_inst
 
     implicit none
     integer,intent(in) :: tstartcycle
@@ -820,7 +828,7 @@ module enkf_clm_mod
     real(r8), pointer :: leafc(:)
     real(r8), pointer :: livestemc(:)
     real(r8), pointer :: deadstemc(:)
-    integer :: i,j,jj,g,c,cc,offset,igc
+    integer :: i, j, jj, g, c, cc, offset, igc, itype
     integer :: n_c
     character (len = 34) :: fn    !TSMP-PDAF: function name for state vector output
     character (len = 34) :: fn2    !TSMP-PDAF: function name for swc output
@@ -954,6 +962,16 @@ module enkf_clm_mod
         clm_statevec_orig(:) = clm_statevec(:)
       end if
 
+      if (clmupdate_lai_params == 1) then
+        cc = 1
+        do j = 1, clm_varsize
+          itype = clm_lai_patch_itype(j)
+          clm_statevec(cc + lai_mode3_npool    *clm_varsize) = pftcon%slatop(itype)
+          clm_statevec(cc + (lai_mode3_npool+1)*clm_varsize) = pftcon%medlynslope(itype)
+          cc = cc + 1
+        end do
+      end if
+
 #ifdef PDAF_DEBUG
       IF(clmt_printensemble == tstartcycle + 1 .OR. clmt_printensemble == -1) THEN
         call write_lai_da_mode3_debug('integrate', tstartcycle + 1, mype)
@@ -961,7 +979,7 @@ module enkf_clm_mod
 #endif
     endif
 
-    if (clmupdate_lai_params==1) then
+    if (clmupdate_lai_params==1 .and. clmupdate_lai==1) then
       cc = 1
       do i=clm_begp,clm_endp
           clm_statevec(cc+1*clm_varsize+offset) = pftcon%slatop(patch%itype(i))
@@ -1426,9 +1444,12 @@ module enkf_clm_mod
     livestemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%livestemn_patch
     deadstemn => bgc_vegetation_inst%cnveg_nitrogenstate_inst%deadstemn_patch
 
-    WRITE(fn, "(a,i5.5,a,a,i5.5,a)") "lai_da_", mype, ".", trim(phase), ".", cycle, ".txt"
+    WRITE(fn, "(a,i5.5,a,a,a,i5.5,a)") "lai_da_", mype, ".", trim(phase), ".", cycle, ".txt"
     OPEN(unit=71, file=fn, action="write", status="replace")
     WRITE(71,"(a)") "# mode3 blocks: clm_statevec clm_lai_patch_idx clm_lai_patch_itype clm_patch2gc clm_patchwt"
+    IF (clmupdate_lai_params == 1) THEN
+      WRITE(71,"(a)") "# param blocks (if update_lai_params=1): slatop medlynslope per slot"
+    END IF
     WRITE(71,"(a)") "#            leafc livestemc deadstemc leafn livestemn deadstemn tlai_clm"
     DO i = 1, clm_statevecsize
       WRITE(71,"(es22.15)") clm_statevec(i)
@@ -1485,7 +1506,6 @@ module enkf_clm_mod
     use clm_instMod, only : bgc_vegetation_inst, canopystate_inst
     use pftconMod       , only : pftcon
     use PatchType       , only : patch
-    use PhotosynthesisMod, only : params_inst
 
     implicit none
 
@@ -1726,6 +1746,16 @@ module enkf_clm_mod
         cc = cc + 1
       end do
 
+      if (clmupdate_lai_params == 1) then
+        cc = 1
+        do j = 1, clm_varsize
+          itype = clm_lai_patch_itype(j)
+          pftcon%slatop(itype) = clm_statevec(cc + lai_mode3_npool    *clm_varsize)
+          pftcon%medlynslope(itype) = clm_statevec(cc + (lai_mode3_npool+1)*clm_varsize)
+          cc = cc + 1
+        end do
+      end if
+
 #ifdef PDAF_DEBUG
       IF(clmt_printensemble == tstartcycle .OR. clmt_printensemble == -1) THEN
         call write_lai_da_mode3_debug('update', tstartcycle, mype)
@@ -1733,7 +1763,7 @@ module enkf_clm_mod
 #endif
     endif
 
-    if (clmupdate_lai_params==1) then
+    if (clmupdate_lai_params==1 .and. clmupdate_lai==1) then
       cc = 1
       do i=clm_begp,clm_endp
         pftcon%slatop(patch%itype(i)) = clm_statevec(cc+1*clm_varsize+offset)

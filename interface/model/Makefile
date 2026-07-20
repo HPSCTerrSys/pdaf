@@ -1,5 +1,6 @@
 BASEDIR = $(PDAF_DIR)
 include $(BASEDIR)/make.arch/$(PDAF_ARCH).h
+FINCS = -I$(BASEDIR)/include -I$(BASEDIR)/build
 ## includes
 
 FFLAGS = -cpp $(TSMPPDAFIMPORTFLAGS)
