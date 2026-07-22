@@ -102,10 +102,12 @@ SUBROUTINE init_pdaf()
 #ifdef CLMFIVE
   USE obs_GRACE_pdafomi, ONLY: assim_GRACE
   USE obs_SM_pdafomi, ONLY: assim_SM
+  USE obs_LST_pdafomi, ONLY: assim_LST
   !USE obs_ST_pdafomi, ONLY: assim_C
 
   USE enkf_clm_mod, ONLY: clmupdate_tws
   USE enkf_clm_mod, ONLY: clmupdate_swc
+  USE enkf_clm_mod, ONLY: clmupdate_T
 !  use enkf_clm_mod, only: clmupdate_C
 #endif
 #endif
@@ -247,6 +249,7 @@ SUBROUTINE init_pdaf()
 #ifdef CLMFIVE
   assim_GRACE = (clmupdate_tws /= 0)
   assim_SM = (clmupdate_swc /= 0)
+  assim_LST = (clmupdate_T /= 0)
   ! assim_C = (clmupdate_C /= 0)
 #endif
 #endif
@@ -350,11 +353,14 @@ SUBROUTINE init_pdaf()
 ! *** Check: multiple eCLM update types without OMI will cause incorrect obs operator ***
   IF (.NOT. use_omi) THEN
     IF (  (clmupdate_swc /= 0 .AND. clmupdate_tws /= 0) &
+    .OR.  (clmupdate_swc /= 0 .AND. clmupdate_T   /= 0) &
+    .OR.  (clmupdate_tws /= 0 .AND. clmupdate_T   /= 0) &
          ) THEN
       IF (mype_world == 0) THEN
         WRITE(*,"(/a)") "ERROR (init_pdaf): Multiple eCLM update types are active but use_omi is not set."
         WRITE(*,"(a,i0)") "       clmupdate_swc = ", clmupdate_swc
         WRITE(*,"(a,i0)") "       clmupdate_tws = ", clmupdate_tws
+        WRITE(*,"(a,i0)") "       clmupdate_T   = ", clmupdate_T
         WRITE(*,"(a)")    "       Multi-observation assimilation requires the OMI interface."
         WRITE(*,"(a)")    "       Add `-use_omi .true.` to the tsmp-pdaf command line execution."
       END IF

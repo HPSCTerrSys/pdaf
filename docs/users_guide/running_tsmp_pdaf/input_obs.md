@@ -290,7 +290,7 @@ means the actual types should be padded with whitespaces (before or
 after). So, currently possible entries would be
 - `"GRACE               "`
 - `"SM                  "`
-
+- `"LST                 "`
 
 (obs:files:clm:multi-scale-da)=
 ### Multi-Scale Data Assimilation observation file variables ###

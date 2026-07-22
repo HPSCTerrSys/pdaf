@@ -15,6 +15,9 @@ COSMO](cos)). Additionally, a control file for the data assimilation
 Furthermore, some command line options ([Command line options](cmd))
 need to be specified when TSMP-PDAF is executed.
 
+For assimilation of land surface temperature observations into CLM, see
+[Land Surface Temperature Data Assimilation](lstda).
+
 For assimilation of GRACE/GRACE-FO terrestrial water storage
 observations into eCLM, see [GRACE/TWS Data Assimilation](gracetws).
 
