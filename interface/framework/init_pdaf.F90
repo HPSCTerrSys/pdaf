@@ -348,6 +348,26 @@ SUBROUTINE init_pdaf()
 
   IF (mype_world == 0) call init_pdaf_info()
 
+#if defined CLMSA
+#ifdef CLMFIVE
+! *** Check: multiple eCLM update types without OMI will cause incorrect obs operator ***
+  IF (.NOT. use_omi) THEN
+    IF (  (clmupdate_swc /= 0 .AND. clmupdate_tws /= 0) &
+         ) THEN
+      IF (mype_world == 0) THEN
+        WRITE(*,"(/a)") "ERROR (init_pdaf): Multiple eCLM update types are active but use_omi is not set."
+        WRITE(*,"(a,i0)") "       clmupdate_swc = ", clmupdate_swc
+        WRITE(*,"(a,i0)") "       clmupdate_tws = ", clmupdate_tws
+        WRITE(*,"(a)")    "       Multi-observation assimilation requires the OMI interface."
+        WRITE(*,"(a)")    "       Add `-use_omi .true.` to the tsmp-pdaf command line execution."
+      END IF
+      CALL abort_parallel()
+    END IF
+  END IF
+#endif
+#endif
+
+
 ! *** Switch on debug output ***
 ! *** for main process        ***
 #ifdef PDAF_DEBUG
