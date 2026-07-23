@@ -49,7 +49,8 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 !
 ! !USES:
    USE mod_assimilation, &
-        ONLY: obs_index_p, obs_p, mype_world
+        ONLY: obs_index_p, obs_p
+   USE mod_parallel_pdaf, ONLY: mype_world
 #ifndef CLMSA
 #ifndef OBS_ONLY_CLM
    USE mod_assimilation, ONLY: sc_p
@@ -73,7 +74,8 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
    USE enkf_clm_mod, &
         ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt, &
-               clm_lai_patch_itype, clmt_printensemble
+               clm_lai_patch_itype, clmt_printensemble, clmupdate_lai_params, &
+               lai_mode3_npool
    USE pftconMod, only : pftcon
 #ifdef CLMFIVE
    USE clm_instMod, &
@@ -104,7 +106,7 @@ real, dimension(:), allocatable :: soide !soil depth
 ! soide=(/0.d0,  0.02d0,  0.05d0,  0.1d0,  0.17d0, 0.3d0,  0.5d0, &
 !                0.8d0,   1.3d0,   2.d0,  3.d0, 5.d0,  12.d0/) !soil depth
 
-real :: tot, avesm, avelai, avesm_temp, Dp
+real :: tot, avesm, avelai, avesm_temp, Dp, slatop_val
 integer :: nsc
 character(len=48) :: fn_hx
 ! end of hcp
@@ -164,7 +166,7 @@ endif ! clmupdate_lai == 2 : m_state_p now contains lai for each gridcell with a
 
 ! LAI assimilation assuming statevec contains leafc, livestemc, deadstemc
 ! for each vegetated patch (bare-ground PFT excluded).
-! H uses fixed slatop/dsladlai from pftcon to compute gridcell LAI.
+! H uses slatop from state (update_lai_params=1) or pftcon; dsladlai from pftcon.
 if (clmupdate_lai==3) then
   lpointobs = .false.
 
@@ -172,12 +174,17 @@ if (clmupdate_lai==3) then
     avelai = 0.0
     do j = 1, clm_varsize
       if (obs_index_p(i)==clm_patch2gc(j)) then
+        if (clmupdate_lai_params == 1) then
+          slatop_val = state_p(j + lai_mode3_npool*clm_varsize)
+        else
+          slatop_val = pftcon%slatop(clm_lai_patch_itype(j))
+        end if
         if (pftcon%dsladlai(clm_lai_patch_itype(j)) > 0.0) then
-          avelai = avelai + clm_patchwt(j) * ((pftcon%slatop(clm_lai_patch_itype(j))&
+          avelai = avelai + clm_patchwt(j) * ((slatop_val&
             *(exp(state_p(j)*pftcon%dsladlai(clm_lai_patch_itype(j))) - 1.0))&
             /pftcon%dsladlai(clm_lai_patch_itype(j)))
         else
-          avelai = avelai + clm_patchwt(j) * (pftcon%slatop(clm_lai_patch_itype(j))*state_p(j))
+          avelai = avelai + clm_patchwt(j) * (slatop_val*state_p(j))
         endif
       endif
     enddo
