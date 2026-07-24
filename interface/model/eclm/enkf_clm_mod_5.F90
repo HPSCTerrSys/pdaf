@@ -2178,25 +2178,11 @@ module enkf_clm_mod
           cycle
        end if
 
-       ! General (non-degenerate) domain: map each observation's
-       ! lon/lat offset to a grid index.  The observation may sit
-       ! exactly on the domain origin (offset == 0), in which case the
-       ! index is pinned to 1 rather than computed via ceiling.
-       if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
-         ((lat_clmobs(i) + 90) - minlat) /= 0) then
-          longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1
-          latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat)) !+ 1
-        else if(((lon_clmobs(i) + 180) - minlon) == 0 .and. &
-                ((lat_clmobs(i) + 90) - minlat) == 0) then
-          longxy_obs(i) = 1
-          latixy_obs(i) = 1
-       else if(((lon_clmobs(i) + 180) - minlon) == 0) then
-          longxy_obs(i) = 1
-          latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat))
-       else if(((lat_clmobs(i) + 90) - minlat) == 0) then
-          longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
-          latixy_obs(i) = 1
-       end if
+       ! General (non-degenerate) domain: map each observation's lon/lat offset to a
+       ! grid index.  max(1, ceiling(...)) handles the edge case where the observation
+       ! sits exactly on the domain minimum (offset == 0), for which ceiling returns 0.
+       longxy_obs(i) = max(1, ceiling(((lon_clmobs(i) + 180) - minlon) * ni / dlon_span))
+       latixy_obs(i) = max(1, ceiling(((lat_clmobs(i) + 90 ) - minlat) * nj / dlat_span))
     end do
 
   end subroutine domain_def_clm
