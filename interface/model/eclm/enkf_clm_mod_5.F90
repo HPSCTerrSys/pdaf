@@ -2102,6 +2102,9 @@ module enkf_clm_mod
     integer :: ncols, counter
     integer :: npatches, ncohorts
     real :: minlon, minlat, maxlon, maxlat
+    real(r8) :: dlon_span
+    real(r8) :: dlat_span
+    real(r8), parameter :: tol_degen = 1.0e-6_r8
     real(r8), pointer :: lon(:)
     real(r8), pointer :: lat(:)
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
@@ -2161,12 +2164,39 @@ module enkf_clm_mod
     minlat = MINVAL(lat(:) + 90)
     maxlat = MAXVAL(lat(:) + 90)
 
+    ! Degenerate horizontal domain (e.g. 1x1 grid): min==max => zero span;
+    ! Avoid dividing by (maxlon-minlon) or (maxlat-minlat).
+    dlon_span = maxval(lon(:) + 180._r8) - minval(lon(:) + 180._r8)
+    dlat_span = maxval(lat(:) + 90._r8) - minval(lat(:) + 90._r8)
+
     if(allocated(longxy_obs)) deallocate(longxy_obs)
     allocate(longxy_obs(dim_obs))
     if(allocated(latixy_obs)) deallocate(latixy_obs)
     allocate(latixy_obs(dim_obs))
 
     do i = 1, dim_obs
+       ! Degenerate domain cases: one or both horizontal domain spans
+       ! are below tolerance. A `cycle` after each branch skips the
+       ! per-observation position logic below, which would divide by
+       ! zero on a zero-span domain.
+       if (dlon_span <= tol_degen .and. dlat_span <= tol_degen) then
+          longxy_obs(i) = 1
+          latixy_obs(i) = 1
+          cycle
+       else if (dlon_span <= tol_degen) then
+          longxy_obs(i) = 1
+          latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat))
+          cycle
+       else if (dlat_span <= tol_degen) then
+          longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
+          latixy_obs(i) = 1
+          cycle
+       end if
+
+       ! General (non-degenerate) domain: map each observation's
+       ! lon/lat offset to a grid index.  The observation may sit
+       ! exactly on the domain origin (offset == 0), in which case the
+       ! index is pinned to 1 rather than computed via ceiling.
        if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
          ((lat_clmobs(i) + 90) - minlat) /= 0) then
           longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1
