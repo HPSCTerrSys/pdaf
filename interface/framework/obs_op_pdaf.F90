@@ -50,7 +50,6 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 ! !USES:
    USE mod_assimilation, &
         ONLY: obs_index_p, obs_p
-   USE mod_parallel_pdaf, ONLY: mype_world
 #ifndef CLMSA
 #ifndef OBS_ONLY_CLM
    USE mod_assimilation, ONLY: sc_p
@@ -58,6 +57,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #endif
    USE mod_assimilation, ONLY: obs_interp_indices_p
    USE mod_assimilation, ONLY: obs_interp_weights_p
+   USE mod_parallel_pdaf, ONLY: mype_world
    use mod_tsmp, &
        only: obs_interp_switch, &
        soilay, &
@@ -72,10 +72,15 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #if defined CLMSA
    USE enkf_clm_mod, &
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
-   USE enkf_clm_mod, &
-        ONLY : clmupdate_lai, clm_begp, clm_endp, clm_patch2gc, clm_patchwt, &
-               clm_lai_patch_itype, clmt_printensemble, clmupdate_lai_params, &
-               lai_mode3_npool
+   USE enkf_clm_mod, ONLY : clmupdate_lai
+   USE enkf_clm_mod, ONLY : clm_begp
+   USE enkf_clm_mod, ONLY : clm_endp
+   USE enkf_clm_mod, ONLY : clm_patch2gc
+   USE enkf_clm_mod, ONLY : clm_patchwt
+   USE enkf_clm_mod, ONLY : clm_lai_patch_itype
+   USE enkf_clm_mod, ONLY : clmt_printensemble
+   USE enkf_clm_mod, ONLY : clmupdate_lai_params
+   USE enkf_clm_mod, ONLY : lai_mode3_npool
    USE pftconMod, only : pftcon
 #ifdef CLMFIVE
    USE clm_instMod, &
@@ -106,7 +111,8 @@ real, dimension(:), allocatable :: soide !soil depth
 ! soide=(/0.d0,  0.02d0,  0.05d0,  0.1d0,  0.17d0, 0.3d0,  0.5d0, &
 !                0.8d0,   1.3d0,   2.d0,  3.d0, 5.d0,  12.d0/) !soil depth
 
-real :: tot, avesm, avelai, avesm_temp, Dp, slatop_val
+real :: tot, avesm, avesm_temp, Dp
+real :: avelai, slatop_val
 integer :: nsc
 character(len=48) :: fn_hx
 ! end of hcp
