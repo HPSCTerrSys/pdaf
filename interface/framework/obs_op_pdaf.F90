@@ -57,6 +57,7 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #endif
    USE mod_assimilation, ONLY: obs_interp_indices_p
    USE mod_assimilation, ONLY: obs_interp_weights_p
+   USE mod_parallel_pdaf, ONLY: mype_world
    use mod_tsmp, &
        only: obs_interp_switch, &
        soilay, &
@@ -71,6 +72,16 @@ SUBROUTINE obs_op_pdaf(step, dim_p, dim_obs_p, state_p, m_state_p)
 #if defined CLMSA
    USE enkf_clm_mod, &
         ONLY : clm_varsize, clm_paramarr, clmupdate_swc, clmupdate_T, clmcrns_bd
+   USE enkf_clm_mod, ONLY : clmupdate_lai
+   USE enkf_clm_mod, ONLY : clm_begp
+   USE enkf_clm_mod, ONLY : clm_endp
+   USE enkf_clm_mod, ONLY : clm_patch2gc
+   USE enkf_clm_mod, ONLY : clm_patchwt
+   USE enkf_clm_mod, ONLY : clm_lai_patch_itype
+   USE enkf_clm_mod, ONLY : clmt_printensemble
+   USE enkf_clm_mod, ONLY : clmupdate_lai_params
+   USE enkf_clm_mod, ONLY : lai_mode3_npool
+   USE pftconMod, only : pftcon
 #ifdef CLMFIVE
    USE clm_instMod, &
      ONLY : soilstate_inst
@@ -101,7 +112,9 @@ real, dimension(:), allocatable :: soide !soil depth
 !                0.8d0,   1.3d0,   2.d0,  3.d0, 5.d0,  12.d0/) !soil depth
 
 real :: tot, avesm, avesm_temp, Dp
+real :: avelai, slatop_val
 integer :: nsc
+character(len=48) :: fn_hx
 ! end of hcp
 
 #ifndef PARFLOW_STAND_ALONE
@@ -127,6 +140,79 @@ REAL :: sum_r1, sum_r2, sum_r3, totw
 
 ! If no special observation operator is compiled, use point observations
 lpointobs = .true.
+
+! LAI assimilation assuming statevec contains leafc, slatop, dsladlai for each patch
+! two component op to get to LAI obs
+! 1 calculate tlai from statevec per patch
+! state_p contains leafc of varsize then slatop of varsize and then dsadlai of varsize
+! 2 average patches according to weight per gridcell
+if (clmupdate_lai==2) then
+  lpointobs = .false. ! disable general obs_op
+  ! Note: This fails if there ever is an observation pointing to a gridcell with 0 patches
+  ! this should not happen, but would cause div by zero.
+
+  do i = 1, dim_obs_p ! loop over all observations
+    avelai = 0.0 ! use avelai as grid cell average collecter
+    do j = 1, clm_endp-clm_begp+1 ! loop over all patches
+      write(*,*) 'DEBUG LAI : obs_index_p(i), clm_patch2gc(j)', obs_index_p(i), clm_patch2gc(j)
+      if (obs_index_p(i)==clm_patch2gc(j)) then
+        write(*,*) 'DEBUG LAI : state dsladlai', state_p(j+2*clm_varsize)
+        if (state_p(j+2*clm_varsize)>0.0) then
+          avelai = avelai + clm_patchwt(j) * ((state_p(j+1*clm_varsize)&
+            *(exp(state_p(j)*state_p(j+2*clm_varsize)) - 1.0))/state_p(j+2*clm_varsize)) ! formula for tlai from leafc
+        else
+          avelai = avelai +  clm_patchwt(j) *(state_p(j+1*clm_varsize)*state_p(j)) ! 2nd formula
+        endif ! dsladlai decider
+      endif ! this patch is in gridcell of observation
+      write(*,*) 'DEBUG LAI : average ', avelai
+    enddo ! all patches for obs checked
+    m_state_p(i) = avelai ! == lai of gridcell where the observation is
+  enddo ! all observations
+endif ! clmupdate_lai == 2 : m_state_p now contains lai for each gridcell with an observation.
+
+! LAI assimilation assuming statevec contains leafc, livestemc, deadstemc
+! for each vegetated patch (bare-ground PFT excluded).
+! H uses slatop from state (update_lai_params=1) or pftcon; dsladlai from pftcon.
+if (clmupdate_lai==3) then
+  lpointobs = .false.
+
+  do i = 1, dim_obs_p
+    avelai = 0.0
+    do j = 1, clm_varsize
+      if (obs_index_p(i)==clm_patch2gc(j)) then
+        if (clmupdate_lai_params == 1) then
+          slatop_val = state_p(j + lai_mode3_npool*clm_varsize)
+        else
+          slatop_val = pftcon%slatop(clm_lai_patch_itype(j))
+        end if
+        if (pftcon%dsladlai(clm_lai_patch_itype(j)) > 0.0) then
+          avelai = avelai + clm_patchwt(j) * ((slatop_val&
+            *(exp(state_p(j)*pftcon%dsladlai(clm_lai_patch_itype(j))) - 1.0))&
+            /pftcon%dsladlai(clm_lai_patch_itype(j)))
+        else
+          avelai = avelai + clm_patchwt(j) * (slatop_val*state_p(j))
+        endif
+      endif
+    enddo
+    m_state_p(i) = avelai
+  enddo
+
+#ifdef PDAF_DEBUG
+  IF(clmt_printensemble == step .OR. clmt_printensemble == -1) THEN
+    WRITE(fn_hx, "(a,i5.5,a,i5.5,a)") "lai_hx_", mype_world, "_", step, ".txt"
+    OPEN(unit=72, file=fn_hx, action="write", status="replace")
+    WRITE(72,"(a,i8)") "# mode3 H(x) at PDAF step ", step
+    WRITE(72,"(a,i8)") "# dim_obs_p ", dim_obs_p
+    DO i = 1, dim_obs_p
+      WRITE(72,"(a,i8,a)") "# obs_index ", obs_index_p(i)
+      WRITE(72,"(es22.15)") m_state_p(i)
+    END DO
+    CLOSE(72)
+  END IF
+#endif
+endif ! clmupdate_lai == 3
+
+
 
 #if defined CLMSA
 if (clmupdate_T==1) then

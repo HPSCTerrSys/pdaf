@@ -14,6 +14,8 @@ COSMO](cos)). Additionally, a control file for the data assimilation
 ([Observation files](obs)) need to be present in the run directory.
 Furthermore, some command line options ([Command line options](cmd))
 need to be specified when TSMP-PDAF is executed.
+For assimilation of LAI observations into eCLM, see
+[LAI Data Assimilation](laida).
 
 For assimilation of GRACE/GRACE-FO terrestrial water storage
 observations into eCLM, see [GRACE/TWS Data Assimilation](gracetws).

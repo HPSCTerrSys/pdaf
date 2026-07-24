@@ -198,7 +198,7 @@ void integrate_tsmp() {
 void update_tsmp(){
 
 #if defined CLMSA
-  if((model == tag_model_clm) && ((clmupdate_swc != 0) || (clmupdate_T != 0) || (clmupdate_tws != 0))){
+  if((model == tag_model_clm) && ((clmupdate_swc != 0) || (clmupdate_T != 0) || (clmupdate_tws != 0) || (clmupdate_lai != 0))){
     update_clm(&tstartcycle, &mype_world);
 
 #ifndef CLMFIVE
@@ -208,6 +208,11 @@ void update_tsmp(){
 #endif
 
 #ifdef CLMFIVE
+    if((clmupdate_lai == 3 && clmupdate_lai_params == 1)){
+      /* Printing update could be implemented for SM-DA as well */
+      /* clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2 || */
+      print_update_clm(&tcycle, &total_steps);
+    }
     /* SWC: enkfpf.par input switch "CLM:print_inc" */
     if ((clmupdate_tws != 0) || (clmupdate_swc != 0 && clmprint_inc !=0)){
       print_inc_clm();

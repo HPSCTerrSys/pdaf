@@ -22,6 +22,7 @@ parts:
       - file: users_guide/running_tsmp_pdaf/input_enkfpf
       - file: users_guide/running_tsmp_pdaf/tsmp_pdaf_omi
       - file: users_guide/running_tsmp_pdaf/grace_tws_da
+      - file: users_guide/running_tsmp_pdaf/lai_da
 
     - file: users_guide/misc/README
       title: Misc

@@ -54,6 +54,9 @@ nprocs      =
 update_swc  =
 update_texture  =
 update_T  =
+update_lai  =
+update_lai_params =
+update_lai_incr_w =
 print_swc   =
 print_et   =
 print_inc   =
@@ -498,6 +501,89 @@ Currently only CLM3.5
 -  0: No update of ground and vegetation temperature
 
 -  1: Update of ground and vegetation temperature
+
+(enkfpf:clm:update_lai)=
+### CLM:update_lai ###
+
+`CLM:update_lai`: (integer) Flag for assimilation of Leaf Area Index
+(LAI) in eCLM. Default: `0`.
+
+Only available for eCLM with Biogeochemical Cycling (BGC) enabled.
+See [LAI Data Assimilation](laida) for algorithmic details.
+
+-  0: No LAI assimilation.
+
+-  1: Gridcell-averaged LAI state vector. One LAI value per grid cell
+   is stored in the state vector, computed as a patch-weight-averaged
+   LAI derived from per-patch leaf carbon (`leafc`) and the specific
+   leaf area parameters (`slatop`, `dsladlai`) using the formula of
+   Thornton and Zimmermann (2007, J. Clim., 20, 3902–3923). After the
+   PDAF update, the updated gridcell LAI is back-transformed to
+   per-patch `leafc` and `leafn`.
+
+-  2: (WARNING: This option is not tested. Rather use option 3 for
+   patch-level state vector) Patch-level state vector. `leafc`,
+   `slatop`, and `dsladlai` are stored for every patch (state vector
+   size: 3 × number of patches).  The LAI-to-observation mapping is
+   computed inside the observation operator `obs_op_pdaf`. The
+   `slatop` and `dsladlai` portions of the state vector can optionally
+   be estimated jointly; set `CLM:update_lai_params=2` to write them
+   back to eCLM after the update.
+
+-  3: Carbon-pool state vector. `leafc`, `livestemc`, and `deadstemc`
+   are stored for every vegetated patch (bare-ground PFT excluded;
+   state vector size: 3 × number of vegetated patches). The
+   observation operator `obs_op_pdaf` maps the `leafc` block to
+   observed gridcell LAI using the Thornton and Zimmermann (2007)
+   formula. After the PDAF update, the three carbon pools are written
+   back to eCLM and the corresponding nitrogen pools (`leafn`,
+   `livestemn`, `deadstemn`) are updated consistently using PFT C:N
+   ratios. Set `CLM:update_lai_params=1` to also estimate `slatop` and
+   `medlynslope` jointly.
+
+(enkfpf:clm:update_lai_params)=
+### CLM:update_lai_params ###
+
+`CLM:update_lai_params`: (integer) Flag for joint
+state–parameter estimation of specific leaf area parameters alongside
+LAI. Only takes effect if `CLM:update_lai` is non-zero. Default: `0`.
+
+-  0: No parameter estimation.
+
+-  1: For `CLM:update_lai=1`: appends `slatop` (specific leaf area at
+   the canopy top) for each patch to the state vector as an additional
+   parameter block.
+
+   For `CLM:update_lai=3`: appends `slatop` and `medlynslope`
+   (Medlyn stomatal slope) per vegetated patch as two additional
+   parameter blocks (blocks 4 and 5). Both parameters are read from
+   the PFT constants before the PDAF update and written back after.
+   The observation operator uses the in-state `slatop` values for the
+   LAI forward mapping.
+
+-  2: Only for `CLM:update_lai=2`. After the PDAF update, writes the
+   updated `slatop` and `dsladlai` values from the state vector back to
+   the eCLM plant functional type constants.
+
+(enkfpf:clm:update_lai_incr_w)=
+### CLM:update_lai_incr_w ###
+
+`CLM:update_lai_incr_w`: (real) Weight of the **additive** LAI increment when mapping the gridcell analysis back to patches. Only used if `CLM:update_lai` is non-zero. Default: `1.0`. 
+
+After the EnKF update, the gridcell-mean LAI increment is applied to each patch in two ways and then blended:
+
+- **Additive** (weight `w`): each patch receives the same increment
+  $\Delta = \text{LAI}_\text{a} - \text{LAI}_\text{f}$:
+  $\text{LAI}'(p) = \text{LAI}_\text{f}(p) + \Delta$.
+
+- **Multiplicative** (weight $1-w$): each patch is scaled by the gridcell analysis-to-forecast ratio:
+  $\text{LAI}'(p) = \text{LAI}_\text{f}(p)\,\text{LAI}_\text{a} / \text{LAI}_\text{f}$.
+
+The final patch LAI is
+$\text{LAI}'(p) = w\,\text{LAI}'_\text{add}(p) + (1-w)\,\text{LAI}'_\text{mult}(p)$.
+
+-  `1.0`: purely additive.
+-  `0.0`: purely multiplicative.
 
 ### CLM:print_swc ###
 
@@ -998,6 +1084,9 @@ Default: 0, output turned off.
  |           | `problemname`           | \-            |
  |           | `nprocs`                | 0             |
  |           | `update_swc`            | 1             |
+ |           | `update_lai`            | 0             |
+ |           | `update_lai_params`     | 0             |
+ |           | `update_lai_incr_w`     | 1.0           |
  |           | `print_swc`             | 0             |
  |           | `print_et`              | 0             |
  |           | `print_inc`             | 0             |
