@@ -2091,8 +2091,8 @@ module enkf_clm_mod
     use decompMod, only : get_proc_total, get_proc_bounds, ldecomp
 
     implicit none
-    real, intent(in) :: lon_clmobs(:)
-    real, intent(in) :: lat_clmobs(:)
+    real(r8), intent(in) :: lon_clmobs(:)
+    real(r8), intent(in) :: lat_clmobs(:)
     integer, intent(in) :: dim_obs
     integer, allocatable, intent(inout) :: longxy(:)
     integer, allocatable, intent(inout) :: latixy(:)
@@ -2101,7 +2101,10 @@ module enkf_clm_mod
     integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits
     integer :: ncols, counter
     integer :: npatches, ncohorts
-    real :: minlon, minlat, maxlon, maxlat
+    real(r8) :: minlon
+    real(r8) :: minlat
+    real(r8) :: maxlon
+    real(r8) :: maxlat
     real(r8) :: dlon_span
     real(r8) :: dlat_span
     real(r8), parameter :: tol_degen = 1.0e-6_r8
