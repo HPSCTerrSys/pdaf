@@ -2759,7 +2759,6 @@ module enkf_clm_mod
           latixy_obs(i) = 1
        end if
     end do
-
     ! deallocate temporary arrays
     !deallocate(longxy)
     !deallocate(latixy)
