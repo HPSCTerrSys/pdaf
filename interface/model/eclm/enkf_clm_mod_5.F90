@@ -343,8 +343,10 @@ module enkf_clm_mod
     end if
 
 
-    ! Allocate statevector-duplicate for saving the forecast state used when
-    ! mapping analysis increments back to CLM (SWC DA column-mean mode or LAI DA mode).
+    ! Allocate statevector-duplicate for saving the forecast state
+    ! vector. The forecast values may then be used during the
+    ! update-phase, when mapping analysis increments back to CLM (used
+    ! in SWC DA column-mean mode or LAI DA mode).
     IF (allocated(clm_statevec_orig)) deallocate(clm_statevec_orig)
     if ( (clmupdate_swc/=0 .and. clmstatevec_colmean/=0) .or. clmupdate_tws/=0  .or. (clmupdate_lai/=0)) then
       allocate(clm_statevec_orig(clm_statevecsize))
