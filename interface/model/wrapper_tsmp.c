@@ -208,8 +208,9 @@ void update_tsmp(){
 #endif
 
 #ifdef CLMFIVE
-    if(clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2 ||
-       (clmupdate_lai == 3 && clmupdate_lai_params == 1)){
+    if((clmupdate_lai == 3 && clmupdate_lai_params == 1)){
+      /* Printing update could be implemented for SM-DA as well */
+      /* clmprint_swc == 1 || clmupdate_texture == 1 || clmupdate_texture == 2 || */
       print_update_clm(&tcycle, &total_steps);
     }
     /* SWC: enkfpf.par input switch "CLM:print_inc" */
