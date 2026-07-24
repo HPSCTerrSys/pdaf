@@ -17,8 +17,9 @@ LAI DA is controlled by three parameters in `enkfpf.par`:
 - [`CLM:update_lai_params`](enkfpf:clm:update_lai_params) — enables
   joint estimation of specific leaf area parameters alongside LAI.
 - [`CLM:update_lai_incr_w`](enkfpf:clm:update_lai_incr_w) — blend between
-  additive and multiplicative patch LAI increments.
+  additive and multiplicative patch LAI increments (options 1 and 2 only).
 
+(laida:background)=
 ## Background ##
 
 eCLM with BGC does not carry LAI as an independent prognostic
@@ -55,14 +56,17 @@ itself.
 The choice of [`CLM:update_lai`](enkfpf:clm:update_lai) determines the
 state vector layout:
 
-| `update_lai` | `update_lai_params` | State vector contents | Size |
-|:---:|:---:|---|---|
-| 1 | 0 | Gridcell-averaged LAI | $N_g$ |
-| 1 | 1 | Gridcell-averaged LAI + `slatop` per patch | $N_g + N_p$ |
-| 2 | 0 | `leafc`, `slatop`, `dsladlai` per patch | $3\,N_p$ |
-| 2 | 2 | `leafc`, `slatop`, `dsladlai` per patch (parameters updated after assimilation) | $3\,N_p$ |
+| `update_lai` | `update_lai_params` | State vector contents                                                           | Size        |
+|:------------:|:-------------------:|---------------------------------------------------------------------------------|-------------|
+|      1       |          0          | Gridcell-averaged LAI                                                           | $N_g$       |
+|      1       |          1          | Gridcell-averaged LAI + `slatop` per patch                                      | $N_g + N_p$ |
+|      2       |          0          | `leafc`, `slatop`, `dsladlai` per patch                                         | $3\,N_p$    |
+|      2       |          2          | `leafc`, `slatop`, `dsladlai` per patch (parameters updated after assimilation) | $3\,N_p$    |
+|      3       |          0          | `leafc`, `livestemc`, `deadstemc` per vegetated patch                           | $3\,N_v$    |
+|      3       |          1          | `leafc`, `livestemc`, `deadstemc` + `slatop`, `medlynslope` per vegetated patch | $5\,N_v$    |
 
-$N_g$ = number of local grid cells, $N_p$ = number of local patches.
+$N_g$ = number of local grid cells, $N_p$ = number of local patches,
+$N_v$ = number of local vegetated patches (non-bare-ground PFTs).
 
 ## Option 1 — Gridcell LAI State Vector ##
 
@@ -108,6 +112,10 @@ the LAI inversion in step 2.
 
 ## Option 2 — Patch-Level State Vector with Observation Operator ##
 
+:::{warning}
+This option is not tested. Use [Option 3](laida:option3) for patch-level state vectors instead.
+:::
+
 With `CLM:update_lai=2`, the state vector holds `leafc`, `slatop`,
 and `dsladlai` for every patch in three consecutive blocks:
 
@@ -136,6 +144,60 @@ After the PDAF update:
   read back from blocks 2 and 3 and written to the PFT constants.
   The diagnostic LAI update is then left to eCLM's own phenology
   routines.
+
+(laida:option3)=
+## Option 3 — Carbon-Pool State Vector ##
+
+With `CLM:update_lai=3`, the state vector holds three carbon pools for
+every vegetated patch (bare-ground PFT excluded):
+
+$$
+\mathbf{x} = \bigl[\underbrace{C_\ell(1),\ldots,C_\ell(N_v)}_{\text{block 1: leafc}},
+              \underbrace{C_s(1),\ldots,C_s(N_v)}_{\text{block 2: livestemc}},
+              \underbrace{C_d(1),\ldots,C_d(N_v)}_{\text{block 3: deadstemc}}\bigr]
+$$
+
+where $C_\ell$ = `leafc`, $C_s$ = `livestemc`, $C_d$ = `deadstemc`.
+
+The observation operator (`obs_op_pdaf`) maps this state to observed
+gridcell LAI using fixed `dsladlai` from the PFT constants and `slatop`
+either from the state vector (when `update_lai_params=1`) or from the PFT
+constants:
+
+$$
+\mathcal{H}(\mathbf{x})_i = \sum_{p:\,g(p)=g_i} w_p\,\text{LAI}(p)
+$$
+
+with $\text{LAI}(p)$ computed from $C_\ell(p)$ using the Thornton and
+Zimmermann (2007) formula described in the [Background](laida:background)
+section.
+
+**Set phase** (`set_clm_statevec`):
+
+1. `leafc`, `livestemc`, and `deadstemc` for each vegetated patch are
+   copied into the three consecutive state vector blocks.
+2. If `update_lai_params=1`, two additional blocks are appended:
+   `slatop` (block 4) and `medlynslope` (block 5) per patch, read from
+   the PFT constants for each patch's PFT type.
+
+**PDAF update**: PDAF operates on the full state vector.
+
+**Update phase** (`update_clm`):
+
+1. `leafc`, `livestemc`, and `deadstemc` are read from their respective
+   state vector blocks and clipped to zero (no negative carbon pools).
+2. Nitrogen pools are updated consistently using PFT C:N ratios from
+   `pftcon`:
+   - $N'_\ell = C'_\ell / \text{leafcn}$
+   - $N'_s = C'_s / \text{livewdcn}$
+   - $N'_d = C'_d / \text{deadwdcn}$
+3. If `update_lai_params=1`, `slatop` and `medlynslope` are read from
+   blocks 4 and 5 and written back to the PFT constants
+   (`pftcon%slatop`, `pftcon%medlynslope`).
+
+**Note**: Unlike options 1 and 2, the `CLM:update_lai_incr_w` blending
+parameter has no effect in option 3. LAI is not part of the state vector;
+only the underlying carbon pools are updated directly.
 
 ## Configuration Examples ##
 
@@ -170,4 +232,20 @@ update_lai_params = 0
 [CLM]
 update_lai        = 2
 update_lai_params = 2
+```
+
+**Example 5** — carbon-pool state vector, no parameter estimation:
+
+```ini
+[CLM]
+update_lai        = 3
+update_lai_params = 0
+```
+
+**Example 6** — carbon-pool state vector with joint `slatop`/`medlynslope` estimation:
+
+```ini
+[CLM]
+update_lai        = 3
+update_lai_params = 1
 ```

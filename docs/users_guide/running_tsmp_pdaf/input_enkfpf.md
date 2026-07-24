@@ -521,13 +521,25 @@ See [LAI Data Assimilation](laida) for algorithmic details.
    PDAF update, the updated gridcell LAI is back-transformed to
    per-patch `leafc` and `leafn`.
 
--  2: Patch-level state vector. `leafc`, `slatop`, and `dsladlai` are
-   stored for every patch (state vector size: 3 × number of patches).
-   The LAI-to-observation mapping is computed inside the observation
-   operator `obs_op_pdaf`. The `slatop` and `dsladlai` portions of the
-   state vector can optionally be estimated jointly; set
-   `CLM:update_lai_params=2` to write them back to eCLM after the
-   update.
+-  2: (WARNING: This option is not tested. Rather use option 3 for
+   patch-level state vector) Patch-level state vector. `leafc`,
+   `slatop`, and `dsladlai` are stored for every patch (state vector
+   size: 3 × number of patches).  The LAI-to-observation mapping is
+   computed inside the observation operator `obs_op_pdaf`. The
+   `slatop` and `dsladlai` portions of the state vector can optionally
+   be estimated jointly; set `CLM:update_lai_params=2` to write them
+   back to eCLM after the update.
+
+-  3: Carbon-pool state vector. `leafc`, `livestemc`, and `deadstemc`
+   are stored for every vegetated patch (bare-ground PFT excluded;
+   state vector size: 3 × number of vegetated patches). The
+   observation operator `obs_op_pdaf` maps the `leafc` block to
+   observed gridcell LAI using the Thornton and Zimmermann (2007)
+   formula. After the PDAF update, the three carbon pools are written
+   back to eCLM and the corresponding nitrogen pools (`leafn`,
+   `livestemn`, `deadstemn`) are updated consistently using PFT C:N
+   ratios. Set `CLM:update_lai_params=1` to also estimate `slatop` and
+   `medlynslope` jointly.
 
 (enkfpf:clm:update_lai_params)=
 ### CLM:update_lai_params ###
@@ -538,9 +550,16 @@ LAI. Only takes effect if `CLM:update_lai` is non-zero. Default: `0`.
 
 -  0: No parameter estimation.
 
--  1: Only for `CLM:update_lai=1`. Appends `slatop` (specific leaf
-   area at the canopy top) for each patch to the state vector as an
-   additional parameter.
+-  1: For `CLM:update_lai=1`: appends `slatop` (specific leaf area at
+   the canopy top) for each patch to the state vector as an additional
+   parameter block.
+
+   For `CLM:update_lai=3`: appends `slatop` and `medlynslope`
+   (Medlyn stomatal slope) per vegetated patch as two additional
+   parameter blocks (blocks 4 and 5). Both parameters are read from
+   the PFT constants before the PDAF update and written back after.
+   The observation operator uses the in-state `slatop` values for the
+   LAI forward mapping.
 
 -  2: Only for `CLM:update_lai=2`. After the PDAF update, writes the
    updated `slatop` and `dsladlai` values from the state vector back to
