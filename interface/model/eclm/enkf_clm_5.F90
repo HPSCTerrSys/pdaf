@@ -71,6 +71,8 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 #if defined CLMSA
   use enkf_clm_mod, only: COMM_model_clm
   use enkf_clm_mod, only: define_clm_statevec
+  use enkf_clm_mod, only: clmprint_da_hist_file
+  use histFileMod,  only: hist_init_da_tape
 #endif
   use clm_varcon, only: averaging_var
 !!<< TSMP PDAF addition end
@@ -196,6 +198,7 @@ subroutine clm_init(finname, pdaf_id, pdaf_max, mype) bind(C,name="clm_init")
 #if defined CLMSA
   averaging_var=0
   call define_clm_statevec(mype)
+  if (clmprint_da_hist_file == 1) call hist_init_da_tape()
 #endif
 
 
