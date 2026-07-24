@@ -2091,17 +2091,24 @@ module enkf_clm_mod
     use decompMod, only : get_proc_total, get_proc_bounds, ldecomp
 
     implicit none
-    real, intent(in) :: lon_clmobs(:)
-    real, intent(in) :: lat_clmobs(:)
+    real(r8), intent(in) :: lon_clmobs(:)
+    real(r8), intent(in) :: lat_clmobs(:)
     integer, intent(in) :: dim_obs
     integer, allocatable, intent(inout) :: longxy(:)
     integer, allocatable, intent(inout) :: latixy(:)
     integer, allocatable, intent(inout) :: longxy_obs(:)
     integer, allocatable, intent(inout) :: latixy_obs(:)
-    integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits
-    integer :: ncols, counter
+    integer :: ni, nj, ii, jj, cid, ier, ncells, nlunits
+    integer :: g
+    integer :: ncols
     integer :: npatches, ncohorts
-    real :: minlon, minlat, maxlon, maxlat
+    real(r8) :: minlon
+    real(r8) :: minlat
+    real(r8) :: maxlon
+    real(r8) :: maxlat
+    real(r8) :: dlon_span
+    real(r8) :: dlat_span
+    real(r8), parameter :: tol_degen = 1.0e-6_r8
     real(r8), pointer :: lon(:)
     real(r8), pointer :: lat(:)
     integer :: begg, endg   ! per-proc gridcell ending gridcell indices
@@ -2120,10 +2127,6 @@ module enkf_clm_mod
     ! beg and end gridcell
     call get_proc_bounds(begg=begg, endg=endg)
 
-   !print *,'ni, nj ', ni, nj
-   !print *,'cells per processor ', ncells
-   !print *,'begg, endg ', begg, endg
-
     ! allocate vector with size of elements in x directions * size of elements in y directions
     if(allocated(longxy)) deallocate(longxy)
     allocate(longxy(ncells))
@@ -2135,31 +2138,21 @@ module enkf_clm_mod
     latixy(:) = 0
 
     ! fill vector with index values
-    counter = 1
-    do ii = 1, nj
-      do jj = 1, ni
-        cid = (ii-1)*ni + jj
-        do kk = begg, endg
-          if(cid == ldecomp%gdc2glo(kk)) then
-            latixy(counter) = ii
-            longxy(counter) = jj
-            counter = counter + 1
-          end if
-        end do
-      end do
+    do g = begg, endg
+      cid = ldecomp%gdc2glo(g)
+      longxy(g - begg + 1) = mod(cid - 1, ni) + 1
+      latixy(g - begg + 1) = (cid - 1) / ni + 1
     end do
 
-    ! set intial values for max/min of lon/lat
-    minlon = 999
-    minlat = 999
-    maxlon = -999
-    maxlat = -999
-
     ! looping over all cell centers to get min/max longitude and latitude
-    minlon = MINVAL(lon(:) + 180)
-    maxlon = MAXVAL(lon(:) + 180)
-    minlat = MINVAL(lat(:) + 90)
-    maxlat = MAXVAL(lat(:) + 90)
+    minlon = minval(lon(:) + 180)
+    maxlon = maxval(lon(:) + 180)
+    minlat = minval(lat(:) + 90)
+    maxlat = maxval(lat(:) + 90)
+
+    ! Compute lon / lat spans of the domain
+    dlon_span = maxlon - minlon
+    dlat_span = maxlat - minlat
 
     if(allocated(longxy_obs)) deallocate(longxy_obs)
     allocate(longxy_obs(dim_obs))
@@ -2167,28 +2160,30 @@ module enkf_clm_mod
     allocate(latixy_obs(dim_obs))
 
     do i = 1, dim_obs
-       if(((lon_clmobs(i) + 180) - minlon) /= 0 .and. &
-         ((lat_clmobs(i) + 90) - minlat) /= 0) then
-          longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1
-          latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat)) !+ 1
-          !print *,'longxy_obs(i) , latixy_obs(i) ', longxy_obs(i) , latixy_obs(i)
-        else if(((lon_clmobs(i) + 180) - minlon) == 0 .and. &
-                ((lat_clmobs(i) + 90) - minlat) == 0) then
+       ! Degenerate domain cases: one or both horizontal domain spans
+       ! are below tolerance. A `cycle` after each branch skips the
+       ! per-observation position logic below, which would divide by
+       ! zero on a zero-span domain.
+       if (dlon_span <= tol_degen .and. dlat_span <= tol_degen) then
           longxy_obs(i) = 1
           latixy_obs(i) = 1
-       else if(((lon_clmobs(i) + 180) - minlon) == 0) then
+          cycle
+       else if (dlon_span <= tol_degen) then
           longxy_obs(i) = 1
           latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat))
-       else if(((lat_clmobs(i) + 90) - minlat) == 0) then
+          cycle
+       else if (dlat_span <= tol_degen) then
           longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon))
           latixy_obs(i) = 1
+          cycle
        end if
+
+       ! General (non-degenerate) domain: map each observation's lon/lat offset to a
+       ! grid index.  max(1, ceiling(...)) handles the edge case where the observation
+       ! sits exactly on the domain minimum (offset == 0), for which ceiling returns 0.
+       longxy_obs(i) = max(1, ceiling(((lon_clmobs(i) + 180) - minlon) * ni / dlon_span))
+       latixy_obs(i) = max(1, ceiling(((lat_clmobs(i) + 90 ) - minlat) * nj / dlat_span))
     end do
-    ! deallocate temporary arrays
-    !deallocate(longxy)
-    !deallocate(latixy)
-    !deallocate(longxy_obs)
-    !deallocate(latixy_obs)
 
   end subroutine domain_def_clm
 
