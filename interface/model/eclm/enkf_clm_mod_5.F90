@@ -2203,11 +2203,6 @@ module enkf_clm_mod
           latixy_obs(i) = 1
        end if
     end do
-    ! deallocate temporary arrays
-    !deallocate(longxy)
-    !deallocate(latixy)
-    !deallocate(longxy_obs)
-    !deallocate(latixy_obs)
 
   end subroutine domain_def_clm
 
