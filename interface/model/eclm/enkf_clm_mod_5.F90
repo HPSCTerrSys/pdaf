@@ -2098,8 +2098,9 @@ module enkf_clm_mod
     integer, allocatable, intent(inout) :: latixy(:)
     integer, allocatable, intent(inout) :: longxy_obs(:)
     integer, allocatable, intent(inout) :: latixy_obs(:)
-    integer :: ni, nj, ii, jj, kk, cid, ier, ncells, nlunits
-    integer :: ncols, counter
+    integer :: ni, nj, ii, jj, cid, ier, ncells, nlunits
+    integer :: g
+    integer :: ncols
     integer :: npatches, ncohorts
     real(r8) :: minlon
     real(r8) :: minlat
@@ -2141,18 +2142,10 @@ module enkf_clm_mod
     latixy(:) = 0
 
     ! fill vector with index values
-    counter = 1
-    do ii = 1, nj
-      do jj = 1, ni
-        cid = (ii-1)*ni + jj
-        do kk = begg, endg
-          if(cid == ldecomp%gdc2glo(kk)) then
-            latixy(counter) = ii
-            longxy(counter) = jj
-            counter = counter + 1
-          end if
-        end do
-      end do
+    do g = begg, endg
+      cid = ldecomp%gdc2glo(g)
+      longxy(g - begg + 1) = mod(cid - 1, ni) + 1
+      latixy(g - begg + 1) = (cid - 1) / ni + 1
     end do
 
     ! set intial values for max/min of lon/lat
