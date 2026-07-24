@@ -2721,9 +2721,9 @@ module enkf_clm_mod
     maxlon = MAXVAL(lon(:) + 180)
     minlat = MINVAL(lat(:) + 90)
     maxlat = MAXVAL(lat(:) + 90)
-    
-    ! Degenerate horizontal domain (e.g. 1x1 grid): min==max => zero span; 
-    ! Avoid dividing by (maxlon-minlon) or (maxlat-minlat). 
+
+    ! Degenerate horizontal domain (e.g. 1x1 grid): min==max => zero span;
+    ! Avoid dividing by (maxlon-minlon) or (maxlat-minlat).
     dlon_span = maxval(lon(:) + 180._r8) - minval(lon(:) + 180._r8)
     dlat_span = maxval(lat(:) + 90._r8) - minval(lat(:) + 90._r8)
 
@@ -2759,7 +2759,7 @@ module enkf_clm_mod
           latixy_obs(i) = 1
        end if
     end do
-    
+
     ! deallocate temporary arrays
     !deallocate(longxy)
     !deallocate(latixy)
