@@ -2148,12 +2148,6 @@ module enkf_clm_mod
       latixy(g - begg + 1) = (cid - 1) / ni + 1
     end do
 
-    ! set intial values for max/min of lon/lat
-    minlon = 999
-    minlat = 999
-    maxlon = -999
-    maxlat = -999
-
     ! looping over all cell centers to get min/max longitude and latitude
     minlon = MINVAL(lon(:) + 180)
     maxlon = MAXVAL(lon(:) + 180)
