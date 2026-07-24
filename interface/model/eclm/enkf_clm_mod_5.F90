@@ -2127,10 +2127,6 @@ module enkf_clm_mod
     ! beg and end gridcell
     call get_proc_bounds(begg=begg, endg=endg)
 
-   !print *,'ni, nj ', ni, nj
-   !print *,'cells per processor ', ncells
-   !print *,'begg, endg ', begg, endg
-
     ! allocate vector with size of elements in x directions * size of elements in y directions
     if(allocated(longxy)) deallocate(longxy)
     allocate(longxy(ncells))
@@ -2190,7 +2186,6 @@ module enkf_clm_mod
          ((lat_clmobs(i) + 90) - minlat) /= 0) then
           longxy_obs(i) = ceiling(((lon_clmobs(i) + 180) - minlon) * ni / (maxlon - minlon)) !+ 1
           latixy_obs(i) = ceiling(((lat_clmobs(i) + 90) - minlat) * nj / (maxlat - minlat)) !+ 1
-          !print *,'longxy_obs(i) , latixy_obs(i) ', longxy_obs(i) , latixy_obs(i)
         else if(((lon_clmobs(i) + 180) - minlon) == 0 .and. &
                 ((lat_clmobs(i) + 90) - minlat) == 0) then
           longxy_obs(i) = 1
