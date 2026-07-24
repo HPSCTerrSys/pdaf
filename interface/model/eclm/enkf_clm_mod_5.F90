@@ -2145,10 +2145,10 @@ module enkf_clm_mod
     end do
 
     ! looping over all cell centers to get min/max longitude and latitude
-    minlon = MINVAL(lon(:) + 180)
-    maxlon = MAXVAL(lon(:) + 180)
-    minlat = MINVAL(lat(:) + 90)
-    maxlat = MAXVAL(lat(:) + 90)
+    minlon = minval(lon(:) + 180)
+    maxlon = maxval(lon(:) + 180)
+    minlat = minval(lat(:) + 90)
+    maxlat = maxval(lat(:) + 90)
 
     ! Compute lon / lat spans of the domain
     dlon_span = maxlon - minlon
