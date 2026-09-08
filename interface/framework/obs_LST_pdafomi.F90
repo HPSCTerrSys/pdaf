@@ -124,6 +124,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   USE PDAFomi, &
     ONLY: PDAFomi_gather_obs, pi
+  USE PDAFomi_obs_f, &
+    ONLY: PDAFomi_get_domain_limits_unstr
 
   Use mod_read_obs, &
     only: multierr, read_obs_nc_type
@@ -216,6 +218,8 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! Geographic distance with haversine formula
   thisobs%disttype = 3
   thisobs%ncoord = 2
+  ! Use process-local observations (requires domain_limits to be initialized below)
+  thisobs%use_global_obs = 0
 
   obs_type_name = "LST"
 
@@ -325,6 +329,28 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! Obtain CLM index information
   call get_proc_bounds(begg, endg, begl, endl, begc, endc, begp, endp)
   call get_proc_global(numg, numl, numc, nump)
+
+  ! Initialize per-rank domain bounding box for use_global_obs=0.
+  ! Must be set once before PDAFomi_get_local_ids_obs_f is called.
+  ! The save guard prevents re-initialization in SM+LST combined runs.
+  block
+    logical, save       :: domlim_done = .false.
+    real, allocatable   :: gcoords_p(:,:)
+    real                :: lonv
+    integer             :: gi
+    if (.not. domlim_done) then
+      allocate(gcoords_p(2, endg-begg+1))
+      do gi = begg, endg
+        lonv = real(lon(gi))
+        if (lonv > 180.0) lonv = lonv - 360.0   ! -> (-180, 180]
+        gcoords_p(1, gi-begg+1) = lonv          * pi / 180.0
+        gcoords_p(2, gi-begg+1) = real(lat(gi)) * pi / 180.0
+      end do
+      call PDAFomi_get_domain_limits_unstr(endg-begg+1, gcoords_p)
+      deallocate(gcoords_p)
+      domlim_done = .true.
+    end if
+  end block
 
   ! Number of observations in process-local domain
   ! ----------------------------------------------
@@ -525,9 +551,14 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
             if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
 
-              ! Convert observation coordinates to radians for haversine distance
+              ! Convert observation coordinates to radians for haversine distance.
+              ! Shift longitude to (-pi, pi) to match domain_limits convention.
               if(thisobs%disttype==3) then
-                ocoord_p(1,cnt) = lon_obs(i) * pi / 180.0
+                if (lon_obs(i) > 180.0) then
+                  ocoord_p(1,cnt) = (lon_obs(i) - 360.0) * pi / 180.0
+                else
+                  ocoord_p(1,cnt) =  lon_obs(i)          * pi / 180.0
+                end if
                 ocoord_p(2,cnt) = lat_obs(i) * pi / 180.0
               else
                 ocoord_p(1,cnt) = lon_obs(i)
