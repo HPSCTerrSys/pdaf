@@ -269,8 +269,9 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
     ALLOCATE(thisobs%id_obs_p(1, 1))
     thisobs%id_obs_p(1, 1) = 0
     thisobs%infile = 0
+    ! Conversion to m like r_earth
     CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
-      thisobs%ncoord, cradius_LST, dim_obs)
+      thisobs%ncoord, cradius_LST*1000.0, dim_obs)
     if(mype_filter==0) DEALLOCATE(obs_g)
     DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
     return
@@ -603,9 +604,10 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! ****************************************
   ! *** Gather global observation arrays ***
   ! ****************************************
-
+  ! Conversion to [m] for cradius like r_earth
+  ! Should be put under disttype 2 or three (Maybe a singled-out change of the radii for these disttypes)
   CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
-    thisobs%ncoord, cradius_LST, dim_obs)
+    thisobs%ncoord, cradius_LST*1000.0, dim_obs)
 
   ! ********************
   ! *** Finishing up ***
@@ -755,7 +757,7 @@ SUBROUTINE init_dim_obs_l_LST(domain_p, step, dim_obs, dim_obs_l)
   end if
 
   ! For disttype=3, cradius and sradius are in km; multiply by 1000 for meters
-  if(thisobs%disttype==3) then
+  if(thisobs%disttype==3 .or. thisobs%disttype==2) then
     CALL PDAFomi_init_dim_obs_l(thisobs_l, thisobs, coords_l, &
       locweight, cradius_LST*1000.0, sradius_LST*1000.0, dim_obs_l)
   else
@@ -813,8 +815,14 @@ SUBROUTINE localize_covar_LST(dim_p, dim_obs, HP_p, HPH, coords_p)
     coords_p(2,i) = lat(pg_i)
   end do
 
-  CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_LST, sradius_LST, &
-    coords_p, HP_p, HPH)
+  ! For disttype=3 or 2, cradius and sradius are in km; multiply by 1000 for meters
+  if (thisobs%disttype==3 .or. thisobs%disttype==2) then
+    CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_LST*1000.0, sradius_LST*1000.0, &
+      coords_p, HP_p, HPH)
+  else
+    CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_LST, sradius_LST, &
+      coords_p, HP_p, HPH)
+  end if
 
 END SUBROUTINE localize_covar_LST
 

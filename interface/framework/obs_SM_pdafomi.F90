@@ -336,8 +336,9 @@ MODULE obs_SM_pdafomi
         ALLOCATE(ocoord_p(2, 1))
         ALLOCATE(thisobs%id_obs_p(1, 1))
         thisobs%infile=0
+        ! Conversion to m like r_earth
         CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
-           thisobs%ncoord, cradius_SM, dim_obs)
+           thisobs%ncoord, cradius_SM*1000.0, dim_obs)
         if (mype_filter==0) DEALLOCATE(obs_g)
         DEALLOCATE(obs_p, ocoord_p, ivar_obs_p)
         return
@@ -892,8 +893,9 @@ MODULE obs_SM_pdafomi
   ! *** Gather global observation arrays ***
   ! ****************************************
 
+      ! Conversion to [m] for cradius like r_earth
       CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
-           thisobs%ncoord, cradius_SM, dim_obs)
+           thisobs%ncoord, cradius_SM*1000.0, dim_obs)
 
   ! ********************
   ! *** Finishing up ***
@@ -1079,10 +1081,9 @@ MODULE obs_SM_pdafomi
 
     end if
 
-    ! for disttype=3, the cradius and sradius have to passed in meters,
-    ! so I multiply by 1000 to be able to put it in km in the input file
+    ! for disttype=3 or 2, cradius and sradius are in km; multiply by 1000 for meters
 
-    if (thisobs%disttype==3) then
+    if (thisobs%disttype==3 .or. thisobs%disttype==2) then
       CALL PDAFomi_init_dim_obs_l(thisobs_l, thisobs, coords_l, &
           locweight, cradius_SM*1000.0, sradius_SM*1000.0, dim_obs_l)
     else
@@ -1167,8 +1168,14 @@ MODULE obs_SM_pdafomi
 
 
 
-      CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_SM, sradius_SM, &
-           coords_p, HP_p, HPH)
+      ! For disttype=3 or 2, cradius and sradius are in km; multiply by 1000 for meters
+      if (thisobs%disttype==3 .or. thisobs%disttype==2) then
+        CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_SM*1000.0, sradius_SM*1000.0, &
+             coords_p, HP_p, HPH)
+      else
+        CALL PDAFomi_localize_covar(thisobs, dim_p, locweight, cradius_SM, sradius_SM, &
+             coords_p, HP_p, HPH)
+      end if
 
     END SUBROUTINE localize_covar_SM
 
