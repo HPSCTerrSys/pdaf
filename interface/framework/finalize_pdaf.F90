@@ -58,6 +58,8 @@ SUBROUTINE finalize_pdaf()
   IF (mype_world==0) CALL PDAF_print_info(10)
 
 ! *** Print PDAF timings onto screen ***
+  IF (mype_world==0) CALL PDAF_print_info(3)
+  IF (mype_world==0) CALL PDAF_print_info(5)
   IF (mype_world==0) CALL PDAF_print_info(1)
 
 ! *** Deallocate PDAF arrays ***
