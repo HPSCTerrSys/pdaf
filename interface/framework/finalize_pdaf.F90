@@ -47,6 +47,13 @@ SUBROUTINE finalize_pdaf()
              local_disp_obs
   USE mod_parallel_pdaf, &
        ONLY: local_npes_model, mype_world
+#ifdef CLMSA
+#ifdef CLMFIVE
+  USE obs_LST_pdafomi, &
+       ONLY: t_LST_readobs, t_LST_snapping, t_LST_gather, &
+             t_LST_total, t_LST_calls
+#endif
+#endif
 
   IMPLICIT NONE
 
@@ -61,6 +68,24 @@ SUBROUTINE finalize_pdaf()
   IF (mype_world==0) CALL PDAF_print_info(3)
   IF (mype_world==0) CALL PDAF_print_info(5)
   IF (mype_world==0) CALL PDAF_print_info(1)
+
+#ifdef CLMSA
+#ifdef CLMFIVE
+! *** Print LST-OMI sub-timers ***
+  IF (mype_world==0 .AND. t_LST_calls > 0) THEN
+    WRITE (*,'(a)') ''
+    WRITE (*,'(a)') 'TSMP-PDAF    LST-OMI init_dim_obs sub-timers (rank 0, accumulated)'
+    WRITE (*,'(a)') 'TSMP-PDAF    --------------------------------------------------------'
+    WRITE (*,'(a,i6)')     'TSMP-PDAF      Number of calls:              ', t_LST_calls
+    WRITE (*,'(a,f12.3,a)') 'TSMP-PDAF      Obs I/O + broadcast:     ', t_LST_readobs, ' s'
+    WRITE (*,'(a,f12.3,a)') 'TSMP-PDAF      Snapping loops + MPI:    ', t_LST_snapping, ' s'
+    WRITE (*,'(a,f12.3,a)') 'TSMP-PDAF      PDAFomi_gather_obs:      ', t_LST_gather, ' s'
+    WRITE (*,'(a,f12.3,a)') 'TSMP-PDAF      Total init_dim_obs_LST:  ', t_LST_total, ' s'
+    WRITE (*,'(a,f12.3,a)') 'TSMP-PDAF      Unaccounted (domain_lim):', &
+      t_LST_total - t_LST_readobs - t_LST_snapping - t_LST_gather, ' s'
+  END IF
+#endif
+#endif
 
 ! *** Deallocate PDAF arrays ***
   CALL PDAF_deallocate()

@@ -77,6 +77,13 @@ MODULE obs_LST_pdafomi
     ! from mod_assimilation when SM and LST are both active simultaneously)
     INTEGER, ALLOCATABLE :: obs_index_p_LST(:)
 
+    ! Sub-timers for init_dim_obs_LST profiling (accumulated over all DA steps)
+    REAL(8) :: t_LST_readobs   = 0.0d0  !< Time for obs I/O + broadcast
+    REAL(8) :: t_LST_snapping  = 0.0d0  !< Time for obs-to-grid snapping loops
+    REAL(8) :: t_LST_gather    = 0.0d0  !< Time for PDAFomi_gather_obs
+    REAL(8) :: t_LST_total     = 0.0d0  !< Total time in init_dim_obs_LST
+    INTEGER :: t_LST_calls     = 0      !< Number of calls
+
   ! *********************************************************
   ! *** Data type obs_f defines the full observations by  ***
   ! *** internally shared variables of the module         ***
@@ -111,6 +118,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   USE mpi, ONLY: MPI_DOUBLE_PRECISION
   USE mpi, ONLY: MPI_SUM
   USE mpi, ONLY: MPI_IN_PLACE
+  USE mpi, ONLY: MPI_WTIME
   USE mod_parallel_pdaf, &
        ONLY: mype_filter, comm_filter, npes_filter, abort_parallel, &
        mype_world
@@ -203,11 +211,15 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   character (len = 27) :: fn    !TSMP-PDAF: function name for obs_index_p output
 
+  REAL(8) :: tw0, tw1, tw_start  ! MPI_Wtime temporaries for sub-timers
 
 
   ! *********************************************
   ! *** Initialize full observation dimension ***
   ! *********************************************
+
+  tw_start = MPI_WTIME()
+  t_LST_calls = t_LST_calls + 1
 
   IF (mype_filter==0) then
     WRITE (*,*) "PDAF-OMI: Assimilate observations - obs type LST"
@@ -310,6 +322,9 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   thisobs%infile = 1
 
+  tw1 = MPI_WTIME()
+  t_LST_readobs = t_LST_readobs + (tw1 - tw_start)
+
   if (mype_filter==0 .and. screen > 2) then
     write(*,*)"PDAF-OMI: Done: load observations from type LST"
   end if
@@ -355,6 +370,7 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
 
   ! Number of observations in process-local domain
   ! ----------------------------------------------
+  tw0 = MPI_WTIME()
   dim_obs_p = 0
 
   ! id_obs_p: placeholder to satisfy PDAFomi internal check;
@@ -604,14 +620,23 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! ****************************************
   ! *** Gather global observation arrays ***
   ! ****************************************
+  tw1 = MPI_WTIME()
+  t_LST_snapping = t_LST_snapping + (tw1 - tw0)
+
   ! Conversion to [m] for cradius like r_earth
   ! Should be put under disttype 2 or three (Maybe a singled-out change of the radii for these disttypes)
+  tw0 = MPI_WTIME()
   CALL PDAFomi_gather_obs(thisobs, dim_obs_p, obs_p, ivar_obs_p, ocoord_p, &
     thisobs%ncoord, cradius_LST*1000.0, dim_obs)
+  tw1 = MPI_WTIME()
+  t_LST_gather = t_LST_gather + (tw1 - tw0)
 
   ! ********************
   ! *** Finishing up ***
   ! ********************
+
+  tw1 = MPI_WTIME()
+  t_LST_total = t_LST_total + (tw1 - tw_start)
 
   DEALLOCATE(obs_g)
   DEALLOCATE(obs_p)
