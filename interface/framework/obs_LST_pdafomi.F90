@@ -84,6 +84,7 @@ MODULE obs_LST_pdafomi
     REAL(8) :: t_LST_total     = 0.0d0  !< Total time in init_dim_obs_LST
     INTEGER :: t_LST_calls     = 0      !< Number of calls
 
+
   ! *********************************************************
   ! *** Data type obs_f defines the full observations by  ***
   ! *** internally shared variables of the module         ***
@@ -371,7 +372,6 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   ! Number of observations in process-local domain
   ! ----------------------------------------------
   tw0 = MPI_WTIME()
-  dim_obs_p = 0
 
   ! id_obs_p: placeholder to satisfy PDAFomi internal check;
   ! actual obs-to-state mapping is in obs_index_p_LST
@@ -379,242 +379,175 @@ SUBROUTINE init_dim_obs_LST(step, dim_obs)
   allocate(thisobs%id_obs_p(1, 1))
   thisobs%id_obs_p(1, 1) = 1
 
-  ! *** Count PE-local observations ***
-  ! LST uses patch loop: one observation per gridcell, assigned to
-  ! the first patch found in that gridcell.
-  do i = 1, dim_obs
-    obs_snapped = .false.
-    do g = begg,endg
-      newgridcell = .true.
-      do p = begp,endp
-        pg = patch%gridcell(p)
-        if(pg == g) then
-          if(newgridcell) then
+    ! *** Single pass: count and fill PE-local observation arrays ***
+    ! Pre-allocate to dim_obs (upper bound on dim_obs_p); trim after.
+    IF (ALLOCATED(obs_index_p_LST)) DEALLOCATE(obs_index_p_LST)
+    ALLOCATE(obs_index_p_LST(dim_obs))
+    IF (ALLOCATED(obs_p))      DEALLOCATE(obs_p)
+    ALLOCATE(obs_p(dim_obs))
+    IF (ALLOCATED(ivar_obs_p)) DEALLOCATE(ivar_obs_p)
+    ALLOCATE(ivar_obs_p(dim_obs))
+    IF (ALLOCATED(ocoord_p))   DEALLOCATE(ocoord_p)
+    ALLOCATE(ocoord_p(2, dim_obs))
 
-            deltax = abs(lon(g)-lon_obs(i))
-            if (deltax > 180.0) then
-              deltax = 360.0 - deltax
-            end if
-            deltay = abs(lat(g)-lat_obs(i))
+    dim_obs_p = 0
+    do i = 1, dim_obs
+      obs_snapped = .false.
+      do g = begg, endg
+        newgridcell = .true.
+        do p = begp, endp
+          pg = patch%gridcell(p)
+          if (pg == g) then
+            if (newgridcell) then
 
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
-              dim_obs_p = dim_obs_p + 1
+              deltax = abs(lon(g) - lon_obs(i))
+              if (deltax > 180.0) deltax = 360.0 - deltax
+              deltay = abs(lat(g) - lat_obs(i))
 
-              if(obs_snapped) then
-                print *, "TSMP-PDAF mype(w)=", mype_world, &
-                  ": ERROR Observation snapped at multiple grid cells."
-                print *, "i=", i
-                call abort_parallel()
+              if ((deltax <= dr_obs(1)) .and. (deltay <= dr_obs(2))) then
+
+                if (obs_snapped) then
+                  print *, "TSMP-PDAF mype(w)=", mype_world, &
+                    ": ERROR Observation snapped at multiple grid cells."
+                  print *, "i=", i
+                  call abort_parallel()
+                end if
+                dim_obs_p = dim_obs_p + 1
+
+                ! Convert observation coordinates to radians for haversine distance.
+                ! Shift longitude to (-pi, pi) to match domain_limits convention.
+                if (thisobs%disttype == 3) then
+                  if (lon_obs(i) > 180.0) then
+                    ocoord_p(1, dim_obs_p) = (lon_obs(i) - 360.0) * pi / 180.0
+                  else
+                    ocoord_p(1, dim_obs_p) =  lon_obs(i)           * pi / 180.0
+                  end if
+                  ocoord_p(2, dim_obs_p) = lat_obs(i) * pi / 180.0
+                else
+                  ocoord_p(1, dim_obs_p) = lon_obs(i)
+                  ocoord_p(2, dim_obs_p) = lat_obs(i)
+                end if
+
+                obs_index_p_LST(dim_obs_p) = state_clm2pdaf_p(p, 1)
+                obs_p(dim_obs_p)            = obs_g(i)
+                if (multierr == 1) ivar_obs_p(dim_obs_p) = 1.0 / (obserr(i)     * obserr(i))
+                if (multierr == 0) ivar_obs_p(dim_obs_p) = 1.0 / (rms_obs_LST   * rms_obs_LST)
+                obs_snapped = .true.
+
               end if
-              obs_snapped = .true.
+
+              newgridcell = .false.
+
             end if
-
-            newgridcell = .false.
-
           end if
-        end if
-      end do
-    end do
-  end do
-
-  if(screen > 2) then
-    print *, "TSMP-PDAF mype(w)=", mype_world, &
-      ": init_dim_obs_LST: dim_obs_p=", dim_obs_p
-  end if
-
-  ! Dimension of full observation vector
-  ! ------------------------------------
-
-  ! Gather and check PE-local observation dimensions
-  call mpi_allreduce(dim_obs_p, sum_dim_obs_p, 1, MPI_INTEGER, MPI_SUM, &
-    comm_filter, ierror)
-
-  ! Check sum of dimensions of PE-local observation vectors against
-  ! dimension of full observation vector
-  if(.not. sum_dim_obs_p == dim_obs) then
-    print *, "TSMP-PDAF mype(w)=", mype_world, &
-      ": ERROR Sum of PE-local observation dimensions"
-    print *, "sum_dim_obs_p=", sum_dim_obs_p
-    print *, "dim_obs=", dim_obs
-    call abort_parallel()
-  end if
-
-  !  Gather PE-local observation dimensions and displacements in arrays
-  ! ----------------------------------------------------------------
-
-  ! Allocate array of PE-local observation dimensions
-  IF (ALLOCATED(local_dims_obs)) DEALLOCATE(local_dims_obs)
-  ALLOCATE(local_dims_obs(npes_filter))
-
-  ! Gather array of PE-local observation dimensions
-  call mpi_allgather(dim_obs_p, 1, MPI_INTEGER, local_dims_obs, 1, MPI_INTEGER, &
-    comm_filter, ierror)
-
-  ! Allocate observation displacement array local_disp_obs
-  IF (ALLOCATED(local_disp_obs)) DEALLOCATE(local_disp_obs)
-  ALLOCATE(local_disp_obs(npes_filter))
-
-  ! Set observation displacement array local_disp_obs
-  local_disp_obs(1) = 0
-  do i = 2, npes_filter
-    local_disp_obs(i) = local_disp_obs(i-1) + local_dims_obs(i-1)
-  end do
-
-  if(mype_filter==0 .and. screen > 2) then
-    print *, "TSMP-PDAF mype(w)=", mype_world, &
-      ": init_dim_obs_LST: local_disp_obs=", local_disp_obs
-  end if
-
-  ! Write index mapping obs_pdaf2nc / obs_nc2pdaf (used for debug output)
-  if(allocated(obs_pdaf2nc)) deallocate(obs_pdaf2nc)
-  allocate(obs_pdaf2nc(dim_obs))
-  obs_pdaf2nc = 0
-  if(allocated(obs_nc2pdaf)) deallocate(obs_nc2pdaf)
-  allocate(obs_nc2pdaf(dim_obs))
-  obs_nc2pdaf = 0
-
-  cnt = 1
-  do i = 1, dim_obs
-    obs_snapped = .true.
-    do g = begg,endg
-      newgridcell = .true.
-      do p = begp,endp
-        pg = patch%gridcell(p)
-        if(pg == g) then
-          if(newgridcell) then
-
-            deltax = abs(lon(g)-lon_obs(i))
-            if (deltax > 180.0) then
-              deltax = 360.0 - deltax
-            end if
-            deltay = abs(lat(g)-lat_obs(i))
-
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
-              if(state_clm2pdaf_p(p,1)==ispval) then
-                obs_snapped = .false.
-                cycle
-              end if
-              obs_pdaf2nc(local_disp_obs(mype_filter+1)+cnt) = i
-              obs_nc2pdaf(i) = local_disp_obs(mype_filter+1)+cnt
-              cnt = cnt + 1
-              obs_snapped = .true.
-            end if
-
-            newgridcell = .false.
-
-          end if
-        end if
+        end do
       end do
     end do
 
-    if(.not. obs_snapped) then
+    if (screen > 2) then
       print *, "TSMP-PDAF mype(w)=", mype_world, &
-        ": ERROR observations exist at non-active gridcells."
-      print *, "Observation-index in NetCDF-file: i=", i
+        ": init_dim_obs_LST: dim_obs_p=", dim_obs_p
+    end if
+
+    ! Gather and check PE-local observation dimensions
+    call mpi_allreduce(dim_obs_p, sum_dim_obs_p, 1, MPI_INTEGER, MPI_SUM, &
+      comm_filter, ierror)
+
+    if (.not. sum_dim_obs_p == dim_obs) then
+      print *, "TSMP-PDAF mype(w)=", mype_world, &
+        ": ERROR Sum of PE-local observation dimensions"
+      print *, "sum_dim_obs_p=", sum_dim_obs_p
+      print *, "dim_obs=", dim_obs
       call abort_parallel()
     end if
-  end do
 
-  ! Gather obs_pdaf2nc / obs_nc2pdaf across all PEs via summation.
-  ! Each PE only wrote to its own slice (indices local_disp_obs(mype+1)+1 ..
-  ! local_disp_obs(mype+1)+dim_obs_p), leaving all other entries zero, so
-  ! MPI_SUM is equivalent to a gather without a dedicated gather buffer.
-  call mpi_allreduce(MPI_IN_PLACE,obs_pdaf2nc,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
-  call mpi_allreduce(MPI_IN_PLACE,obs_nc2pdaf,dim_obs,MPI_INTEGER,MPI_SUM,comm_filter,ierror)
+    ! Write index mapping obs_pdaf2nc / obs_nc2pdaf (debug output only).
+    ! This loop + MPI_Allreduce is skipped in production runs (screen=0).
+    IF (screen > 2) THEN
 
-  if(mype_filter==0 .and. screen > 2) then
-    print *, "TSMP-PDAF mype(w)=", mype_world, &
-      ": init_dim_obs_LST: obs_pdaf2nc=", obs_pdaf2nc
-  end if
+      IF (ALLOCATED(local_dims_obs)) DEALLOCATE(local_dims_obs)
+      ALLOCATE(local_dims_obs(npes_filter))
+      call mpi_allgather(dim_obs_p, 1, MPI_INTEGER, local_dims_obs, 1, MPI_INTEGER, &
+        comm_filter, ierror)
 
-  ! Write process-local observation arrays
-  ! --------------------------------------
-
-  ! Use module-local obs_index_p_LST to avoid conflict with global obs_index_p
-  IF (ALLOCATED(obs_index_p_LST)) DEALLOCATE(obs_index_p_LST)
-  ALLOCATE(obs_index_p_LST(dim_obs_p))
-  IF (ALLOCATED(obs_p)) DEALLOCATE(obs_p)
-  ALLOCATE(obs_p(dim_obs_p))
-
-  ! Initialize OMI arrays
-  IF (ALLOCATED(ivar_obs_p)) DEALLOCATE(ivar_obs_p)
-  ALLOCATE(ivar_obs_p(dim_obs_p))
-  IF (ALLOCATED(ocoord_p)) DEALLOCATE(ocoord_p)
-  ALLOCATE(ocoord_p(2, dim_obs_p))
-
-  cnt = 1
-
-  do i = 1, dim_obs
-
-    do g = begg,endg
-      newgridcell = .true.
-
-      do p = begp,endp
-
-        pg = patch%gridcell(p)
-
-        if(pg == g) then
-
-          if(newgridcell) then
-            ! Sets first patch/column in a gridcell. TODO: Make
-            ! patch / column information part of the observation
-            ! file
-
-            deltax = abs(lon(g)-lon_obs(i))
-            if (deltax > 180.0) then
-              deltax = 360.0 - deltax
-            end if
-            deltay = abs(lat(g)-lat_obs(i))
-
-            if((deltax<=dr_obs(1)).and.(deltay<=dr_obs(2))) then
-
-              ! Convert observation coordinates to radians for haversine distance.
-              ! Shift longitude to (-pi, pi) to match domain_limits convention.
-              if(thisobs%disttype==3) then
-                if (lon_obs(i) > 180.0) then
-                  ocoord_p(1,cnt) = (lon_obs(i) - 360.0) * pi / 180.0
-                else
-                  ocoord_p(1,cnt) =  lon_obs(i)          * pi / 180.0
-                end if
-                ocoord_p(2,cnt) = lat_obs(i) * pi / 180.0
-              else
-                ocoord_p(1,cnt) = lon_obs(i)
-                ocoord_p(2,cnt) = lat_obs(i)
-              end if
-
-              ! Set state vector index for this patch and save it in
-              ! the observation index array.
-              !
-              ! LST uses patch (not column), variable 1 = TSKIN.
-              obs_index_p_LST(cnt) = state_clm2pdaf_p(p,1)
-
-              obs_p(cnt) = obs_g(i)
-              if(multierr==1) ivar_obs_p(cnt) = 1.0/(obserr(i)*obserr(i))
-              if(multierr==0) ivar_obs_p(cnt) = 1.0/(rms_obs_LST*rms_obs_LST)
-              cnt = cnt + 1
-
-            end if
-
-            newgridcell = .false.
-
-          end if
-
-        end if
-
+      IF (ALLOCATED(local_disp_obs)) DEALLOCATE(local_disp_obs)
+      ALLOCATE(local_disp_obs(npes_filter))
+      local_disp_obs(1) = 0
+      do i = 2, npes_filter
+        local_disp_obs(i) = local_disp_obs(i-1) + local_dims_obs(i-1)
       end do
-    end do
 
-  end do
+      if (mype_filter == 0) then
+        print *, "TSMP-PDAF mype(w)=", mype_world, &
+          ": init_dim_obs_LST: local_disp_obs=", local_disp_obs
+      end if
+
+      if (allocated(obs_pdaf2nc)) deallocate(obs_pdaf2nc)
+      allocate(obs_pdaf2nc(dim_obs))
+      obs_pdaf2nc = 0
+      if (allocated(obs_nc2pdaf)) deallocate(obs_nc2pdaf)
+      allocate(obs_nc2pdaf(dim_obs))
+      obs_nc2pdaf = 0
+
+      cnt = 1
+      do i = 1, dim_obs
+        obs_snapped = .true.
+        do g = begg, endg
+          newgridcell = .true.
+          do p = begp, endp
+            pg = patch%gridcell(p)
+            if (pg == g) then
+              if (newgridcell) then
+
+                deltax = abs(lon(g) - lon_obs(i))
+                if (deltax > 180.0) deltax = 360.0 - deltax
+                deltay = abs(lat(g) - lat_obs(i))
+
+                if ((deltax <= dr_obs(1)) .and. (deltay <= dr_obs(2))) then
+                  if (state_clm2pdaf_p(p,1) == ispval) then
+                    obs_snapped = .false.
+                    cycle
+                  end if
+                  obs_pdaf2nc(local_disp_obs(mype_filter+1)+cnt) = i
+                  obs_nc2pdaf(i) = local_disp_obs(mype_filter+1)+cnt
+                  cnt = cnt + 1
+                  obs_snapped = .true.
+                end if
+
+                newgridcell = .false.
+
+              end if
+            end if
+          end do
+        end do
+
+        if (.not. obs_snapped) then
+          print *, "TSMP-PDAF mype(w)=", mype_world, &
+            ": ERROR observations exist at non-active gridcells."
+          print *, "Observation-index in NetCDF-file: i=", i
+          call abort_parallel()
+        end if
+      end do
+
+      call mpi_allreduce(MPI_IN_PLACE, obs_pdaf2nc, dim_obs, MPI_INTEGER, MPI_SUM, comm_filter, ierror)
+      call mpi_allreduce(MPI_IN_PLACE, obs_nc2pdaf, dim_obs, MPI_INTEGER, MPI_SUM, comm_filter, ierror)
+
+      if (mype_filter == 0) then
+        print *, "TSMP-PDAF mype(w)=", mype_world, &
+          ": init_dim_obs_LST: obs_pdaf2nc=", obs_pdaf2nc
+      end if
+
+    END IF  ! screen > 2
 
 #ifdef PDAF_DEBUG
-  IF (da_print_obs_index > 0) THEN
-    WRITE(fn, "(a,i5.5,a,i5.5,a)") "obs_index_p_LST_", mype_world, ".", step, ".txt"
-    OPEN(unit=72, file=fn, action="write")
-    DO i = 1, dim_obs_p
-      WRITE (72,"(i10)") obs_index_p_LST(i)
-    END DO
-    CLOSE(72)
-  END IF
+    IF (da_print_obs_index > 0) THEN
+      WRITE(fn, "(a,i5.5,a,i5.5,a)") "obs_index_p_LST_", mype_world, ".", step, ".txt"
+      OPEN(unit=72, file=fn, action="write")
+      DO i = 1, dim_obs_p
+        WRITE (72,"(i10)") obs_index_p_LST(i)
+      END DO
+      CLOSE(72)
+    END IF
 #endif
 
   ! ****************************************
