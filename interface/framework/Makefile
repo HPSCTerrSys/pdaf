@@ -168,7 +168,7 @@ libpdaf-d.a:
 %.o : %.c
 	$(PREP_C) $(CC) $(COPT) $(CPP_DEFS) $(CFLAGS) -c $< -o $@
 
-%.o %.mod: %.F90
+%.o : %.F90
 	$(PREP_C) $(FC) $(OPT) $(CPP_DEFS) $(FFLAGS) -c $*.F90
 
 .PHONY: clean depend

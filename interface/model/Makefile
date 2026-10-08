@@ -72,7 +72,7 @@ $(info $$OBJ is [${OBJ}])
 all: libmodel.a
 
 libmodel.a: $(OBJ)
-	ar rcs $@ *.o 
+	ar rcs $@ $(OBJ)
 	ranlib $@
 	mv $@ $(TSMPPDAFLIBDIR)
 	@echo "library compilation suceeded"
