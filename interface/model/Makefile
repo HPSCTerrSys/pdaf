@@ -68,11 +68,20 @@ endif
 
 $(info $$OBJ is [${OBJ}])
 
+## Module ordering dependencies (parallel build safety)
+# Each _mod file must be compiled first so its .mod file exists when
+# dependent translation units are compiled with -j.
+enkf_clm_5.o print_update_clm_5.o mod_clm_statistics_5.o: enkf_clm_mod_5.o
+enkf_clm_5.o: mod_clm_statistics_5.o
+enkf_clm.o print_update_clm.o mod_clm_statistics.o: enkf_clm_mod.o
+enkf_clm.o: mod_clm_statistics.o
+enkf_cosmo.o: enkf_cosmo_mod.o
+
 ## target + rules
 all: libmodel.a
 
 libmodel.a: $(OBJ)
-	ar rcs $@ *.o 
+	ar rcs $@ $(OBJ)
 	ranlib $@
 	mv $@ $(TSMPPDAFLIBDIR)
 	@echo "library compilation suceeded"

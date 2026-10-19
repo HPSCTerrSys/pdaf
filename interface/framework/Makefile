@@ -131,6 +131,24 @@ OBJ_USER_LOCAL = init_n_domains_pdaf.o \
 OBJ_PDAF_USER = $(OBJ_USER_GEN) $(OBJ_USER_SEIK) $(OBJ_USER_ENKF) $(OBJ_USER_LOCAL) $(OBJ_USER_PDAFOMI)
 
 ######################################################
+# Module ordering dependencies (parallel build safety)
+# These ensure .mod files exist before dependent translation units
+# are compiled with -j.
+# Level 1: parser_mpi and mod_read_obs need base modules
+parser_mpi.o: mod_parallel_pdaf.o
+mod_read_obs.o: mod_tsmp.o mod_parallel_pdaf.o mod_assimilation.o
+# Level 2: obs handlers need mod_read_obs
+obs_GRACE_pdafomi.o obs_SM_pdafomi.o: mod_read_obs.o
+# Level 3: files that USE the obs handlers or parser
+init_pdaf.o init_pdaf_parse.o callback_obs_pdafomi.o: \
+	obs_GRACE_pdafomi.o obs_SM_pdafomi.o
+init_pdaf_parse.o init_parallel_pdaf.o: parser_mpi.o
+# All OBJ targets need the three base modules
+$(OBJ_MODEL_PDAF) $(OBJ_PDAF_INT) $(OBJ_PDAF_USER): \
+	    mod_tsmp.o mod_parallel_pdaf.o mod_assimilation.o
+# OBJ targets that also USE mod_read_obs
+add_obs_error_pdaf.o init_dim_obs_f_pdaf.o init_dim_obs_l_pdaf.o init_dim_obs_pdaf.o init_obscovar_pdaf.o localize_covar_pdaf.o next_observation_pdaf.o obs_op_f_pdaf.o prodrinva_l_pdaf.o prodrinva_pdaf.o: mod_read_obs.o
+######################################################
 
 all: $(PROG)
 
@@ -168,7 +186,7 @@ libpdaf-d.a:
 %.o : %.c
 	$(PREP_C) $(CC) $(COPT) $(CPP_DEFS) $(CFLAGS) -c $< -o $@
 
-%.o %.mod: %.F90
+%.o : %.F90
 	$(PREP_C) $(FC) $(OPT) $(CPP_DEFS) $(FFLAGS) -c $*.F90
 
 .PHONY: clean depend
