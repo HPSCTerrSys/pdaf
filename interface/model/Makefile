@@ -26,6 +26,7 @@ OBJCLM = enkf_clm_mod.o\
 OBJCLM5 = enkf_clm_mod_5.o\
 		mod_clm_statistics_5.o\
 		print_update_clm_5.o\
+		hist_write_pdaf.o\
 		enkf_clm_5.o\
 
 ## parflow object files

@@ -80,6 +80,7 @@ void read_enkfpar(char *parname)
   clmupdate_T           = iniparser_getint(pardict,"CLM:update_T",0);
   clmupdate_texture     = iniparser_getint(pardict,"CLM:update_texture",0);
   clmprint_swc          = iniparser_getint(pardict,"CLM:print_swc",0);
+  clmprint_da_hist_file = iniparser_getint(pardict,"CLM:print_da_hist_file",0);
   clmprint_et           = iniparser_getint(pardict,"CLM:print_et",0);
   clmprint_inc           = iniparser_getint(pardict,"CLM:print_inc",0);
   clmstatevec_allcol    = iniparser_getint(pardict,"CLM:statevec_allcol",0);
